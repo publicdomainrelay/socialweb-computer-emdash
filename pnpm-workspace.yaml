@@ -1,0 +1,16 @@
+packages:
+  - site
+  - packages/*
+  - plugins/*
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+  better-sqlite3: true
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - emdash
+  - "@emdash-cms/*"
+blockExoticSubdeps: true

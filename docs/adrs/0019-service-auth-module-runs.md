@@ -14,7 +14,7 @@ Module runs needed the site's browser session. atproto already lets one account 
   1. requires `ES256K` or `ES256`, and a plain `did:plc` or `did:web` issuer;
   2. requires `aud` to be the site DID, with or without `#emdash_integrations`, and `lxm` to be the run method;
   3. requires `exp` to be in the future and at most an hour ahead;
-  4. verifies the low-S signature against the issuer's `#atproto` Multikey with `@noble/curves`, which is bundled into the sandbox;
+  4. verifies the signature against the issuer's `#atproto` Multikey with `@atcute/crypto`, which rejects malleable (high-S) signatures and requires the key type to match `alg`;
   5. claims the `jti` with an insert-if-absent write, so a token works once.
 - The issuer must own the session the module uses. The plugin finds the EmDash user who connected that session and runs the module with it.
 - Callers get a token from `com.atproto.server.getServiceAuth`, or let their PDS mint one with `atproto-proxy: did:web:<host>#emdash_integrations`. OAuth clients need `rpc:com.publicdomainrelay.temp.wasm.run?aud=did:web:<host>%23emdash_integrations`.

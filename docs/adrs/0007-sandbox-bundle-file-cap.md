@@ -9,7 +9,7 @@ The EmDash registry caps each file in a plugin tarball at 128 KB, decompressed. 
 ## Decision
 
 - Use vetted libraries through their public exports for anything security-sensitive:
-  - `@noble/curves` (`secp256k1`, `p256`) for service-auth signatures;
+  - `@atcute/crypto` for atproto Multikey parsing and service-auth signatures;
   - `@scure/base` for base58, base32 and base64url;
   - WebCrypto for DPoP, PKCE and AES-GCM.
   Never re-implement or re-declare their internals to save bytes.
@@ -20,4 +20,4 @@ The EmDash registry caps each file in a plugin tarball at 128 KB, decompressed. 
 
 ## Consequences
 
-- `plugin.mjs` is about 109 KB, mostly `@noble/curves`. Watch the size when adding dependencies. If the cap is reached, split the plugin rather than replace a library with our own code.
+- `plugin.mjs` is about 39 KB. Watch the size when adding dependencies. If the cap is reached, split the plugin rather than replace a library with our own code.

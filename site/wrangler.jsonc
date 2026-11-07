@@ -1,0 +1,20 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "socialweb-computer-emdash",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-02-24",
+	"compatibility_flags": ["nodejs_compat"],
+	"routes": [{ "pattern": "exec.fedfork.com", "custom_domain": true }],
+	"vars": { "EMDASH_SITE_URL": "https://exec.fedfork.com" },
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "socialweb-computer-emdash",
+			"database_id": "89e57069-8596-4af3-ae9d-fa5fc33999b1"
+		}
+	],
+	"r2_buckets": [{ "binding": "MEDIA", "bucket_name": "socialweb-computer-emdash-media" }],
+	"worker_loaders": [{ "binding": "LOADER" }],
+	"triggers": { "crons": ["* * * * *"] },
+	"observability": { "enabled": true }
+}

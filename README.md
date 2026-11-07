@@ -4,6 +4,8 @@ Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. 
 
 Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
 
+To work on it, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/publicdomainrelay/socialweb-computer-emdash)
 
 ## Run
@@ -162,7 +164,7 @@ After changing the fork:
 ./scripts/release-emdash-fork.sh
 ```
 
-The script packs the fork with `scripts/emdash-fork.sh`, uploads a release for the submodule's commit, points the overrides at it and reinstalls.
+The script packs the fork with `scripts/emdash-fork.sh`, uploads a release for the submodule's commit, points the overrides at it and reinstalls. The full process is in [docs/emdash-fork.md](docs/emdash-fork.md).
 
 ## Public origin through fedproxy
 

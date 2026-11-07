@@ -129,12 +129,14 @@ curl -s --get http://127.0.0.1:8080/run \
 Needs the Workers Paid plan, for Worker Loader.
 
 - **Button.** The Deploy to Cloudflare button copies this repo into your GitHub. Cloudflare then creates D1, R2 and KV from `wrangler.jsonc`, asks for `EMDASH_ENCRYPTION_KEY`, and runs `pnpm run build` and `pnpm run deploy`.
-- **Terminal.** `pnpm run deploy` builds the plugin and the site, then runs `wrangler deploy`. Wrangler creates every D1, R2 and KV binding that has no ID.
+- **Terminal.** `pnpm run deploy` builds the plugin and the site, then runs `wrangler deploy`. Wrangler creates every D1, R2 and KV binding that has no ID, named after the Worker, and reuses them on later deploys.
+- **Encryption key.** `EMDASH_ENCRYPTION_KEY` is required. Without it, connecting an integration fails with `Plugin secret settings require EMDASH_ENCRYPTION_KEY`.
 
 ```bash
 pnpm install
 pnpm run deploy
-echo emdash_enc_v1_$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '=') | pnpm --filter site exec wrangler secret put EMDASH_ENCRYPTION_KEY
+cd site
+echo emdash_enc_v1_$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '=') | pnpm exec wrangler secret put EMDASH_ENCRYPTION_KEY --config dist/server/wrangler.json
 ```
 
 - `wrangler.jsonc` is at the repo root, where the button looks for it. `site/astro.config.mjs` points the adapter at it.

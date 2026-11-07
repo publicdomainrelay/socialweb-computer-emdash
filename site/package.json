@@ -14,7 +14,7 @@
     "start": "node ./dist/server/entry.mjs",
     "typecheck": "astro check",
     "build:cloudflare": "EMDASH_TARGET=cloudflare astro build",
-    "deploy": "pnpm build:cloudflare && wrangler deploy"
+    "deploy": "pnpm build:cloudflare && env -u CLOUDFLARE_ENV wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.6",

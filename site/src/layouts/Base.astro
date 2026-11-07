@@ -28,7 +28,6 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{fullTitle}</title>
-		{description && <meta name="description" content={description} />}
 		<EmDashHead page={page} />
 	</head>
 	<body>

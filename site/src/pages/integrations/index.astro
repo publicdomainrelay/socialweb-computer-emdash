@@ -450,6 +450,15 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		border-top: 1px solid var(--color-border-subtle);
 		font-size: var(--font-size-sm);
 	}
+	.integration__details pre {
+		max-width: 100%;
+		margin-top: 0.5rem;
+		padding: 0.75rem 1rem;
+		overflow-x: auto;
+		border-radius: var(--radius-lg);
+		background: var(--color-fill);
+		font-size: var(--font-size-xs);
+	}
 	.integration__details summary {
 		cursor: pointer;
 		color: var(--color-text-secondary);

@@ -5,8 +5,22 @@
 	"license": "MIT",
 	"author": { "name": "John Andersen" },
 	"security": { "email": "johnandersenpdx@gmail.com" },
+	"name": "socialweb.computer requester",
 	"description": "Request compute and associate DID keys via publicdomainrelay lexicons with progressive OAuth scopes.",
-	"capabilities": [],
+	"keywords": ["atproto", "oauth", "compute"],
+	"capabilities": ["network:request:unrestricted"],
 	"allowedHosts": [],
-	"storage": {}
+	"storage": {
+		"records": { "indexes": ["createdAt"] }
+	},
+	"admin": {
+		"pages": [
+			{ "path": "/requester", "label": "Requester", "icon": "plug" },
+			{ "path": "/connect", "label": "Requester account", "icon": "link" }
+		],
+		"settingsSchema": {
+			"session": { "type": "secret", "label": "OAuth session", "description": "Managed by the Connect page" },
+			"pending": { "type": "secret", "label": "Pending OAuth request", "description": "Managed by the Connect page" }
+		}
+	}
 }

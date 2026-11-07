@@ -1,16 +1,19 @@
+import { handleConnect, oauthRoutes, parseInteraction } from "atproto-oauth-sandbox";
 import type { SandboxedPlugin } from "emdash/plugin";
+import { integration } from "./integration";
+import { handleRequester } from "./requester";
 
-/**
- * Sandboxed plugin entry. The explicit `SandboxedPlugin` annotation gives TypeScript per-hook /
- * per-route inference (`ctx` is `PluginContext` automatically; hook
- * `event` parameters are typed by hook name).
- */
 const plugin: SandboxedPlugin = {
 	routes: {
-		hello: {
-			handler: async (_routeCtx, ctx) => {
-				ctx.log.info("hello route called", { pluginId: ctx.plugin.id });
-				return { greeting: "hello", pluginId: ctx.plugin.id };
+		...oauthRoutes(integration),
+		admin: {
+			handler: async (routeCtx, ctx) => {
+				const interaction = parseInteraction(routeCtx.input);
+				if (!interaction) return { blocks: [] };
+				return (
+					(await handleConnect(ctx, integration, interaction)) ??
+					(await handleRequester(ctx, interaction)) ?? { blocks: [] }
+				);
 			},
 		},
 	},

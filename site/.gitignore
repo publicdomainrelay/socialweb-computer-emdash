@@ -10,3 +10,4 @@ data.db-*
 .env
 .env.*
 !.env.example
+emdash-env.d.ts

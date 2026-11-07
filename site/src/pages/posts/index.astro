@@ -15,8 +15,6 @@ const {
 });
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
-// Single batched query for tags across every post, instead of calling
-// getEntryTerms() per post (which would be N round-trips).
 const tagsByEntry = await getTermsForEntries(
 	"posts",
 	posts.map((p) => p.data.id),

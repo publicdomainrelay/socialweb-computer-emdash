@@ -1,0 +1,12 @@
+{
+	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+	"slug": "statusphere",
+	"publisher": "did:plc:5svqtrhheairglgiiyvutzik",
+	"license": "MIT",
+	"author": { "name": "John Andersen" },
+	"security": { "email": "johnandersenpdx@gmail.com" },
+	"description": "Post xyz.statusphere.status records from EmDash with progressive OAuth scopes.",
+	"capabilities": [],
+	"allowedHosts": [],
+	"storage": {}
+}

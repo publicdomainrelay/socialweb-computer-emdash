@@ -1,7 +1,7 @@
 import { BASE_SCOPE, type ScopeGroup, scopeList } from "./oauth/scopes";
 
 export const COLLECTION = "com.publicdomainrelay.temp.oauth.clientMetadata";
-export const PLUGIN_ID = "atproto-integrations";
+const PLUGIN_ID = "atproto-integrations";
 
 export interface IntegrationRecord {
 	name: string;

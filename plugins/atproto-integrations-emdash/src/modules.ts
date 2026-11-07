@@ -5,24 +5,24 @@ import { resolveIdentity } from "./oauth/identity";
 import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
 export const MODULE_COLLECTION = "com.publicdomainrelay.temp.wasm.module";
-export const MODULE_ABI = "emdash-wasm-json-v1";
-export const MAX_ROUNDS = 8;
-export const MAX_CALLS_PER_ROUND = 10;
-export const MAX_CALLS = 25;
+const MODULE_ABI = "emdash-wasm-json-v1";
+const MAX_ROUNDS = 8;
+const MAX_CALLS_PER_ROUND = 10;
+const MAX_CALLS = 25;
 
-export interface ModuleField {
+interface ModuleField {
 	key: string;
 	label: string;
 }
 
-export interface ModuleAction {
+interface ModuleAction {
 	entry: string;
 	label: string;
 	description?: string;
 	fields: ModuleField[];
 }
 
-export interface WasmModuleRecord {
+interface WasmModuleRecord {
 	name: string;
 	description?: string;
 	blobCid: string;
@@ -136,7 +136,7 @@ interface ModuleStep {
 	result?: unknown;
 }
 
-export interface CallResult {
+interface CallResult {
 	nsid: string;
 	ok: boolean;
 	output?: unknown;
@@ -168,7 +168,7 @@ async function perform(agent: SessionAgent, call: XrpcCallPlan): Promise<CallRes
 	}
 }
 
-export type AgentFor = (session: IntegrationRef) => Promise<SessionAgent | undefined>;
+type AgentFor = (session: IntegrationRef) => Promise<SessionAgent | undefined>;
 
 export async function runModule(
 	ctx: PluginContext,

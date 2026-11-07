@@ -1,12 +1,12 @@
 import type { Http } from "./http";
 
-export interface Identity {
+interface Identity {
 	did: string;
 	handle?: string;
 	pds: string;
 }
 
-export interface DidDocument {
+interface DidDocument {
 	id?: string;
 	alsoKnownAs?: string[];
 	verificationMethod?: Array<{ id: string; type: string; controller?: string; publicKeyMultibase?: string }>;

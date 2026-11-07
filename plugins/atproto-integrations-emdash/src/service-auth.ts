@@ -2,11 +2,12 @@ import { p256 } from "@noble/curves/nist.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 import type { PluginContext } from "emdash/plugin";
 import { requireHttp } from "./oauth/http";
+import { fromBase64url } from "./oauth/jwt";
 import { isDid, resolveDidDocument } from "./oauth/identity";
 
 export const RUN_NSID = "com.publicdomainrelay.temp.wasm.run";
-export const SERVICE_ID = "emdash_integrations";
-export const SERVICE_TYPE = "EmDashAtprotoIntegrations";
+const SERVICE_ID = "emdash_integrations";
+const SERVICE_TYPE = "EmDashAtprotoIntegrations";
 const MAX_LIFETIME_SECONDS = 3600;
 const CLOCK_SKEW_SECONDS = 30;
 
@@ -43,14 +44,9 @@ function base58Decode(value: string) {
 	return Uint8Array.from(bytes.reverse());
 }
 
-function base64UrlDecode(value: string) {
-	const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
-	return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
-}
-
 function decodeJson(segment: string): Record<string, unknown> {
 	try {
-		const value: unknown = JSON.parse(new TextDecoder().decode(base64UrlDecode(segment)));
+		const value: unknown = JSON.parse(new TextDecoder().decode(fromBase64url(segment)));
 		if (typeof value === "object" && value !== null && !Array.isArray(value)) return value as Record<string, unknown>;
 	} catch {}
 	throw new ServiceAuthError("Malformed service auth token");
@@ -104,7 +100,7 @@ export async function verifyServiceAuth(ctx: PluginContext, token: string, audie
 	const signed = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`);
 	const valid = (() => {
 		try {
-			return algorithm.curve.verify(base64UrlDecode(encodedSignature), signed, key.slice(2));
+			return algorithm.curve.verify(fromBase64url(encodedSignature), signed, key.slice(2));
 		} catch {
 			return false;
 		}

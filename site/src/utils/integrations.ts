@@ -1,13 +1,13 @@
 const PLUGIN = "atproto-integrations";
 
-export interface IntegrationGroup {
+interface IntegrationGroup {
 	key: string;
 	label: string;
 	scopes: string[];
 	granted: boolean;
 }
 
-export interface IntegrationModule {
+interface IntegrationModule {
 	did: string;
 	rkey: string;
 	uri: string;

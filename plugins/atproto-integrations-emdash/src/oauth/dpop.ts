@@ -6,7 +6,7 @@ export interface DpopKey {
 	nonces: Record<string, string>;
 }
 
-export interface DpopRequest {
+interface DpopRequest {
 	method: "GET" | "POST";
 	headers?: Record<string, string>;
 	body?: string;

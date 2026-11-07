@@ -1,6 +1,6 @@
 import type { Http } from "./http";
 
-export interface AuthorizationServer {
+interface AuthorizationServer {
 	issuer: string;
 	authorization_endpoint: string;
 	token_endpoint: string;

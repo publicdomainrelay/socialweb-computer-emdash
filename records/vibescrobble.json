@@ -1,0 +1,34 @@
+{
+	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"name": "Vibescrobble",
+	"description": "Post com.vibescrobble.scrobble records of work you shipped.",
+	"clientMetadata": {
+		"client_id": "https://vibescrobble.example.com/oauth-client-metadata.json",
+		"client_name": "Vibescrobble",
+		"client_uri": "https://vibescrobble.com",
+		"redirect_uris": [
+			"https://vibescrobble.example.com/oauth/callback"
+		],
+		"grant_types": [
+			"authorization_code",
+			"refresh_token"
+		],
+		"response_types": [
+			"code"
+		],
+		"scope": "atproto repo:com.vibescrobble.scrobble?action=create",
+		"application_type": "web",
+		"token_endpoint_auth_method": "none",
+		"dpop_bound_access_tokens": true
+	},
+	"scopeGroups": [
+		{
+			"key": "scrobble",
+			"label": "Post scrobbles",
+			"scopes": [
+				"repo:com.vibescrobble.scrobble?action=create"
+			]
+		}
+	],
+	"createdAt": "2026-11-07T06:00:00.000Z"
+}

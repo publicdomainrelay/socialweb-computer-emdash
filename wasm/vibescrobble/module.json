@@ -1,0 +1,25 @@
+{
+	"name": "Vibescrobble",
+	"description": "Post a com.vibescrobble.scrobble record of work you shipped.",
+	"session": "vibescrobble",
+	"actions": [
+		{
+			"entry": "scrobble",
+			"label": "Scrobble",
+			"description": "Text must start with an emoji, for example 🚀 shipped the Cloudflare deploy.",
+			"fields": [
+				{
+					"key": "text",
+					"label": "What you shipped"
+				},
+				{
+					"key": "task",
+					"label": "Task"
+				}
+			]
+		}
+	],
+	"calls": [
+		"com.atproto.repo.createRecord"
+	]
+}

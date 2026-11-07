@@ -1,0 +1,29 @@
+{
+	"name": "Statusphere",
+	"description": "Set or clear your xyz.statusphere.status emoji status.",
+	"session": "statusphere",
+	"actions": [
+		{
+			"entry": "set_status",
+			"label": "Set status",
+			"description": "Skips the write when your latest status already matches.",
+			"fields": [
+				{
+					"key": "status",
+					"label": "Emoji"
+				}
+			]
+		},
+		{
+			"entry": "clear_status",
+			"label": "Clear statuses",
+			"description": "Deletes up to 10 of your statuses.",
+			"fields": []
+		}
+	],
+	"calls": [
+		"com.atproto.repo.listRecords",
+		"com.atproto.repo.createRecord",
+		"com.atproto.repo.deleteRecord"
+	]
+}

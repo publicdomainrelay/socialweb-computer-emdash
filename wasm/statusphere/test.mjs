@@ -1,37 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
-const bytes = await readFile(new URL("./statusphere.wasm", import.meta.url));
-const module = new WebAssembly.Module(bytes);
-const { exports } = new WebAssembly.Instance(module, {});
+import { did, load, now } from "../harness.mjs";
 
-function run(entry, input) {
-	const data = new TextEncoder().encode(JSON.stringify(input ?? null));
-	const ptr = exports.alloc(data.length);
-	new Uint8Array(exports.memory.buffer, ptr, data.length).set(data);
-	const packed = BigInt.asUintN(64, exports[entry](ptr, data.length));
-	const outPtr = Number(packed >> 32n);
-	const outLen = Number(packed & 0xffffffffn);
-	return JSON.parse(new TextDecoder().decode(new Uint8Array(exports.memory.buffer, outPtr, outLen)));
-}
-
-const did = "did:plc:lpfuqerea3deuoyrn7ojser4";
-const now = "2026-11-06T12:34:56.789Z";
+const { module, run, drive } = await load(new URL("./statusphere.wasm", import.meta.url));
 const ENTRIES = ["set_status", "set_status_write", "set_status_done", "clear_status", "clear_status_delete", "clear_status_done"];
-
-function drive(entry, input, respond) {
-	const rounds = [];
-	let output = run(entry, { ...input, did, now });
-	for (;;) {
-		if (output.error) return { error: output.error, rounds };
-		rounds.push({ entry, calls: output.calls });
-		const results = output.calls.map(respond);
-		if (!output.next) return { result: output.result, rounds };
-		entry = output.next;
-		output = run(entry, { ...input, did, now, state: output.state, results });
-	}
-}
 
 test("module has no imports and exports the ABI", () => {
 	assert.equal(WebAssembly.Module.imports(module).length, 0);

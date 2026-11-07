@@ -2,6 +2,8 @@
 
 Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.publicdomainrelay.temp.oauth.clientMetadata` record in their own PDS.
 
+Live on Cloudflare Workers: https://exec.fedfork.com/integrations
+
 ## Run
 
 ```bash
@@ -51,14 +53,22 @@ goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.oauth.clientMet
 ## WebAssembly integrations
 
 ```bash
-./wasm/statusphere/build.sh
-pnpm exec node wasm/statusphere/test.mjs
-ATPROTO_PDS=https://bsky.social ./scripts/publish-wasm.sh
+./wasm/build.sh
+node --test wasm/*/test.mjs
+./scripts/publish-wasm.sh statusphere
+./scripts/publish-wasm.sh vibescrobble
 ```
 
 ```bash
-goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/statusphere"
+goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/vibescrobble"
 ```
+
+- `statusphere`: set or clear your `xyz.statusphere.status`.
+- `vibescrobble`: post a `com.vibescrobble.scrobble` record of work you shipped. The text must start with an emoji.
+- **Add a module:**
+  1. Add a crate under `wasm/` that uses `abi::entries!`.
+  2. Add a `module.json` and a `test.mjs`.
+  3. Add the module's name to `wasm/build.sh`.
 
 ## Run a module with atproto service auth
 
@@ -111,6 +121,29 @@ curl -s --get http://127.0.0.1:8080/run \
 
 ```bash
 ./scripts/celld.sh down
+```
+
+## Deploy to Cloudflare Workers
+
+Needs:
+- a Workers Paid plan, for Worker Loader;
+- R2 turned on;
+- `~/.cloudflare_source` exporting `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+
+```bash
+. ~/.cloudflare_source
+cd site
+pnpm exec wrangler d1 create socialweb-computer-emdash
+pnpm exec wrangler r2 bucket create socialweb-computer-emdash-media
+EMDASH_SITE_URL=https://exec.fedfork.com pnpm run deploy
+pnpm exec emdash secrets generate | pnpm exec wrangler secret put EMDASH_ENCRYPTION_KEY
+```
+
+- `wrangler d1 create` prints a `database_id`. Put it in `site/wrangler.jsonc`.
+- Set the host in two places, `routes` and `vars.EMDASH_SITE_URL`.
+
+```bash
+SITE_URL=https://exec.fedfork.com pnpm exec node scripts/e2e.ts
 ```
 
 ## Public origin through fedproxy
@@ -177,6 +210,7 @@ goat record create -n -r example example.json
 - **Limits.** 8 rounds, 10 calls per round, 25 calls in total. The record can list which NSIDs the module may call.
 - **Service auth.** The site is `did:web:<host>` with service `#emdash_integrations`. `POST /xrpc/com.publicdomainrelay.temp.wasm.run` takes a service-auth JWT, which `@atcute/crypto` verifies. The plugin checks `aud`, `lxm` and `exp`, and each `jti` works only once.
 - **Parallel runs.** A lease in plugin storage serializes token refresh. Parallel runs refresh a session once instead of racing single-use refresh tokens.
+- **Scrobbles.** The `vibescrobble` module posts `com.vibescrobble.scrobble` records, matching atirc's emoji rule and record shape.
 - **Bundle.** The plugin bundle is about 93 KB, under the registry's 128 KB per-file cap.
 
 ### Connect
@@ -255,6 +289,7 @@ All patches are on `publicdomainrelay/emdash`, branch `wasm-blob-sandbox`.
 - `dacc55fdf`: celld's CPU-limit message maps to `WASM_TIMEOUT`.
 - `04769ba75`: plugin-cli bundles the `workerd`, `worker` and `browser` builds of dependencies instead of their Node builds.
 - `c28373a85`: the Miniflare dev runner uses the production compatibility date and `nodejs_compat`.
+- `15473214e`: the `sandboxLimits` option on `emdash()`. Without it, the Cloudflare runner's limit of 10 subrequests per invocation breaks OAuth connect.
 - Also on the branch:
   - a spec, `proposals/sandboxed-wasm-modules.md`;
   - a lint fix;
@@ -262,20 +297,20 @@ All patches are on `publicdomainrelay/emdash`, branch `wasm-blob-sandbox`.
 
 ## Cloudflare Workers
 
-The code path exists, but the site has never been deployed to Cloudflare itself.
+Deployed and verified at https://exec.fedfork.com (ADR 0022).
 
-- **Runner.** The Cloudflare runner uses a Worker Loader (Dynamic Workers) isolate with `globalOutbound: null`.
-- **Tested so far:**
-  - the Cloudflare runner's unit tests;
-  - celld, which emulates Dynamic Workers locally, running module rounds;
-  - the full live flow on the Miniflare dev runner.
-- **A deploy needs:**
-  - this fork's packages, because upstream EmDash has no `wasm:execute`;
-  - a Worker Loader binding on the account;
-  - D1 for plugin storage, whose `compareAndSet` backs the refresh lock and replay protection;
-  - compatibility date `2025-01-01` or later, with `nodejs_compat`;
-  - the PDS and authorization server hosts allowed for `ctx.http`.
-- **Module network access.** Modules need no network access. Every call goes through the plugin's `ctx.http`.
+- **Isolates.**
+  - Sandboxed plugins run in Worker Loader isolates.
+  - Each WebAssembly run gets its own isolate with `globalOutbound: null`.
+  - Modules have no network access. Every call goes through the plugin's `ctx.http`.
+- **Bindings:** D1 `DB` (plugin storage, refresh lock, replay protection), R2 `MEDIA`, Worker Loader `LOADER`, KV `SESSION`.
+- **Limits.** `sandboxLimits: { cpuMs: 1000, subrequests: 200 }`. The runner defaults are 50 ms and 10 subrequests, which are too small for OAuth.
+- **Upstream gap.** Upstream EmDash has no `wasm:execute`, so the deploy uses this fork's packages.
+- **Verified with `scripts/e2e.ts`:**
+  - sign-in and progressive scopes;
+  - rounds and parallel runs;
+  - service auth, replay refusal and the PDS proxy;
+  - scrobbles.
 
 ## What is ours
 
@@ -284,9 +319,11 @@ Legend: `●` ours, `◐` upstream code we patched, `○` third-party and untouc
 ```text
 socialweb-computer-emdash/                    ● github.com/publicdomainrelay/socialweb-computer-emdash
 ├── site/                                     ● Astro + EmDash site
-│   ├── astro.config.mjs                      ● plugin, login provider, sandbox runner
+│   ├── astro.config.mjs                      ● Node or Cloudflare (EMDASH_TARGET), plugin, login, sandbox limits
+│   ├── wrangler.jsonc                        ● Worker, D1, R2, LOADER, exec.fedfork.com
 │   ├── seed/seed.json                        ● title, menu
 │   └── src/
+│       ├── worker.ts                         ● Cloudflare entry, exports PluginBridge
 │       ├── layouts/Base.astro                ●
 │       ├── styles/site.css                   ●
 │       ├── utils/integrations.ts             ● calls plugin routes
@@ -309,9 +346,12 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   │   ├── http.ts                           ● ctx.http as fetch
 │   │   └── record.ts scopes.ts seal.ts       ● record parsing, scope groups, AES-GCM
 │   └── tests/                                ● sandbox tests
-├── wasm/statusphere/                         ● Rust module: set_status, clear_status
+├── wasm/                                     ● Cargo workspace, build.sh, harness.mjs
+│   ├── abi/                                  ● shared JSON ABI: Did, CallResult, entries!
+│   ├── statusphere/                          ● set_status, clear_status
+│   └── vibescrobble/                         ● scrobble
 ├── lexicons/com/publicdomainrelay/temp/      ● oauth.clientMetadata, wasm.module, wasm.run
-├── records/                                  ● example records
+├── records/                                  ● statusphere, vibescrobble, socialweb-computer; records/wasm/ module records
 ├── celld/                                    ● celld Worker using the fork runtime
 ├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, emdash-fork.sh
 ├── docs/adrs/                                ● decisions
@@ -319,6 +359,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
     ├── proposals/sandboxed-wasm-modules.md   ● spec
     └── packages/
         ├── core/src/plugins/wasm.ts          ● JSON ABI runner
+        ├── core/src/{config/options-schema,astro/integration/runtime,emdash-runtime}.ts  ◐ sandboxLimits
         ├── core/src/plugins/{context,types,index,manifest-schema}.ts  ◐ ctx.wasm, capability
         ├── plugin-types/src/                 ◐ wasm:execute in manifest and descriptions
         ├── plugin-cli/src/build/pipeline.ts  ◐ worker export conditions
@@ -337,10 +378,11 @@ external
 ├── @atcute/oauth-node-client, identity-resolver, identity, crypto, lexicons   ○
 ├── @scure/base, @noble/curves (tests only)      ○
 ├── astro, the rest of emdash                    ○
+├── @astrojs/cloudflare, wrangler, unicode-segmentation, atproto-record   ○
 └── celld, rustfs, goat, fedproxy                ○ tooling
 ```
 
-- Generated, not hand-written: `pnpm-lock.yaml` and `wasm/statusphere/Cargo.lock`.
+- Generated, not hand-written: `pnpm-lock.yaml` and `wasm/Cargo.lock`.
 - Count our own tracked lines:
 
 ```bash

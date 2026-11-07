@@ -1,0 +1,39 @@
+{
+	"$type": "com.publicdomainrelay.temp.wasm.module",
+	"name": "Vibescrobble",
+	"description": "Post a com.vibescrobble.scrobble record of work you shipped.",
+	"module": {
+		"$type": "blob",
+		"ref": {
+			"$link": "bafkreiazoyk3axvsgzqyk5sm47pvz6qymcmakjgfu3ta45p5cedeqdj6r4"
+		},
+		"mimeType": "application/wasm",
+		"size": 129784
+	},
+	"abi": "emdash-wasm-json-v1",
+	"session": {
+		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.publicdomainrelay.temp.oauth.clientMetadata/vibescrobble",
+		"cid": "bafyreibf6dhj6ojm23u6i2ldcqyucsalc6atrgt3v6koibgyxieq3qqahi"
+	},
+	"actions": [
+		{
+			"entry": "scrobble",
+			"label": "Scrobble",
+			"description": "Text must start with an emoji, for example 🚀 shipped the Cloudflare deploy.",
+			"fields": [
+				{
+					"key": "text",
+					"label": "What you shipped"
+				},
+				{
+					"key": "task",
+					"label": "Task"
+				}
+			]
+		}
+	],
+	"calls": [
+		"com.atproto.repo.createRecord"
+	],
+	"createdAt": "2026-11-07T05:53:45.000Z"
+}

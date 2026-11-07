@@ -6,7 +6,7 @@
 	"scripts": {
 		"build": "pnpm -r --filter \"./plugins/*\" build",
 		"dev": "pnpm --filter site dev",
-		"test": "pnpm -r test && node --test wasm/statusphere/test.mjs"
+		"test": "pnpm -r test && node --test wasm/*/test.mjs"
 	},
 	"devEngines": {
 		"runtime": {

@@ -202,6 +202,17 @@ const proxied = await fetch(`${pds}/xrpc/${RUN_NSID}`, {
 });
 const proxiedBody = await proxied.json();
 log("run clear_status through PDS proxy", { status: proxied.status, ...(proxied.ok ? summary(proxiedBody as Ran) : proxiedBody), remaining: (await statuses()).length });
+await connect("vibescrobble", ["scrobble"]);
+const scrobbled = await plugin<Ran>("run", { did, rkey: "vibescrobble", entry: "scrobble", input: { text: "🧪 e2e scrobble through EmDash WebAssembly", task: "#socialweb-computer-emdash" } });
+const scrobbleRkey = String(scrobbled.result.uri).split("/").pop() ?? "";
+const scrobble = await (await fetch(`${pds}/xrpc/com.atproto.repo.getRecord?${new URLSearchParams({ repo: did, collection: "com.vibescrobble.scrobble", rkey: scrobbleRkey })}`)).json();
+log("run scrobble", { ...summary(scrobbled), stored: scrobble.value });
+const removed = await fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
+	method: "POST",
+	headers: { ...bearer, "content-type": "application/json" },
+	body: JSON.stringify({ repo: did, collection: "com.vibescrobble.scrobble", rkey: scrobbleRkey }),
+});
+log("delete test scrobble", { status: removed.status });
 await connect("socialweb-computer", ["associate"]);
 await connect("socialweb-computer", ["associate", "policy", "atirc"]);
 const listing = await plugin<Listing>("integrations", { did });

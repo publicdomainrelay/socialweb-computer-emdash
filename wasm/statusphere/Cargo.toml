@@ -8,13 +8,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-atproto-record = { git = "https://tangled.org/ngerakines.me/atproto-crates", rev = "c4564e941675d2566c65ecf26b9698aae5229768" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-
-[profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true
+abi.workspace = true
+atproto-record.workspace = true
+serde.workspace = true
+serde_json.workspace = true

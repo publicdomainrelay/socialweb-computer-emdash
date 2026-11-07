@@ -5,10 +5,10 @@
 	"module": {
 		"$type": "blob",
 		"ref": {
-			"$link": "bafkreibdiavcjab6dzbeuq6aqkb5pdape2is2ckud53yxc3utehdqec6ky"
+			"$link": "bafkreidry5ck5hepxgai6fwbkzp4qwpxyqyvqqzt34hv3bntmryjegzhea"
 		},
 		"mimeType": "application/wasm",
-		"size": 108323
+		"size": 108672
 	},
 	"abi": "emdash-wasm-json-v1",
 	"session": {

@@ -12,5 +12,5 @@ When the site origin is `localhost`, `127.0.0.1` or `[::1]`, the plugin uses `ht
 
 ## Consequences
 
-- `pnpm dev` works against real PDSes such as bsky.social, with no tunnel.
+- `pnpm dev` works against real PDSes such as bsky.social, with no tunnel. `scripts/e2e.ts` runs this path end to end.
 - Loopback clients are public clients with short-lived sessions. Production uses the served CIMD.

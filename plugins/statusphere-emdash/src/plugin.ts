@@ -1,4 +1,4 @@
-import { connectedAgent, handleConnect, MissingScopeError, oauthRoutes, parseInteraction } from "atproto-oauth-sandbox";
+import { connectedAgent, integrationRoutes, MissingScopeError } from "atproto-oauth-sandbox";
 import type { SandboxedPlugin } from "emdash/plugin";
 import { integration } from "./integration";
 import { handleStatus, postStatus } from "./status";
@@ -20,19 +20,7 @@ const plugin: SandboxedPlugin = {
 			},
 		},
 	},
-	routes: {
-		...oauthRoutes(integration),
-		admin: {
-			handler: async (routeCtx, ctx) => {
-				const interaction = parseInteraction(routeCtx.input);
-				if (!interaction) return { blocks: [] };
-				return (
-					(await handleConnect(ctx, integration, interaction)) ??
-					(await handleStatus(ctx, interaction)) ?? { blocks: [] }
-				);
-			},
-		},
-	},
+	routes: integrationRoutes(integration, handleStatus),
 };
 
 export default plugin;

@@ -3,7 +3,7 @@ import type { PluginContext } from "emdash/plugin";
 import type { SessionAgent } from "./flow";
 import { requireHttp, xrpcUrl } from "./http";
 import { resolveActor } from "./identity";
-import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef, STUDIO_RKEY } from "./record";
+import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
 export const MODULE_COLLECTION = "com.fedfork.exec.wasm.module";
 const MODULE_ABI = "emdash-wasm-json-v1";
@@ -51,7 +51,6 @@ function parseSessionRef(value: unknown): IntegrationRef {
 	const uri = isObject(value) ? text(value.uri) : undefined;
 	const match = uri ? /^at:\/\/(did:[^/]+)\/([^/]+)\/([^/]+)$/.exec(uri) : null;
 	if (!match || match[2] !== CLIENT_COLLECTION) throw new Error("Module session must reference a clientMetadata record");
-	if (match[3] === STUDIO_RKEY) throw new Error("Modules cannot run with the studio session");
 	return { did: match[1], rkey: match[3] };
 }
 

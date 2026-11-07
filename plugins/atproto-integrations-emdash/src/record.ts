@@ -1,7 +1,6 @@
 import { BASE_SCOPE, type ScopeGroup, scopeList } from "./scopes";
 
 export const COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
-export const STUDIO_RKEY = "_studio";
 export const RKEY = /^[a-zA-Z0-9._:~-]{1,512}$/;
 const PLUGIN_ID = "atproto-integrations";
 

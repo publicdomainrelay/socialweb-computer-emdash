@@ -30,7 +30,7 @@ pnpm dev
 | `site/` | Astro and EmDash site: guide pages, `/integrations`, `/studio`, `/source`, `did:web`, the `wasm.run` XRPC endpoint |
 | `site/src/studio/` | In-browser AssemblyScript compiler wrapper and the `abi.ts` helpers and templates for editor modules |
 | `site/src/diagrams.ts` | Every Mermaid diagram on the site, drawn by [Pele](https://pele.run) |
-| `plugins/atproto-integrations-emdash/` | The sandboxed plugin: OAuth, sealed sessions, module rounds, service auth, the studio session |
+| `plugins/atproto-integrations-emdash/` | The sandboxed plugin: OAuth, sealed sessions, site integrations, module rounds, service auth, the studio routes |
 | `wasm/` | Cargo workspace: `abi`, `statusphere`, `vibescrobble`, plus `harness.mjs` for tests |
 | `lexicons/` | `com.fedfork.exec.*` lexicons |
 | `records/` | Integration records, and module records in `records/wasm/` |
@@ -135,7 +135,11 @@ Never run a manifest's command directly on your machine. It comes from someone's
 ### The studio
 
 The studio pages call five plugin routes: `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`. They are declared in `plugins/atproto-integrations-emdash/src/plugin.ts` and implemented in `src/studio.ts`.
-- **Reserved key.** The studio session is stored under the reserved record key `_studio`. Keep the guards that refuse that key in `beginConnect`, `listIntegrations` and the module session parser.
+- **The studio is a record.** It is the site integration with record key `studio`, defined in `records/studio.json` and listed in `EMDASH_SITE_INTEGRATIONS`. To change its scopes, edit its groups there and republish with `./scripts/publish-records.sh`. Do not hard-code scopes in the plugin.
+- **Trust rule.** Keep these two checks:
+  - `beginConnect` lets an account authorize a record only when the record is in that account's repo or listed in `src/site.ts`'s site integrations.
+  - Modules run only with own-record sessions, through `ownSessionAgent`.
+- **Repository.** Publishing writes to the studio session's own account, never to a DID the browser sends.
 - **Editor templates.** These live in `site/src/studio/assemblyscript/` as `.as` files, so the site's TypeScript check skips them. The editor hands them to `asc` as `.ts`.
 - **Compiler version.** If you upgrade `assemblyscript`, keep its version pinned exactly in `site/package.json`. Manifests record it, and rebuilds need the same compiler.
 
@@ -165,6 +169,7 @@ Follow [docs/emdash-fork.md](docs/emdash-fork.md): change and test in `emdash/`,
 
 - **Your own copy:** use the Deploy to Cloudflare button, or `pnpm run deploy`. See [Deploy your own](https://exec.fedfork.com/deploy).
 - **exec.fedfork.com itself:** maintainers deploy it with `pnpm run deploy:fedfork`. Plain `pnpm run deploy` on that account would rebind the production Worker to new, empty resources.
+- **Site integrations:** `EMDASH_SITE_INTEGRATIONS` in `wrangler.jsonc` lists the records every account may connect. Set it in the top level and again in each `env` block, because wrangler environments do not inherit variables. Only list records your operator account controls.
 - **After any deploy,** run `scripts/e2e.ts` against the deployed site.
 - **Throwaway Workers:** when you test a deploy on a temporary Worker, delete its D1 database, R2 bucket and KV namespace afterwards as well.
 

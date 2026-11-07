@@ -1,7 +1,6 @@
 import { plugin, studioDid } from "./api";
 
 const COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
-const STUDIO_RKEY = "_studio";
 const RKEY = /^[a-zA-Z0-9._:~-]{1,512}$/;
 const GROUP_KEY = /^[a-z0-9-]+$/;
 const NSID = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z0-9-]+){2,}$/;
@@ -109,8 +108,8 @@ export function buildRecord(state: State) {
 
 export function problems(state: State) {
 	const found: string[] = [];
-	if (!RKEY.test(state.rkey) || state.rkey === "." || state.rkey === ".." || state.rkey === STUDIO_RKEY) {
-		found.push("Record key must be 1 to 512 characters of letters, digits and . _ : ~ - (and not _studio).");
+	if (!RKEY.test(state.rkey) || state.rkey === "." || state.rkey === "..") {
+		found.push("Record key must be 1 to 512 characters of letters, digits and . _ : ~ -.");
 	}
 	if (!state.name.trim()) found.push("Name is required.");
 	if (state.clientUri.trim() && !isUrl(state.clientUri.trim())) found.push("Client URI must be an http or https URL.");

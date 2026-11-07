@@ -1,8 +1,6 @@
 import { plugin, studioDid } from "./api";
 import type { ExamplesBundle } from "./examples";
 
-export const AFTER_CONNECT_KEY = "studio:after-connect";
-
 export interface InstallStep {
 	label: string;
 	state: "pending" | "running" | "done" | "skipped" | "failed";

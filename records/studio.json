@@ -1,0 +1,44 @@
+{
+	"$type": "com.fedfork.exec.oauth.clientMetadata",
+	"name": "Studio",
+	"description": "Publish integration records, WebAssembly modules and their source to your own PDS from this site.",
+	"clientMetadata": {
+		"client_id": "https://exec.fedfork.com/oauth-client-metadata.json",
+		"client_name": "Studio",
+		"client_uri": "https://exec.fedfork.com",
+		"redirect_uris": [
+			"https://exec.fedfork.com/oauth/callback"
+		],
+		"grant_types": [
+			"authorization_code",
+			"refresh_token"
+		],
+		"response_types": [
+			"code"
+		],
+		"scope": "atproto repo:com.fedfork.exec.oauth.clientMetadata repo:com.fedfork.exec.wasm.module repo:com.fedfork.exec.source.file repo:com.fedfork.exec.source.manifest blob:application/wasm",
+		"application_type": "web",
+		"token_endpoint_auth_method": "none",
+		"dpop_bound_access_tokens": true
+	},
+	"scopeGroups": [
+		{
+			"key": "integrations",
+			"label": "Publish integration records",
+			"scopes": [
+				"repo:com.fedfork.exec.oauth.clientMetadata"
+			]
+		},
+		{
+			"key": "modules",
+			"label": "Publish WebAssembly modules and their source",
+			"scopes": [
+				"repo:com.fedfork.exec.wasm.module",
+				"repo:com.fedfork.exec.source.file",
+				"repo:com.fedfork.exec.source.manifest",
+				"blob:application/wasm"
+			]
+		}
+	],
+	"createdAt": "2026-11-07T10:00:00.000Z"
+}

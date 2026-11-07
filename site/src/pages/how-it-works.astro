@@ -2,7 +2,7 @@
 import Code from "../components/Code.astro";
 import Diagram from "../components/Diagram.astro";
 import Legend from "../components/Legend.astro";
-import { connect, records, refresh, rounds, serviceAuth, sourceRecords, trust } from "../diagrams";
+import { connect, records, refresh, rounds, serviceAuth, sessions, sourceRecords, trust } from "../diagrams";
 import Guide from "../layouts/Guide.astro";
 
 const toc = [
@@ -10,7 +10,7 @@ const toc = [
 	{ id: "records", label: "Records define it" },
 	{ id: "connect", label: "Connecting" },
 	{ id: "trust", label: "Who holds what" },
-	{ id: "studio", label: "The studio session" },
+	{ id: "sessions", label: "One session per set of scopes" },
 	{ id: "rounds", label: "Running a module" },
 	{ id: "service-auth", label: "Service auth" },
 	{ id: "refresh", label: "Parallel runs" },
@@ -97,19 +97,31 @@ const integrationRecord = `{
 		</ul>
 	</section>
 
-	<section id="studio">
-		<h2>The studio session</h2>
+	<section id="sessions">
+		<h2>One session per set of scopes</h2>
 		<p>
-			Signing in asks only for <code>atproto</code>, so the site cannot write to your repo. The <a href="/studio">studio</a> asks for write access separately, as its own OAuth session that the plugin defines itself rather than reading it from a record. It requests exactly these scopes:
+			This is the pattern the whole site is built on. Signing in asks only for <code>atproto</code>, which proves who you are and nothing more. Every other capability is a new OAuth session, defined by a <code>com.fedfork.exec.oauth.clientMetadata</code> record and granted one scope group at a time when you ask for it. The login session never grows.
+		</p>
+		<Diagram code={sessions} label="Flowchart: sign-in with the atproto scope leads to one new session per integration record, from your own records or from the site's integrations such as the studio. All sessions are sealed per user per record. Only own-record sessions drive modules; the studio session publishes records. Another account's record cannot be connected." />
+		<h3>Where integrations come from</h3>
+		<ul>
+			<li><strong>Your own records.</strong> Any <code>clientMetadata</code> record in your repo. Only your account can authorize it. A record from another account is refused, so nobody can borrow this site's client identity to ask you for scopes.</li>
+			<li><strong>Site integrations.</strong> Records the site's operator vouches for, by listing their AT-URIs in the Worker variable <code>EMDASH_SITE_INTEGRATIONS</code>. The site serves the list at <code>/integrations/site.json</code>, and the plugin reads it from its own origin and caches it for five minutes. Any signed-in account may authorize a site integration, for itself only. They show on <a href="/integrations">/integrations</a> as offered by this site.</li>
+		</ul>
+		<h3>The studio is just another record</h3>
+		<p>
+			The <a href="/studio">studio</a> is the site integration whose record key is <code>studio</code>. On this site that is <code>records/studio.json</code>, published by the operator account. It has two scope groups:
 		</p>
 		<ul>
-			<li><code>repo:com.fedfork.exec.oauth.clientMetadata</code>, for your integration records;</li>
-			<li><code>repo:com.fedfork.exec.wasm.module</code>, for your module records;</li>
-			<li><code>repo:com.fedfork.exec.source.file</code> and <code>repo:com.fedfork.exec.source.manifest</code>, for module sources;</li>
-			<li><code>blob:application/wasm</code>, to upload compiled modules.</li>
+			<li><strong>integrations</strong>: <code>repo:com.fedfork.exec.oauth.clientMetadata</code>, to publish integration records;</li>
+			<li><strong>modules</strong>: <code>repo:com.fedfork.exec.wasm.module</code>, <code>repo:com.fedfork.exec.source.file</code>, <code>repo:com.fedfork.exec.source.manifest</code> and <code>blob:application/wasm</code>, to publish modules and their source.</li>
 		</ul>
 		<p>
-			Like every other session, it can authorize only your own DID, and it is sealed in plugin storage. It is stored under the reserved record key <code>_studio</code>. The plugin refuses that key everywhere else: a <code>clientMetadata</code> record named <code>_studio</code> is not listed or connectable, and a module whose <code>session</code> names it does not run. So no module can borrow the studio's write access.
+			Its session uses the same PAR, PKCE and DPoP client, the same sealed storage and the same refresh lock as every other integration. Publishing always writes to the account that session belongs to, whatever the page sends.
+		</p>
+		<h3>What a session can drive</h3>
+		<p>
+			A module runs only with a session for its own record's account: its <code>session</code> must name an integration record in the same repo as the module. A site integration session, such as the studio, cannot drive a module. So no module can borrow the studio's write access.
 		</p>
 	</section>
 

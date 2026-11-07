@@ -160,7 +160,7 @@ pre {
 	display: none;
 }
 
-@media (max-width: 64rem) {
+@media (max-width: 72rem) {
 	.site-header__inner {
 		grid-template-areas:
 			"title actions"

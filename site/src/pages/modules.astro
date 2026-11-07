@@ -376,7 +376,7 @@ const ascCommand = `npx --yes --package=assemblyscript@0.28.20 asc module.ts --o
 			<li>The blob's sha256 must match its CID.</li>
 			<li>No imports. A module that imports anything does not instantiate.</li>
 			<li>Keep the blob small. Both shipped modules are under 130 KB with <code>opt-level = "z"</code> and LTO; editor modules are about 12 KB.</li>
-			<li>A module cannot run with the studio session. Its <code>session</code> must name one of your integration records.</li>
+			<li>A module runs only with a session for its own record's account. Its <code>session</code> must name one of your integration records, so site integrations such as the studio cannot drive it.</li>
 		</ul>
 	</section>
 </Guide>

@@ -5,7 +5,6 @@ export const CLIENT_COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
 export const MODULE_COLLECTION = "com.fedfork.exec.wasm.module";
 export const FILE_COLLECTION = "com.fedfork.exec.source.file";
 export const MANIFEST_COLLECTION = "com.fedfork.exec.source.manifest";
-export const STUDIO_RKEY = "_studio";
 
 const AT_URI = /^at:\/\/(did:[a-z]+:[a-zA-Z0-9._:%-]+)\/([a-zA-Z0-9.-]+)\/([a-zA-Z0-9._:~-]+)$/;
 

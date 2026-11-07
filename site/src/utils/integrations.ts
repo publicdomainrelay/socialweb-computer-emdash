@@ -25,6 +25,7 @@ export interface Integration {
 	description?: string;
 	declaredScope: string;
 	groups: IntegrationGroup[];
+	site: boolean;
 	session: { handle?: string; scope: string; updatedAt: string } | null;
 	modules: IntegrationModule[];
 }

@@ -290,3 +290,27 @@ export const verifySource = flowchart(
   F -- yes --> G["Reproducible"]:::site
   F -- no --> H["Not reproducible"]:::deny`,
 );
+
+export const sessions = flowchart(
+	"TD",
+	`
+  LOGIN["Sign in<br/>scope atproto only"]:::you
+  subgraph own["Your integration records"]
+    S1["statusphere<br/>repo:xyz.statusphere.status"]:::pds
+    S2["vibescrobble<br/>repo:com.vibescrobble.scrobble"]:::pds
+  end
+  subgraph offered["Site integrations<br/>EMDASH_SITE_INTEGRATIONS"]
+    ST["studio<br/>integrations, modules"]:::site
+  end
+  LOGIN -- "new session per record,<br/>groups you tick" --> S1
+  LOGIN --> S2
+  LOGIN -- "new session,<br/>for your own account" --> ST
+  S1 --> SEALED[("Sealed sessions<br/>one per user per record")]:::store
+  S2 --> SEALED
+  ST --> SEALED
+  SEALED -- "own-record sessions only" --> RUN["Module runs"]:::wasm
+  SEALED -- "studio session" --> PUB["Publish records,<br/>modules, source"]:::pds
+  X["Another account's record"]:::deny -. "only that account can connect it" .-x SEALED
+  style own fill:#ec48990f,stroke:#ec4899
+  style offered fill:#3b82f60f,stroke:#3b82f6`,
+);

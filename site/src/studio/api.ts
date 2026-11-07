@@ -1,3 +1,5 @@
+export const AFTER_CONNECT_KEY = "studio:after-connect";
+
 export async function plugin<T>(route: string, body: unknown): Promise<T> {
 	const response = await fetch(`/_emdash/api/plugins/atproto-integrations/${route}`, {
 		method: "POST",
@@ -10,3 +12,10 @@ export async function plugin<T>(route: string, body: unknown): Promise<T> {
 }
 
 export const studioDid = () => document.querySelector<HTMLElement>("[data-studio-did]")?.dataset.studioDid ?? "";
+
+export async function connectStudio(groups: string[], returnTo: string) {
+	try {
+		sessionStorage.setItem(AFTER_CONNECT_KEY, returnTo);
+	} catch {}
+	window.location.href = (await plugin<{ url: string }>("studio/connect", { account: studioDid(), groups })).url;
+}

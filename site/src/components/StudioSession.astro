@@ -1,19 +1,20 @@
 ---
 import AtmosphereSignIn from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignIn.astro";
-import { missingScopes, type StudioStatus } from "../utils/studio";
+import { missingGroups, type StudioStatus, studioReady } from "../utils/studio";
 
 interface Props {
 	did?: string;
 	status?: StudioStatus;
+	needs: readonly string[];
 	returnTo: string;
 }
 
-const { did, status, returnTo } = Astro.props;
-const missing = status?.connected ? missingScopes(status) : [];
-const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && scope !== "atproto");
+const { did, status, needs, returnTo } = Astro.props;
+const ready = studioReady(status, needs);
+const missing = missingGroups(status, needs);
 ---
 
-<div class="card studio-session" data-studio-did={did}>
+<div class="card studio-session" data-studio-did={did} data-return-to={returnTo}>
 	{
 		!did ? (
 			<>
@@ -21,32 +22,51 @@ const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && s
 				<p>The studio writes records to your own PDS, so it needs to know who you are.</p>
 				<AtmosphereSignIn returnTo={returnTo} class="studio-session__signin" inputClass="field" buttonClass="btn" placeholder="alice.bsky.social" />
 			</>
-		) : status?.connected && missing.length === 0 ? (
-			<div class="studio-session__row">
-				<div>
-					<h2>
-						Studio connected <span class="pill pill--on">ready</span>
-					</h2>
-					<p>The studio can write your integration, module and source records, and upload WebAssembly blobs.</p>
-				</div>
-				<button class="btn btn--ghost btn--small" type="button" data-studio-disconnect>
-					Disconnect
-				</button>
-			</div>
+		) : !status ? (
+			<>
+				<h2>No studio on this site</h2>
+				<p>The operator has not listed a studio integration in <code>EMDASH_SITE_INTEGRATIONS</code>.</p>
+			</>
 		) : (
 			<>
-				<h2>{status?.connected ? "Reconnect the studio" : "Connect the studio"}</h2>
-				<p>The studio is a separate OAuth session for your own account. It asks for these permissions and nothing else:</p>
-				<ul class="studio-session__scopes">
-					{scopes.map((scope) => (
-						<li>
-							<code>{scope}</code>
-						</li>
+				<div class="studio-session__row">
+					<div>
+						<h2>
+							{status.name}
+							{ready ? <span class="pill pill--on">ready</span> : <span class="pill pill--off">{status.connected ? "needs more" : "not connected"}</span>}
+						</h2>
+						<p>
+							The studio is an integration record this site offers,
+							<code>{status.uri}</code>. Connecting it opens a separate OAuth session for your own account with only the groups you tick.
+						</p>
+					</div>
+					{status.connected && (
+						<button class="btn btn--ghost btn--small" type="button" data-studio-disconnect>
+							Disconnect
+						</button>
+					)}
+				</div>
+				<fieldset class="studio-session__groups">
+					<legend>Permissions</legend>
+					{status.groups.map((group) => (
+						<label class="studio-session__group">
+							<input type="checkbox" name="groups" value={group.key} checked={group.granted || needs.includes(group.key)} disabled={ready} />
+							<span>
+								<strong>{group.label}</strong>
+								<span class="studio-session__scopes">{group.scopes.map((scope) => <code>{scope}</code>)}</span>
+							</span>
+							{group.granted && <span class="pill pill--on">granted</span>}
+						</label>
 					))}
-				</ul>
-				<button class="btn" type="button" data-studio-connect>
-					{status?.connected ? "Grant the missing permissions" : "Connect the studio"}
-				</button>
+				</fieldset>
+				{!ready && (
+					<>
+						<button class="btn" type="button" data-studio-connect>
+							{status.connected ? "Grant the ticked groups" : "Connect the studio"}
+						</button>
+						{missing.length > 0 && <p class="studio-session__hint">This page needs {missing.join(" and ")}.</p>}
+					</>
+				)}
 				<p class="studio-session__error" data-studio-error hidden />
 			</>
 		)
@@ -54,12 +74,14 @@ const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && s
 </div>
 
 <script>
-	import { plugin, studioDid } from "../studio/api";
+	import { connectStudio, plugin } from "../studio/api";
 
+	const card = document.querySelector<HTMLElement>(".studio-session");
 	const error = document.querySelector<HTMLElement>("[data-studio-error]");
 	document.querySelector("[data-studio-connect]")?.addEventListener("click", async () => {
+		const groups = [...(card?.querySelectorAll<HTMLInputElement>("input[name=groups]:checked") ?? [])].map((input) => input.value);
 		try {
-			window.location.href = (await plugin<{ url: string }>("studio/connect", { did: studioDid() })).url;
+			await connectStudio(groups, card?.dataset.returnTo ?? "/studio");
 		} catch (cause) {
 			if (error) {
 				error.textContent = cause instanceof Error ? cause.message : String(cause);
@@ -68,7 +90,7 @@ const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && s
 		}
 	});
 	document.querySelector("[data-studio-disconnect]")?.addEventListener("click", async () => {
-		await plugin("studio/disconnect", { did: studioDid() });
+		await plugin("studio/disconnect", {});
 		window.location.reload();
 	});
 </script>
@@ -89,6 +111,14 @@ const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && s
 		color: var(--color-text-secondary);
 	}
 
+	.studio-session code {
+		padding: 0.1em 0.4em;
+		border-radius: 0.3em;
+		background: var(--color-fill);
+		font-size: var(--font-size-xs);
+		overflow-wrap: anywhere;
+	}
+
 	.studio-session__row {
 		display: flex;
 		flex-wrap: wrap;
@@ -97,20 +127,49 @@ const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && s
 		gap: 1rem;
 	}
 
+	.studio-session__groups {
+		display: grid;
+		gap: 0.5rem;
+		margin-block: 1rem;
+		padding: 0;
+		border: 0;
+	}
+
+	.studio-session__groups legend {
+		margin-bottom: 0.5rem;
+		color: var(--color-muted);
+		font-size: var(--font-size-label);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.studio-session__group {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.625rem;
+		padding: 0.625rem 0.875rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
+		cursor: pointer;
+	}
+
+	.studio-session__group > span:first-of-type {
+		display: grid;
+		flex: 1;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
 	.studio-session__scopes {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.375rem;
-		margin-block: 0.75rem 1rem;
-		list-style: none;
+		gap: 0.25rem;
 	}
 
-	.studio-session__scopes code {
-		padding: 0.15em 0.45em;
-		border-radius: 0.3em;
-		background: var(--color-fill);
-		font-size: var(--font-size-xs);
-		overflow-wrap: anywhere;
+	.studio-session__group:has(input:checked) {
+		border-color: var(--color-brand);
 	}
 
 	.studio-session :global(.studio-session__signin) {
@@ -123,6 +182,11 @@ const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && s
 	.studio-session :global(.studio-session__signin .field) {
 		flex: 1;
 		min-width: 12rem;
+	}
+
+	.studio-session__hint {
+		margin-top: 0.5rem;
+		font-size: var(--font-size-sm);
 	}
 
 	.studio-session__error {

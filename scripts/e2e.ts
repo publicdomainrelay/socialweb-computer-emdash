@@ -237,12 +237,13 @@ const pdsDelete = (collection: string, rkey: string) =>
 		body: JSON.stringify({ repo: did, collection, rkey }),
 	}).then((response) => response.status);
 
-log("studio status before", await plugin<object>("studio/status", { did }));
-const studio = await approve((await plugin<{ url: string }>("studio/connect", { did })).url);
+type StudioStatus = { uri: string; connected: boolean; account?: string; groups: Array<{ key: string; granted: boolean }> };
+const studioSummary = (status: StudioStatus) => ({ uri: status.uri, connected: status.connected, account: status.account, granted: status.groups.filter((group) => group.granted).map((group) => group.key) });
+log("studio status before", studioSummary(await plugin<StudioStatus>("studio/status", {})));
+const studio = await approve((await plugin<{ url: string }>("studio/connect", { account: did, groups: ["integrations", "modules"] })).url);
 const studioCallback = await siteFetch(pathOf(studio.callback));
 log("connect studio", { requested: studio.scope, location: studioCallback.headers.get("location") });
-const studioStatus = await plugin<{ connected: boolean; scope?: string; requested: string }>("studio/status", { did });
-log("studio status after", { connected: studioStatus.connected, granted: studioStatus.scope === studioStatus.requested || studioStatus.requested.split(" ").every((scope) => studioStatus.scope?.split(" ").includes(scope)) });
+log("studio status after", studioSummary(await plugin<StudioStatus>("studio/status", {})));
 
 const integration = await plugin<StrongRef>("studio/publish-integration", {
 	did,
@@ -323,8 +324,8 @@ log("studio cleanup", {
 	manifest: await pdsDelete("com.fedfork.exec.source.manifest", published.source.uri.split("/").pop() ?? ""),
 	integration: await pdsDelete("com.fedfork.exec.oauth.clientMetadata", STUDIO_KEY),
 });
-await plugin("studio/disconnect", { did });
-log("studio disconnected", await plugin<object>("studio/status", { did }));
+await plugin("studio/disconnect", {});
+log("studio disconnected", studioSummary(await plugin<StudioStatus>("studio/status", {})));
 
 const connectedPage = await (await siteFetch("/integrations")).text();
 log("page pills", { pills: [...connectedPage.matchAll(/class="pill[^"]*"[^>]*>\s*([^<]+?)\s*</g)].map((match) => match[1]) });

@@ -14,6 +14,7 @@ const toc = [
 	{ id: "run", label: "Run a module" },
 	{ id: "cli", label: "From your terminal" },
 	{ id: "own", label: "Your own integration" },
+	{ id: "site-integrations", label: "Site integrations" },
 	{ id: "studio", label: "Use the studio" },
 	{ id: "troubleshooting", label: "Troubleshooting" },
 ];
@@ -170,15 +171,27 @@ goat record create -n -r example example.json`;
 		<p>To give it a module, see <a href="/modules">Write a module</a>.</p>
 	</section>
 
+	<section id="site-integrations">
+		<h2>Site integrations</h2>
+		<p>
+			Besides your own records, <a href="/integrations">/integrations</a> lists integrations this site offers. Their cards say they are offered by this site. Their records live in the operator's repo, and the operator vouches for them by listing them in the site's configuration.
+		</p>
+		<ul>
+			<li>You connect them the same way: tick the groups you want and approve. The session is for your own account only.</li>
+			<li>Your own records still come only from your repo. Nobody else's record can ask you for scopes through this site.</li>
+			<li>Site integration sessions cannot run modules. Modules only run with sessions for their own record's account.</li>
+		</ul>
+	</section>
+
 	<section id="studio">
 		<h2>Use the studio</h2>
 		<p>
-			Everything above also works without a terminal. The studio is part of this site and writes to your own PDS with a separate, narrowly scoped session.
+			Everything above also works without a terminal. The studio is a site integration: an ordinary <code>clientMetadata</code> record, with two scope groups, that writes to your own PDS.
 		</p>
 		<ol class="steps">
 			<li>
 				<strong>Connect the studio</strong>
-				On <a href="/studio">/studio</a>, approve one more OAuth request. It can write only your integration, module and source records, and upload WebAssembly blobs.
+				On <a href="/studio">/studio</a> or on its card in <a href="/integrations">/integrations</a>, tick the groups you need and approve. <em>Publish integration records</em> covers the integration builder. <em>Publish WebAssembly modules and their source</em> covers the module editor and blob uploads. Tick both to add the examples.
 			</li>
 			<li>
 				<strong>Build an integration</strong>

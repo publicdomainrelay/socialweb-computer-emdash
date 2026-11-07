@@ -1,9 +1,14 @@
 import type { PluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 import socialweb from "../../../records/socialweb-computer.json";
 import statusphere from "../../../records/statusphere.json";
+import studio from "../../../records/studio.json";
 
 export const SITE_URL = "https://site.example";
+export const ROUTE_ORIGIN = "https://plugin.test";
 export const ALICE = { did: "did:plc:ewvi7nxzyoun6zhxrhs64oiz", handle: "alice.example", pds: "https://pds.example" };
+export const OPERATOR = { did: "did:plc:operatorsiteexampleaaaaa", handle: "operator.example", pds: "https://operator-pds.example" };
+export const STUDIO_RECORD = studio;
+export type Actor = typeof ALICE;
 export const ISSUER = "https://auth.example";
 export const RECORDS = { "socialweb-computer": socialweb, statusphere } as const;
 export const COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
@@ -27,19 +32,25 @@ export async function call(host: PluginRuntimeTestHost, user: User, route: strin
 const lastBody = (host: PluginRuntimeTestHost, url: string) =>
 	new TextDecoder().decode(host.http.requests().findLast((request) => request.url === url)?.body);
 
-export const didDocument = (verificationMethod: unknown[] = []) => ({
+export const didDocument = (verificationMethod: unknown[] = [], actor: Actor = ALICE) => ({
 	"@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/multikey/v1"],
-	id: ALICE.did,
-	alsoKnownAs: [`at://${ALICE.handle}`],
+	id: actor.did,
+	alsoKnownAs: [`at://${actor.handle}`],
 	verificationMethod,
-	service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: ALICE.pds }],
+	service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: actor.pds }],
 });
 
-export async function queueIdentity(host: PluginRuntimeTestHost, document: unknown = didDocument(), times = 1) {
+export async function queueIdentity(host: PluginRuntimeTestHost, document: unknown = didDocument(), times = 1, actor: Actor = ALICE) {
 	for (let index = 0; index < times; index++) {
-		await host.http.respond(`https://plc.directory/${encodeURIComponent(ALICE.did)}`, json(document));
-		await host.http.respond(`https://${ALICE.handle}/.well-known/atproto-did`, new Response(ALICE.did));
+		await host.http.respond(`https://plc.directory/${encodeURIComponent(actor.did)}`, json(document));
+		await host.http.respond(`https://${actor.handle}/.well-known/atproto-did`, new Response(actor.did));
 	}
+}
+
+export const recordUri = (actor: Actor, rkey: string) => `at://${actor.did}/${COLLECTION}/${rkey}`;
+
+export async function queueSite(host: PluginRuntimeTestHost, integrations: unknown, origin = ROUTE_ORIGIN) {
+	await host.http.respond(`${origin}/integrations/site.json`, json(integrations));
 }
 
 export async function queueListing(host: PluginRuntimeTestHost, modules: Array<{ uri: string; cid: string; value: unknown }> = []) {
@@ -84,7 +95,7 @@ export async function queueAuthorizationServer(host: PluginRuntimeTestHost) {
 }
 
 export async function connect(host: PluginRuntimeTestHost, user: User, rkey: keyof typeof RECORDS, groups: string[], sub = ALICE.did, expiresIn = 3600) {
-	await queueIdentity(host, didDocument(), 2);
+	await queueIdentity(host, didDocument(), 3);
 	await host.http.respond(
 		`${ALICE.pds}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(ALICE.did)}&collection=${COLLECTION}&rkey=${rkey}`,
 		json({ uri: `at://${ALICE.did}/${COLLECTION}/${rkey}`, cid: "bafy", value: RECORDS[rkey] }),

@@ -15,6 +15,11 @@ export const guides = [
 		blurb: "A Rust crate with a JSON ABI. It plans XRPC calls and the plugin makes them.",
 	},
 	{
+		href: "/lexicons",
+		title: "Lexicons",
+		blurb: "The five com.fedfork.exec schemas, field by field, and how the site uses each one.",
+	},
+	{
 		href: "/deploy",
 		title: "Deploy your own",
 		blurb: "Run the site on your machine or on Cloudflare Workers with D1, R2 and Worker Loader.",

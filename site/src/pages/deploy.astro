@@ -12,6 +12,7 @@ const toc = [
 	{ id: "domain", label: "Your own domain" },
 	{ id: "local", label: "Run on your machine" },
 	{ id: "topology", label: "What runs where" },
+	{ id: "site-integrations", label: "Site integrations" },
 	{ id: "verify", label: "Check it works" },
 	{ id: "fork", label: "Fork packages" },
 	{ id: "troubleshooting", label: "Troubleshooting" },
@@ -65,6 +66,16 @@ curl -fsS -o /dev/null -w '%{http_code}\\n' "$SITE/integrations"`;
 
 const e2e = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
 SITE_URL=$SITE pnpm exec node scripts/e2e.ts`;
+
+const siteVars = `"vars": {
+  "EMDASH_SITE_INTEGRATIONS": "at://did:plc:…/com.fedfork.exec.oauth.clientMetadata/studio"
+}`;
+
+const ownStudio = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
+goat lex validate -c lexicons records/studio.json
+./scripts/publish-records.sh`;
+
+const checkSite = `curl -fsS "$SITE/integrations/site.json" | jq .`;
 
 const forkPackages = `./scripts/emdash-fork.sh
 ./scripts/release-emdash-fork.sh`;
@@ -176,12 +187,32 @@ const forkPackages = `./scripts/emdash-fork.sh
 					<tr><td><code>LOADER</code></td><td>Worker Loader</td><td>The plugin isolate and one isolate per WebAssembly run</td></tr>
 					<tr><td><code>EMDASH_ENCRYPTION_KEY</code></td><td>Secret, required</td><td>EmDash plugin secret settings, including the key that seals OAuth sessions</td></tr>
 					<tr><td><code>EMDASH_SITE_URL</code></td><td>Variable</td><td>The public origin. Optional on <code>workers.dev</code></td></tr>
+					<tr><td><code>EMDASH_SITE_INTEGRATIONS</code></td><td>Variable</td><td>AT-URIs of the integration records this site offers to every account, separated by spaces</td></tr>
 				</tbody>
 			</table>
 		</div>
 		<p>
 			<code>site/astro.config.mjs</code> builds for Cloudflare when <code>EMDASH_TARGET=cloudflare</code> and for Node otherwise. It raises the plugin sandbox to <code>cpuMs: 1000</code> and <code>subrequests: 200</code>.
 		</p>
+	</section>
+
+	<section id="site-integrations">
+		<h2>Site integrations</h2>
+		<p>
+			Every signed-in account can connect the integrations you list in <code>EMDASH_SITE_INTEGRATIONS</code>, each for its own account. Everything else on <a href="/integrations">/integrations</a> comes from the visitor's own repo. The studio is the listed record whose key is <code>studio</code>.
+		</p>
+		<ul>
+			<li><strong>Default.</strong> The top level of <code>wrangler.jsonc</code> lists this project's studio record, so a fresh deploy has a working studio right away.</li>
+			<li><strong>Per environment.</strong> Variables are not inherited by wrangler environments, so set it again in each <code>env</code> block, as <code>env.fedfork</code> does.</li>
+			<li><strong>How the Worker reads it.</strong> The site serves the list at <code>/integrations/site.json</code>. The plugin fetches that from its own origin and caches it for five minutes, so a change shows up within five minutes of a deploy.</li>
+		</ul>
+		<Code title="wrangler.jsonc" code={siteVars} />
+		<h3>Offer your own studio</h3>
+		<p>
+			To own the studio's definition, publish <code>records/studio.json</code> from your operator account, change its <code>client_uri</code> to your site, and point the variable at the new record. The record key must stay <code>studio</code>. Only list records you control: whatever you list, every visitor's consent screen shows as coming from your site.
+		</p>
+		<Code code={ownStudio} />
+		<Code title="check" code={checkSite} />
 	</section>
 
 	<section id="verify">

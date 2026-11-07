@@ -2,12 +2,12 @@
 import StudioSession from "../../components/StudioSession.astro";
 import Base from "../../layouts/Base.astro";
 import { rkeyOf } from "../../utils/atproto";
-import { missingScopes, studioContext } from "../../utils/studio";
+import { STUDIO_GROUPS, studioContext, studioReady } from "../../utils/studio";
 
 export const prerender = false;
 
 const { did, status, integrations, error } = await studioContext(Astro.locals, Astro.url);
-const ready = Boolean(status?.connected && missingScopes(status).length === 0);
+const ready = studioReady(status, STUDIO_GROUPS.integrations);
 const records = JSON.stringify(integrations.map((record) => ({ rkey: rkeyOf(record.uri), value: record.value }))).replace(/</g, "\\u003c");
 const notReady = !did ? "Sign in to publish." : ready ? "" : "Connect the studio above to publish.";
 ---
@@ -24,7 +24,7 @@ const notReady = !did ? "Sign in to publish." : ready ? "" : "Connect the studio
 	</header>
 
 	<div class="frame builder" data-builder data-ready={String(ready)}>
-		<StudioSession did={did} status={status} returnTo="/studio/integration" />
+		<StudioSession did={did} status={status} needs={STUDIO_GROUPS.integrations} returnTo="/studio/integration" />
 		{error && <p class="notice notice--error" role="alert">{error}</p>}
 		<script type="application/json" data-records set:html={records} />
 

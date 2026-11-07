@@ -2,12 +2,12 @@
 import StudioSession from "../../components/StudioSession.astro";
 import Base from "../../layouts/Base.astro";
 import { rkeyOf } from "../../utils/atproto";
-import { missingScopes, studioContext } from "../../utils/studio";
+import { STUDIO_GROUPS, studioContext, studioReady } from "../../utils/studio";
 
 export const prerender = false;
 
 const { did, status, integrations, modules, error } = await studioContext(Astro.locals, Astro.url);
-const ready = Boolean(status?.connected && missingScopes(status).length === 0);
+const ready = studioReady(status, STUDIO_GROUPS.examples);
 const existing = { integrations: integrations.map((record) => rkeyOf(record.uri)), modules: modules.map((record) => rkeyOf(record.uri)) };
 const examples = [
 	{
@@ -42,7 +42,7 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 
 	<div class="frame examples" data-existing={JSON.stringify(existing)} data-ready={String(ready)}>
 		{error && <p class="notice notice--error" role="alert">{error}</p>}
-		{!did && <StudioSession did={did} status={status} returnTo="/studio/examples" />}
+		{!did && <StudioSession did={did} status={status} needs={STUDIO_GROUPS.examples} returnTo="/studio/examples" />}
 
 		<div class="grid">
 			{
@@ -95,8 +95,8 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 </Base>
 
 <script>
-	import { plugin, studioDid } from "../../studio/api";
-	import { AFTER_CONNECT_KEY, type InstallStep, installExamples } from "../../studio/install-examples";
+	import { connectStudio } from "../../studio/api";
+	import { type InstallStep, installExamples } from "../../studio/install-examples";
 
 	const root = document.querySelector<HTMLElement>(".examples");
 	const button = document.querySelector<HTMLButtonElement>("[data-install]");
@@ -135,10 +135,7 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 
 	button?.addEventListener("click", async () => {
 		if (ready) return install();
-		try {
-			sessionStorage.setItem(AFTER_CONNECT_KEY, "/studio/examples?install=1");
-		} catch {}
-		window.location.href = (await plugin<{ url: string }>("studio/connect", { did: studioDid() })).url;
+		await connectStudio(["integrations", "modules"], "/studio/examples?install=1");
 	});
 
 	if (ready && button && new URLSearchParams(window.location.search).get("install") === "1") {

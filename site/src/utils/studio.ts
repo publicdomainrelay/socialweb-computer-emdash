@@ -1,10 +1,21 @@
-import { CLIENT_COLLECTION, listRecords, MODULE_COLLECTION, pdsOf, rkeyOf, STUDIO_RKEY } from "./atproto";
+import { CLIENT_COLLECTION, listRecords, MODULE_COLLECTION, pdsOf } from "./atproto";
 import { atprotoDid, callPlugin } from "./integrations";
 
+export interface StudioGroup {
+	key: string;
+	label: string;
+	scopes: string[];
+	granted: boolean;
+}
+
 export interface StudioStatus {
+	uri: string;
+	name: string;
+	description?: string;
 	connected: boolean;
-	requested: string;
+	account?: string;
 	scope?: string;
+	groups: StudioGroup[];
 }
 
 export interface IntegrationValue {
@@ -24,10 +35,15 @@ export interface ModuleValue {
 	calls?: string[];
 }
 
-export const missingScopes = (status: StudioStatus) => {
-	const granted = new Set((status.scope ?? "").split(" "));
-	return status.requested.split(" ").filter((scope) => scope && !granted.has(scope));
-};
+export const STUDIO_GROUPS = { integrations: ["integrations"], modules: ["modules"], examples: ["integrations", "modules"] } as const;
+
+export const missingGroups = (status: StudioStatus | undefined, needs: readonly string[]) =>
+	needs.filter((key) => !status?.groups.some((group) => group.key === key && group.granted));
+
+export const studioReady = (status: StudioStatus | undefined, needs: readonly string[]) =>
+	Boolean(status?.connected) && missingGroups(status, needs).length === 0;
+
+const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
 export async function studioContext(locals: App.Locals, url: URL) {
 	const did = await atprotoDid(locals);
@@ -35,18 +51,18 @@ export async function studioContext(locals: App.Locals, url: URL) {
 	try {
 		const pds = await pdsOf(did);
 		const [status, integrations, modules] = await Promise.all([
-			callPlugin<StudioStatus>(locals, url, "studio/status", { did }),
+			callPlugin<StudioStatus>(locals, url, "studio/status", {}).catch((cause: unknown) => message(cause)),
 			listRecords<IntegrationValue>(did, CLIENT_COLLECTION, pds),
 			listRecords<ModuleValue>(did, MODULE_COLLECTION, pds),
 		]);
 		return {
 			did,
-			status,
-			integrations: integrations.filter((record) => rkeyOf(record.uri) !== STUDIO_RKEY),
+			status: typeof status === "string" ? undefined : status,
+			integrations,
 			modules,
-			error: undefined,
+			error: typeof status === "string" ? status : undefined,
 		};
 	} catch (cause) {
-		return { did, status: undefined, integrations: [], modules: [], error: cause instanceof Error ? cause.message : String(cause) };
+		return { did, status: undefined, integrations: [], modules: [], error: message(cause) };
 	}
 }

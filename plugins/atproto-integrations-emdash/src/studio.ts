@@ -1,17 +1,14 @@
 import { base64, hex } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
-import { authorize, disconnect, type SessionAgent, sessionAgent } from "./flow";
-import { resolveActor } from "./identity";
+import { beginConnect, disconnect, fetchRecord, type SessionAgent, sessionAgent } from "./flow";
 import { MODULE_COLLECTION, parseModuleRecord } from "./modules";
-import { COLLECTION, clientConfig, type IntegrationRecord, parseRecord, parseRef, RKEY, STUDIO_RKEY } from "./record";
+import { COLLECTION, type IntegrationRef, parseRecord, RKEY, recordUri } from "./record";
+import { grantedGroupKeys } from "./scopes";
+import { siteIntegrations } from "./site";
 
 export const FILE_COLLECTION = "com.fedfork.exec.source.file";
 export const MANIFEST_COLLECTION = "com.fedfork.exec.source.manifest";
-export const STUDIO_SCOPE = [
-	"atproto",
-	...[COLLECTION, MODULE_COLLECTION, FILE_COLLECTION, MANIFEST_COLLECTION].map((collection) => `repo:${collection}`),
-	"blob:application/wasm",
-].join(" ");
+export const STUDIO_KEY = "studio";
 
 const MODULE_ABI = "emdash-wasm-json-v1";
 const MAX_MODULE_BYTES = 4 * 1024 * 1024;
@@ -27,13 +24,6 @@ const TOOLS = new Set(["asc", "cargo"]);
 type Input = Record<string, unknown>;
 type StrongRef = { uri: string; cid: string };
 
-const studioRecord: IntegrationRecord = {
-	name: "Studio",
-	description: "Write integration, module and source records to your own PDS from this site.",
-	clientMetadata: { client_id: "https://studio.invalid/oauth-client-metadata.json", client_name: "Studio", scope: STUDIO_SCOPE },
-	scopeGroups: [],
-};
-
 const isObject = (value: unknown): value is Input => typeof value === "object" && value !== null && !Array.isArray(value);
 
 function text(value: unknown, name: string, max: number) {
@@ -45,7 +35,7 @@ function text(value: unknown, name: string, max: number) {
 const optional = (value: unknown, name: string, max: number) => (value === undefined || value === "" ? undefined : text(value, name, max));
 
 function recordKey(value: unknown, name: string) {
-	if (typeof value !== "string" || !RKEY.test(value) || value === "." || value === ".." || value === STUDIO_RKEY) {
+	if (typeof value !== "string" || !RKEY.test(value) || value === "." || value === "..") {
 		throw new Error(`${name} must be 1 to 512 characters of letters, digits and . _ : ~ -`);
 	}
 	return value;
@@ -61,37 +51,51 @@ function sourcePath(value: unknown) {
 
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) => hex.encode(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)));
 
-const studioRef = (did: string) => parseRef({ did, rkey: STUDIO_RKEY });
+export async function studioRef(ctx: PluginContext, siteOrigin: string): Promise<IntegrationRef> {
+	const ref = (await siteIntegrations(ctx, siteOrigin)).find((item) => item.rkey === STUDIO_KEY);
+	if (!ref) throw new Error("This site offers no studio integration");
+	return ref;
+}
 
-async function requireStudio(ctx: PluginContext, userId: string, did: string) {
-	const agent = await sessionAgent(ctx, userId, studioRef(did));
+async function requireStudio(ctx: PluginContext, userId: string, siteOrigin: string) {
+	const agent = await sessionAgent(ctx, userId, await studioRef(ctx, siteOrigin));
 	if (!agent) throw new Error("Connect the studio first");
 	return agent;
 }
 
-export async function connectStudio(ctx: PluginContext, userId: string, origin: string, did: string) {
-	const ref = studioRef(did);
-	const actor = await resolveActor(ctx, ref.did);
-	const entry = { ...ref, origin: clientConfig(origin, ref, studioRecord).origin, cid: STUDIO_RKEY, record: studioRecord };
-	return authorize(ctx, userId, entry, STUDIO_SCOPE, actor.did);
+export async function connectStudio(ctx: PluginContext, userId: string, origin: string, siteOrigin: string, account: string, groups: string[]) {
+	const site = await siteIntegrations(ctx, siteOrigin);
+	return beginConnect(ctx, userId, origin, await studioRef(ctx, siteOrigin), groups, account, site);
 }
 
-export async function studioStatus(ctx: PluginContext, userId: string, did: string) {
-	const agent = await sessionAgent(ctx, userId, studioRef(did));
-	if (!agent) return { connected: false, requested: STUDIO_SCOPE };
-	return { connected: true, requested: STUDIO_SCOPE, scope: await agent.scope() };
+export async function studioStatus(ctx: PluginContext, userId: string, siteOrigin: string) {
+	const ref = await studioRef(ctx, siteOrigin);
+	const [{ record }, agent] = await Promise.all([fetchRecord(ctx, ref), sessionAgent(ctx, userId, ref)]);
+	const scope = agent ? await agent.scope() : undefined;
+	const granted = scope ? grantedGroupKeys(record.scopeGroups, scope) : [];
+	return {
+		uri: recordUri(ref),
+		name: record.name,
+		description: record.description,
+		connected: Boolean(agent),
+		account: agent?.account,
+		scope,
+		groups: record.scopeGroups.map((group) => ({ ...group, granted: granted.includes(group.key) })),
+	};
 }
 
-export const disconnectStudio = (ctx: PluginContext, userId: string, did: string) => disconnect(ctx, userId, studioRef(did));
+export async function disconnectStudio(ctx: PluginContext, userId: string, siteOrigin: string) {
+	await disconnect(ctx, userId, await studioRef(ctx, siteOrigin));
+}
 
-export async function publishIntegration(ctx: PluginContext, userId: string, did: string, input: Input) {
+export async function publishIntegration(ctx: PluginContext, userId: string, siteOrigin: string, input: Input) {
 	const rkey = recordKey(input.rkey, "Record key");
 	const value = isObject(input.record) ? input.record : {};
 	const record = parseRecord(value);
-	const agent = await requireStudio(ctx, userId, did);
+	const agent = await requireStudio(ctx, userId, siteOrigin);
 	return agent.call<StrongRef>("com.atproto.repo.putRecord", {
 		input: {
-			repo: did,
+			repo: agent.account,
 			collection: COLLECTION,
 			rkey,
 			record: {
@@ -208,7 +212,7 @@ function calls(value: unknown) {
 	});
 }
 
-export async function publishModule(ctx: PluginContext, userId: string, did: string, input: Input) {
+export async function publishModule(ctx: PluginContext, userId: string, siteOrigin: string, input: Input) {
 	const rkey = recordKey(input.rkey, "Module key");
 	const session = recordKey(input.session, "Integration");
 	const name = text(input.name, "Name", 640);
@@ -222,7 +226,8 @@ export async function publishModule(ctx: PluginContext, userId: string, did: str
 	const sources = sourceFiles(source.files);
 	const moduleActions = actions(input.actions);
 	const allowedCalls = calls(input.calls);
-	const agent = await requireStudio(ctx, userId, did);
+	const agent = await requireStudio(ctx, userId, siteOrigin);
+	const did = agent.account;
 	const createdAt = new Date().toISOString();
 
 	const integration = await agent.call<StrongRef>("com.atproto.repo.getRecord", { params: { repo: did, collection: COLLECTION, rkey: session } });

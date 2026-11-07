@@ -12,11 +12,15 @@ import {
 	type SessionEntry,
 	sessionKey,
 } from "./oauth";
-import { COLLECTION, clientConfig, clientMetadata, type IntegrationRef, parseRecord, recordUri, STUDIO_RKEY } from "./record";
+import { COLLECTION, clientConfig, clientMetadata, type IntegrationRecord, type IntegrationRef, parseRecord, recordUri } from "./record";
 import { grantedGroupKeys, requestedScope } from "./scopes";
+import { isSiteIntegration } from "./site";
 
-async function fetchRecord(ctx: PluginContext, pds: string, ref: IntegrationRef) {
-	const response = await requireHttp(ctx).fetch(xrpcUrl(pds, "com.atproto.repo.getRecord", { repo: ref.did, collection: COLLECTION, rkey: ref.rkey }));
+const FOREIGN_RECORD = "Only the account that published an integration record, or any account for an integration this site offers, can connect it";
+
+export async function fetchRecord(ctx: PluginContext, ref: IntegrationRef) {
+	const actor = await resolveActor(ctx, ref.did);
+	const response = await requireHttp(ctx).fetch(xrpcUrl(actor.pds, "com.atproto.repo.getRecord", { repo: ref.did, collection: COLLECTION, rkey: ref.rkey }));
 	if (!response.ok) throw new Error(`Integration ${recordUri(ref)} not found`);
 	const { value, cid } = (await response.json()) as { value: unknown; cid: string };
 	return { record: parseRecord(value), cid };
@@ -24,12 +28,30 @@ async function fetchRecord(ctx: PluginContext, pds: string, ref: IntegrationRef)
 
 const clientEntry = async (ctx: PluginContext, ref: IntegrationRef) => (await ctx.storage.clients.get(clientKey(ref))) as ClientEntry | null;
 
+const sessionEntry = async (ctx: PluginContext, userId: string, ref: IntegrationRef) =>
+	(await ctx.storage.sessions.get(sessionKey(userId, ref))) as SessionEntry | null;
+
+const accountOf = (entry: SessionEntry) => entry.account ?? entry.did;
+
 export async function servedMetadata(ctx: PluginContext, ref: IntegrationRef) {
 	const entry = await clientEntry(ctx, ref);
 	return entry ? clientMetadata(entry.origin, ref, entry.record) : undefined;
 }
 
-export async function listIntegrations(ctx: PluginContext, userId: string, did: string) {
+function describe(ref: IntegrationRef, uri: string, record: IntegrationRecord, session: SessionEntry | undefined, handle: string | undefined) {
+	const granted = session ? grantedGroupKeys(record.scopeGroups, session.scope) : [];
+	return {
+		...ref,
+		uri,
+		name: record.name,
+		description: record.description,
+		declaredScope: record.clientMetadata.scope,
+		groups: record.scopeGroups.map((group) => ({ ...group, granted: granted.includes(group.key) })),
+		session: session ? { handle, scope: session.scope, updatedAt: session.updatedAt } : null,
+	};
+}
+
+export async function listIntegrations(ctx: PluginContext, userId: string, did: string, site: IntegrationRef[]) {
 	const actor = await resolveActor(ctx, did);
 	const response = await requireHttp(ctx).fetch(xrpcUrl(actor.pds, "com.atproto.repo.listRecords", { repo: actor.did, collection: COLLECTION, limit: "100" }));
 	if (!response.ok) throw new Error(`Could not list integrations for ${did}`);
@@ -38,22 +60,13 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 	const modules = await listModules(ctx, actor.pds, actor.did);
 	const connected = new Map(sessions.items.map(({ data }) => [clientKey(data as SessionEntry), data as SessionEntry]));
 	const handle = actor.handle === "handle.invalid" ? undefined : actor.handle;
-	return records.flatMap(({ uri, value }) => {
+	const own = records.flatMap(({ uri, value }) => {
 		try {
-			const record = parseRecord(value);
 			const ref = { did: actor.did, rkey: uri.split("/").pop() ?? "" };
-			if (ref.rkey === STUDIO_RKEY) return [];
-			const session = connected.get(clientKey(ref));
-			const granted = session ? grantedGroupKeys(record.scopeGroups, session.scope) : [];
 			return [
 				{
-					...ref,
-					uri,
-					name: record.name,
-					description: record.description,
-					declaredScope: record.clientMetadata.scope,
-					groups: record.scopeGroups.map((group) => ({ ...group, granted: granted.includes(group.key) })),
-					session: session ? { handle, scope: session.scope, updatedAt: session.updatedAt } : null,
+					...describe(ref, uri, parseRecord(value), connected.get(clientKey(ref)), handle),
+					site: false,
 					modules: modules
 						.filter((module) => module.session.did === ref.did && module.session.rkey === ref.rkey)
 						.map(({ did: moduleDid, rkey, uri: moduleUri, name, description, actions, source }) => ({
@@ -72,47 +85,78 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 			return [];
 		}
 	});
+	const offered = await Promise.all(
+		site
+			.filter((ref) => ref.did !== actor.did)
+			.map(async (ref) => {
+				try {
+					const { record } = await fetchRecord(ctx, ref);
+					const session = connected.get(clientKey(ref));
+					const mine = session && accountOf(session) === actor.did ? session : undefined;
+					return [{ ...describe(ref, recordUri(ref), record, mine, handle), site: true, modules: [] }];
+				} catch (error) {
+					ctx.log.warn("Skipping unavailable site integration", { uri: recordUri(ref), error: error instanceof Error ? error.message : String(error) });
+					return [];
+				}
+			}),
+	);
+	return [...offered.flat(), ...own];
 }
 
-export async function authorize(ctx: PluginContext, userId: string, entry: ClientEntry, scope: string, did: string) {
+export async function authorize(ctx: PluginContext, userId: string, entry: ClientEntry, scope: string, account: string) {
 	await ctx.storage.clients.put(clientKey(entry), entry);
-	const { url } = await oauthClient(ctx, entry, userId).authorize({
-		target: { type: "account", identifier: did as Did },
+	const { url } = await oauthClient(ctx, entry, userId, account).authorize({
+		target: { type: "account", identifier: account as Did },
 		scope,
-		state: { did: entry.did, rkey: entry.rkey, userId } satisfies AuthorizeState,
+		state: { did: entry.did, rkey: entry.rkey, userId, account } satisfies AuthorizeState,
 	});
 	return url.href;
 }
 
-export async function beginConnect(ctx: PluginContext, userId: string, origin: string, ref: IntegrationRef, groupKeys: string[]) {
-	if (ref.rkey === STUDIO_RKEY) throw new Error("Connect the studio from /studio");
-	const actor = await resolveActor(ctx, ref.did);
-	const { record, cid } = await fetchRecord(ctx, actor.pds, ref);
+export async function beginConnect(
+	ctx: PluginContext,
+	userId: string,
+	origin: string,
+	ref: IntegrationRef,
+	groupKeys: string[],
+	account: string,
+	site: IntegrationRef[],
+) {
+	if (account !== ref.did && !isSiteIntegration(site, ref)) throw new Error(FOREIGN_RECORD);
+	const { did } = await resolveActor(ctx, account);
+	const { record, cid } = await fetchRecord(ctx, ref);
 	const entry: ClientEntry = { ...ref, origin: clientConfig(origin, ref, record).origin, cid, record };
-	return authorize(ctx, userId, entry, requestedScope(record.clientMetadata.scope, record.scopeGroups, groupKeys), actor.did);
+	return authorize(ctx, userId, entry, requestedScope(record.clientMetadata.scope, record.scopeGroups, groupKeys), did);
 }
 
 export async function completeConnect(ctx: PluginContext, params: Record<string, string | undefined>) {
 	const pending = (await ctx.storage.pending.get(params.state ?? "")) as PendingEntry | null;
 	if (!pending) throw new Error("Unknown or expired authorization request");
 	const ref = { did: pending.did, rkey: pending.rkey };
+	const account = pending.account ?? pending.did;
 	const entry = await clientEntry(ctx, ref);
 	if (!entry) throw new Error(`Integration ${recordUri(ref)} is no longer configured`);
 	const query = new URLSearchParams(Object.entries(params).filter((pair): pair is [string, string] => pair[1] !== undefined));
-	await oauthClient(ctx, entry, pending.userId).callback(query);
-	return ref;
+	await oauthClient(ctx, entry, pending.userId, account).callback(query);
+	return { ref, account };
 }
 
 export async function disconnect(ctx: PluginContext, userId: string, ref: IntegrationRef) {
-	const entry = await clientEntry(ctx, ref);
-	if (entry) await oauthClient(ctx, entry, userId).revoke(ref.did as Did).catch(() => undefined);
+	const [entry, session] = await Promise.all([clientEntry(ctx, ref), sessionEntry(ctx, userId, ref)]);
+	if (entry && session) {
+		const account = accountOf(session);
+		await oauthClient(ctx, entry, userId, account)
+			.revoke(account as Did)
+			.catch(() => undefined);
+	}
 	await ctx.storage.sessions.delete(sessionKey(userId, ref));
 }
 
 export async function sessionAgent(ctx: PluginContext, userId: string, ref: IntegrationRef) {
-	const entry = await clientEntry(ctx, ref);
-	if (!entry || !(await ctx.storage.sessions.exists(sessionKey(userId, ref)))) return undefined;
-	const session = await oauthClient(ctx, entry, userId).restore(ref.did as Did);
+	const [entry, stored] = await Promise.all([clientEntry(ctx, ref), sessionEntry(ctx, userId, ref)]);
+	if (!entry || !stored) return undefined;
+	const account = accountOf(stored);
+	const session = await oauthClient(ctx, entry, userId, account).restore(account as Did);
 	const send = async <T>(nsid: string, path: string, init: RequestInit): Promise<T> => {
 		const response = await session.handle(path, init);
 		const body = (await response.json().catch(() => ({}))) as T & { error?: string; message?: string };
@@ -130,6 +174,7 @@ export async function sessionAgent(ctx: PluginContext, userId: string, ref: Inte
 	const upload = <T>(nsid: string, body: Uint8Array<ArrayBuffer>, contentType: string) =>
 		send<T>(nsid, `/xrpc/${nsid}`, { method: "POST", headers: { "content-type": contentType }, body });
 	return {
+		account,
 		scope: async () => (await session.getTokenInfo(false)).scope,
 		call,
 		upload,
@@ -138,7 +183,12 @@ export async function sessionAgent(ctx: PluginContext, userId: string, ref: Inte
 
 export type SessionAgent = NonNullable<Awaited<ReturnType<typeof sessionAgent>>>;
 
+export async function ownSessionAgent(ctx: PluginContext, userId: string, ref: IntegrationRef) {
+	const stored = await sessionEntry(ctx, userId, ref);
+	return stored && accountOf(stored) === ref.did ? sessionAgent(ctx, userId, ref) : undefined;
+}
+
 export async function sessionOwner(ctx: PluginContext, ref: IntegrationRef) {
 	const { items } = await ctx.storage.sessions.query({ where: { did: ref.did }, orderBy: { updatedAt: "desc" }, limit: 50 });
-	return items.map((item) => item.data as SessionEntry).find((entry) => entry.rkey === ref.rkey)?.userId;
+	return items.map((item) => item.data as SessionEntry).find((entry) => entry.rkey === ref.rkey && accountOf(entry) === ref.did)?.userId;
 }

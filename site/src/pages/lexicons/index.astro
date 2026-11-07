@@ -1,0 +1,224 @@
+---
+import Code from "../../components/Code.astro";
+import Diagram from "../../components/Diagram.astro";
+import Legend from "../../components/Legend.astro";
+import Guide from "../../layouts/Guide.astro";
+import { lexicons, relationships } from "../../lexicons";
+
+const toc = [
+	{ id: "overview", label: "Overview" },
+	...lexicons.map((lexicon) => ({ id: lexicon.anchor, label: lexicon.nsid.replace("com.fedfork.exec.", "") })),
+	{ id: "site-integrations", label: "Site integrations" },
+];
+---
+
+<Guide
+	title="Lexicons"
+	eyebrow="Reference"
+	description="Five com.fedfork.exec schemas define everything this site does: integrations, modules, their source, and the procedure that runs them. Here is each one, field by field, and how the site uses it."
+	toc={toc}
+>
+	<section id="overview">
+		<h2>Overview</h2>
+		<p>
+			Four are record types that live in people's own repos. One, <code>com.fedfork.exec.wasm.run</code>, is a procedure the site serves. The schemas are in <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/lexicons/com/fedfork/exec">lexicons/com/fedfork/exec</a>.
+		</p>
+		<Legend />
+		<Diagram code={relationships} label="A site integration list names clientMetadata records. wasm.run names a wasm.module, which points at its clientMetadata session, its WebAssembly blob and its source.manifest, which points at source.file records keyed by sha256." />
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>NSID</th><th>Kind</th><th>What it is</th></tr></thead>
+				<tbody>
+					{
+						lexicons.map((lexicon) => (
+							<tr>
+								<td><a href={`#${lexicon.anchor}`}><code>{lexicon.nsid}</code></a></td>
+								<td>{lexicon.guide.kind}</td>
+								<td>{lexicon.guide.summary}</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	{
+		lexicons.map((lexicon) => (
+			<section id={lexicon.anchor} class="lexicon">
+				<h2>
+					<code>{lexicon.nsid}</code>
+				</h2>
+				<p>{lexicon.guide.summary}</p>
+				<dl class="lexicon__facts">
+					<dt>Kind</dt>
+					<dd>{lexicon.guide.kind}</dd>
+					<dt>Record key</dt>
+					<dd>{lexicon.guide.key}</dd>
+					<dt>Written by</dt>
+					<dd>{lexicon.guide.writtenBy}</dd>
+					<dt>Read by</dt>
+					<dd>{lexicon.guide.readBy}</dd>
+					<dt>Schema</dt>
+					<dd><a href={lexicon.source}>{lexicon.source.replace("https://github.com/publicdomainrelay/socialweb-computer-emdash/blob/main/", "")}</a></dd>
+				</dl>
+				<h3>How it is used</h3>
+				<ul>
+					{lexicon.guide.uses.map((use) => <li>{use}</li>)}
+				</ul>
+				{lexicon.tables.map((table) => (
+					<div class="lexicon__table" id={table.id}>
+						<h3>{table.title}</h3>
+						{table.description && <p class="lexicon__description">{table.description}</p>}
+						{table.rows.length === 0 ? (
+							<p class="lexicon__description">No fields.</p>
+						) : (
+							<div class="table-scroll">
+								<table>
+									<thead>
+										<tr><th>Field</th><th>Type</th><th>Constraints</th></tr>
+									</thead>
+									<tbody>
+										{table.rows.map((row) => (
+											<tr>
+												<td>
+													<code>{row.name}</code>
+													{row.required && <span class="pill pill--on lexicon__required">required</span>}
+												</td>
+												<td>{row.link ? <a href={row.link}><code>{row.type}</code></a> : <code>{row.type}</code>}</td>
+												<td>
+													{row.constraints.length > 0 && <span class="lexicon__constraints">{row.constraints.join("; ")}</span>}
+													{row.description && <span class="lexicon__field-description">{row.description}</span>}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)}
+					</div>
+				))}
+				{lexicon.errors.length > 0 && (
+					<>
+						<h3>Errors</h3>
+						<ul>
+							{lexicon.errors.map((error) => (
+								<li>
+									<code>{error.name}</code>
+									{error.description && ` ${error.description}`}
+								</li>
+							))}
+						</ul>
+					</>
+				)}
+				<h3>Example</h3>
+				<Code title={lexicon.guide.example.title} code={JSON.stringify(lexicon.guide.example.value, null, 2)} />
+				<p class="lexicon__links">
+					{lexicon.guide.links.map((link) => (
+						<a href={link.href}>{link.label}</a>
+					))}
+				</p>
+			</section>
+		))
+	}
+
+	<section id="site-integrations">
+		<h2>Site integrations</h2>
+		<p>
+			A <code>com.fedfork.exec.oauth.clientMetadata</code> record normally connects only the account that published it. That keeps anyone from using this site's name on a consent screen for their own client.
+		</p>
+		<p>
+			The operator can vouch for some records instead. <code>EMDASH_SITE_INTEGRATIONS</code> lists their AT-URIs, the site serves the list at <code>/integrations/site.json</code>, and any signed-in account can connect those records for itself. Each account still gets its own session, with only the scope groups it ticks.
+		</p>
+		<p>
+			The studio is one of them. <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/blob/main/records/studio.json">records/studio.json</a> is an ordinary integration record with two scope groups: publishing integration records, and publishing modules with their source. Login asks only for <code>atproto</code>; every extra permission comes from a new session for a record like this one.
+		</p>
+	</section>
+</Guide>
+
+<style>
+	.lexicon__facts {
+		display: grid;
+		grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
+		gap: 0.375rem 1rem;
+		margin-block: 1rem;
+		font-size: var(--font-size-sm);
+	}
+
+	.lexicon__facts dt {
+		color: var(--color-muted);
+		font-weight: 600;
+	}
+
+	.lexicon__facts dd {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.lexicon__table {
+		scroll-margin-top: 1.5rem;
+	}
+
+	.lexicon table {
+		table-layout: fixed;
+	}
+
+	.lexicon th:first-child {
+		width: 30%;
+	}
+
+	.lexicon th:nth-child(2) {
+		width: 30%;
+	}
+
+	.lexicon td code {
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.lexicon__required {
+		margin-left: 0.375rem;
+	}
+
+	.lexicon__constraints {
+		display: block;
+		color: var(--color-text);
+	}
+
+	.lexicon__field-description {
+		display: block;
+		margin-top: 0.25rem;
+		color: var(--color-text-secondary);
+	}
+
+	.lexicon__description {
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
+	}
+
+	.lexicon__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.25rem;
+		font-size: var(--font-size-sm);
+	}
+
+	@media (max-width: 30rem) {
+		.lexicon__facts {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.lexicon__facts dd {
+			margin-bottom: 0.5rem;
+		}
+
+		.lexicon th:first-child,
+		.lexicon th:nth-child(2) {
+			width: auto;
+		}
+
+		.lexicon table {
+			table-layout: auto;
+		}
+	}
+</style>

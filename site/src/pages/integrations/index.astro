@@ -22,6 +22,7 @@ if (did) {
 	}
 }
 
+const ownCount = integrations.filter((item) => !item.site).length;
 const scopeCount = (scope: string) => scope.split(" ").filter((item) => item && item !== "atproto").length;
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 ---
@@ -58,7 +59,7 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 			}
 
 			{
-				did && integrations.length === 0 && !loadError && (
+				did && ownCount === 0 && !loadError && (
 					<div class="card empty">
 						<h2>No integrations yet</h2>
 						<p>Add the Statusphere and Vibescrobble examples to your account in one click: their integration records, WebAssembly modules and source. Then connect them here and run them.</p>
@@ -74,10 +75,11 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 				did && integrations.length > 0 && (
 					<ul class="integrations" role="list">
 						{integrations.map((item) => (
-							<li class="card integration" data-did={item.did} data-rkey={item.rkey}>
+							<li class="card integration" data-did={item.did} data-rkey={item.rkey} data-account={did}>
 								<div class="integration__head">
 									<div>
 										<h2 class="integration__name">{item.name}</h2>
+										{item.site && <p class="integration__offered">Offered by this site · <code>{item.uri}</code></p>}
 										{item.description && <p class="integration__description">{item.description}</p>}
 									</div>
 									<span class:list={["pill", item.session ? "pill--on" : "pill--off"]}>
@@ -182,7 +184,7 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		});
 
 	for (const card of document.querySelectorAll<HTMLElement>(".integration")) {
-		const ref = { did: card.dataset.did, rkey: card.dataset.rkey };
+		const ref = { did: card.dataset.did, rkey: card.dataset.rkey, account: card.dataset.account };
 		const result = card.querySelector<HTMLElement>("[data-result]");
 		const show = (text: string) => {
 			if (!result) return;
@@ -324,6 +326,16 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 	}
 	.integration__name {
 		font-size: var(--font-size-2xl);
+	}
+	.integration__offered {
+		margin: 0.25rem 0 0;
+		color: var(--color-brand-text);
+		font-size: var(--font-size-sm);
+		overflow-wrap: anywhere;
+	}
+	.integration__offered code {
+		color: var(--color-muted);
+		font-size: var(--font-size-xs);
 	}
 	.integration__description,
 	.integration__meta {

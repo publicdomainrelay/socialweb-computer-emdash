@@ -2,7 +2,20 @@
 
 Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.fedfork.exec.oauth.clientMetadata` record in their own PDS. On `/studio` they can write those records, compile AssemblyScript modules in the browser, and publish them with their source.
 
-Our lexicons are `com.fedfork.exec.*`: `oauth.clientMetadata`, `wasm.module`, `wasm.run`, `source.file` and `source.manifest`.
+Our lexicons are `com.fedfork.exec.*`: `oauth.clientMetadata`, `wasm.module`, `wasm.run`, `source.file` and `source.manifest`. Each is described in [docs/lexicons.md](docs/lexicons.md) and at [/lexicons](https://exec.fedfork.com/lexicons).
+
+## The pattern: one session per set of scopes
+
+- **Login is identity only.** Signing in asks for `atproto` and never grows.
+- **Every extra capability is a new OAuth session.** Each is defined by an `oauth.clientMetadata` record and granted one scope group at a time, when the user asks for it. Sessions are sealed per user per record.
+- **Integrations come from two places:**
+  - **The user's own records.** Only that account can authorize them, so a third party cannot use this site's client identity to ask someone for scopes.
+  - **Site integrations.** These are records the operator vouches for by listing their AT-URIs, space-separated, in the Worker variable `EMDASH_SITE_INTEGRATIONS`. The site serves the list at `/integrations/site.json`, and the plugin reads it from its own origin and caches it for five minutes. Any signed-in account may authorize a site integration, for itself only.
+- **The studio is just another record.** It is the site integration with record key `studio`, defined in `records/studio.json`, with the groups `integrations` and `modules`.
+  - On this site it is published by the operator account, currently the test account `did:plc:lpfuqerea3deuoyrn7ojser4`.
+  - Publishing always writes to the account the studio session belongs to.
+- **Modules only run with own-record sessions.** A module's `session` must name an integration record in the module's own repo, so a site integration session such as the studio cannot drive a module.
+- **Configuration.** The top level of `wrangler.jsonc` points `EMDASH_SITE_INTEGRATIONS` at this project's studio record, so Deploy-button sites get a working studio. To own it, publish your own `records/studio.json` and point the variable at it, in the top level and in every `env` block.
 
 Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
 
@@ -98,8 +111,7 @@ goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/vibescrobble"
 
 ## Studio
 
-- **`/studio`.** Connect the studio, a separate OAuth session for your own DID that the plugin defines itself. It asks for `repo:` on the four `com.fedfork.exec` record collections and for `blob:application/wasm`.
-- **Reserved key.** The session lives under the reserved key `_studio`. The plugin refuses that key for integration records and for module sessions.
+- **`/studio`.** Connect the studio, the site integration `records/studio.json`. Its groups are `integrations` (`repo:com.fedfork.exec.oauth.clientMetadata`) and `modules` (`repo:` on `wasm.module`, `source.file` and `source.manifest`, plus `blob:application/wasm`). It also appears as a card on `/integrations`, offered by this site.
 - **`/studio/integration`.** A form builder for `oauth.clientMetadata` records, with scope groups and a scope helper.
 - **`/studio/module`.**
   - Write AssemblyScript against the `abi.ts` helpers, then compile it in the browser with `asc` 0.28.20.
@@ -109,7 +121,7 @@ goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/vibescrobble"
 - **`/studio/examples`.** One click adds Statusphere and Vibescrobble to the signed-in account: integration records, modules and Rust source. It connects the studio first when needed, and skips records the account already has.
   - The bundle is `/studio/examples.json`, prerendered from `records/`, `wasm/*/module.json`, the built `.wasm` files and the sources listed in `records/wasm/<module>.manifest.json`.
   - The build fails if a source file or module no longer matches its manifest, so republish with `publish-wasm.sh` after changing a module.
-  - Login alone cannot publish them: it asks only for `atproto`, and writing to an account needs that account's consent to the studio session.
+  - Login alone cannot publish them: it asks only for `atproto`, and writing to an account needs that account's consent to the studio's groups.
 - **Plugin routes:** `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`.
 
 ## Run a module with atproto service auth
@@ -271,7 +283,7 @@ goat record create -n -r example example.json
 - **Parallel runs.** A lease in plugin storage serializes token refresh. Parallel runs refresh a session once instead of racing single-use refresh tokens.
 - **Scrobbles.** The `vibescrobble` module posts `com.vibescrobble.scrobble` records, matching atirc's emoji rule and record shape.
 - **Source.** A module can point at an immutable `source.manifest` whose `source.file` records are keyed by sha256, modeled on how knotless stores repositories. Anyone can rebuild it and compare hashes.
-- **Studio.** A scoped, plugin-defined OAuth session writes integration, module and source records, so the login never asks for more than `atproto`.
+- **Studio.** The studio is a site integration record like any other. Its session writes integration, module and source records, so the login never asks for more than `atproto`.
 - **Bundle.** The plugin bundle is about 100 KB, under the registry's 128 KB per-file cap.
 
 ### Connect
@@ -379,7 +391,7 @@ Legend: `●` ours, `◐` upstream code we patched, `○` third-party and untouc
 
 ```text
 socialweb-computer-emdash/                    ● github.com/publicdomainrelay/socialweb-computer-emdash
-├── wrangler.jsonc                            ● Worker, auto-provisioned D1, R2, KV, LOADER; env.fedfork
+├── wrangler.jsonc                            ● Worker, auto-provisioned D1, R2, KV, LOADER; EMDASH_SITE_INTEGRATIONS; env.fedfork
 ├── .dev.vars.example                         ● secret the deploy button asks for
 ├── package.json                              ● build, deploy, deploy:fedfork; binding descriptions
 ├── site/                                     ● Astro + EmDash site
@@ -413,7 +425,8 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   │   ├── lock.ts                           ● storage lease for token refresh
 │   │   ├── modules.ts                        ● blob fetch, CID check, rounds loop
 │   │   ├── service-auth.ts                   ● JWT verify, jti replay, did:web
-│   │   ├── studio.ts                         ● studio session, publish integration, module, source
+│   │   ├── site.ts                           ● site integrations from /integrations/site.json
+│   │   ├── studio.ts                         ● studio as the site integration "studio"; publish integration, module, source
 │   │   ├── identity.ts                       ● resolver wiring
 │   │   ├── http.ts                           ● ctx.http as fetch
 │   │   └── record.ts scopes.ts seal.ts       ● record parsing, scope groups, AES-GCM
@@ -423,7 +436,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   ├── statusphere/                          ● set_status, clear_status
 │   └── vibescrobble/                         ● scrobble
 ├── lexicons/com/fedfork/exec/                ● oauth.clientMetadata, wasm.module, wasm.run, source.file, source.manifest
-├── records/                                  ● statusphere, vibescrobble, socialweb-computer; records/wasm/ module records
+├── records/                                  ● statusphere, vibescrobble, socialweb-computer, studio; records/wasm/ module records and manifests
 ├── celld/                                    ● celld Worker using the fork runtime
 ├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, verify-source.sh, emdash-fork.sh, release-emdash-fork.sh
 ├── docs/adrs/                                ● decisions

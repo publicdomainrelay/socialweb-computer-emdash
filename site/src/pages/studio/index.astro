@@ -25,7 +25,7 @@ const sessionOf = (uri: string) => rkeyOf(uri);
 	<div class="frame studio">
 		{connected && <p class="notice notice--success" role="status">Studio connected.</p>}
 		{error && <p class="notice notice--error" role="alert">{error}</p>}
-		<StudioSession did={did} status={status} returnTo="/studio" />
+		<StudioSession did={did} status={status} needs={[]} returnTo="/studio" />
 
 		<div class="grid">
 			<a class="tile tone-you" href="/studio/examples">
@@ -100,13 +100,13 @@ const sessionOf = (uri: string) => rkeyOf(uri);
 </Base>
 
 <script>
-	import { AFTER_CONNECT_KEY } from "../../studio/install-examples";
+	import { AFTER_CONNECT_KEY } from "../../studio/api";
 
 	if (new URLSearchParams(window.location.search).get("connected") === "studio") {
 		try {
 			const after = sessionStorage.getItem(AFTER_CONNECT_KEY);
 			sessionStorage.removeItem(AFTER_CONNECT_KEY);
-			if (after?.startsWith("/studio/")) window.location.replace(after);
+			if (after?.startsWith("/studio/") || after?.startsWith("/integrations")) window.location.replace(after);
 		} catch {}
 	}
 </script>

@@ -1,6 +1,6 @@
 # 0025. com.fedfork.exec lexicons, the studio, and module source records
 
-Status: accepted. Renames the lexicons from 0010, 0015 and 0019.
+Status: accepted; studio session superseded by 0026. Renames the lexicons from 0010, 0015 and 0019.
 
 ## Context
 

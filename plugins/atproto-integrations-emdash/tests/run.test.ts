@@ -1,4 +1,5 @@
 import { createPluginRuntimeTestHost, type PluginRuntimeTestHost } from "@emdash-cms/plugin-test";
+import { p256 } from "@noble/curves/nist.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import statusphereWasm from "../../../wasm/statusphere/statusphere.wasm?inline";
@@ -35,8 +36,12 @@ const b64url = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");
 const secretKey = secp256k1.utils.randomSecretKey();
 const multikey = `z${base58(Uint8Array.from([0xe7, 0x01, ...secp256k1.getPublicKey(secretKey, true)]))}`;
 
-function serviceToken(claims: Record<string, unknown> = {}, key = secretKey) {
-	const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: "ES256K", typ: "JWT" })));
+const p256SecretKey = p256.utils.randomSecretKey();
+const p256Multikey = `z${base58(Uint8Array.from([0x80, 0x24, ...p256.getPublicKey(p256SecretKey, true)]))}`;
+
+function serviceToken(claims: Record<string, unknown> = {}, key = secretKey, curve: typeof secp256k1 | typeof p256 = secp256k1) {
+	const alg = curve === p256 ? "ES256" : "ES256K";
+	const header = b64url(new TextEncoder().encode(JSON.stringify({ alg, typ: "JWT" })));
 	const payload = b64url(
 		new TextEncoder().encode(
 			JSON.stringify({
@@ -49,7 +54,7 @@ function serviceToken(claims: Record<string, unknown> = {}, key = secretKey) {
 			}),
 		),
 	);
-	const signature = secp256k1.sign(new TextEncoder().encode(`${header}.${payload}`), key);
+	const signature = curve.sign(new TextEncoder().encode(`${header}.${payload}`), key);
 	return `${header}.${payload}.${b64url(signature)}`;
 }
 
@@ -62,13 +67,13 @@ beforeEach(async () => {
 
 afterEach(() => host.dispose());
 
-async function queueSigningIdentity() {
+async function queueSigningIdentity(publicKeyMultibase = multikey) {
 	await host.http.respond(
 		`https://plc.directory/${ALICE.did}`,
 		json({
 			id: ALICE.did,
 			alsoKnownAs: [`at://${ALICE.handle}`],
-			verificationMethod: [{ id: `${ALICE.did}#atproto`, type: "Multikey", controller: ALICE.did, publicKeyMultibase: multikey }],
+			verificationMethod: [{ id: `${ALICE.did}#atproto`, type: "Multikey", controller: ALICE.did, publicKeyMultibase }],
 			service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: ALICE.pds }],
 		}),
 	);
@@ -164,6 +169,25 @@ describe("service/run", () => {
 		expect(ran.error).toBeUndefined();
 		expect(ran.did).toBe(ALICE.did);
 		expect(ran.result.uri).toBe(`at://${ALICE.did}/${STATUS}/3new`);
+	});
+
+	it("accepts ES256 tokens signed with a P-256 atproto key", async () => {
+		const user = await host.fixtures.user({ email: "a@example.com", role: "subscriber" });
+		await connect(host, user, "statusphere", []);
+		await queueSigningIdentity(p256Multikey);
+		await queueModule(wasmBytes);
+		await queueStatusCalls("🦋");
+		const ran = await serviceRun(serviceToken({}, p256SecretKey, p256));
+		expect(ran.error).toBeUndefined();
+		expect(ran.did).toBe(ALICE.did);
+	});
+
+	it("rejects an ES256 token when the DID's key is secp256k1", async () => {
+		await queueSigningIdentity();
+		expect(await serviceRun(serviceToken({}, p256SecretKey, p256))).toEqual({
+			error: "AuthenticationRequired",
+			message: "Service auth algorithm does not match the signing key",
+		});
 	});
 
 	it("rejects a replayed token", async () => {

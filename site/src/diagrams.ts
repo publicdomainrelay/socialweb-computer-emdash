@@ -299,7 +299,7 @@ export const sessions = flowchart(
     S1["statusphere<br/>repo:xyz.statusphere.status"]:::pds
     S2["vibescrobble<br/>repo:com.vibescrobble.scrobble"]:::pds
   end
-  subgraph offered["Site integrations<br/>EMDASH_SITE_INTEGRATIONS"]
+  subgraph offered["Site integrations<br/>siteIntegrations setting"]
     ST["studio<br/>integrations, modules"]:::site
   end
   LOGIN -- "new session per record,<br/>groups you tick" --> S1

@@ -51,25 +51,25 @@ function sourcePath(value: unknown) {
 
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) => hex.encode(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)));
 
-export async function studioRef(ctx: PluginContext, siteOrigin: string): Promise<IntegrationRef> {
-	const ref = (await siteIntegrations(ctx, siteOrigin)).find((item) => item.rkey === STUDIO_KEY);
+export async function studioRef(ctx: PluginContext): Promise<IntegrationRef> {
+	const ref = (await siteIntegrations(ctx)).find((item) => item.rkey === STUDIO_KEY);
 	if (!ref) throw new Error("This site offers no studio integration");
 	return ref;
 }
 
-async function requireStudio(ctx: PluginContext, userId: string, siteOrigin: string) {
-	const agent = await sessionAgent(ctx, userId, await studioRef(ctx, siteOrigin));
+async function requireStudio(ctx: PluginContext, userId: string) {
+	const agent = await sessionAgent(ctx, userId, await studioRef(ctx));
 	if (!agent) throw new Error("Connect the studio first");
 	return agent;
 }
 
-export async function connectStudio(ctx: PluginContext, userId: string, origin: string, siteOrigin: string, account: string, groups: string[]) {
-	const site = await siteIntegrations(ctx, siteOrigin);
-	return beginConnect(ctx, userId, origin, await studioRef(ctx, siteOrigin), groups, account, site);
+export async function connectStudio(ctx: PluginContext, userId: string, origin: string, account: string, groups: string[]) {
+	const site = await siteIntegrations(ctx);
+	return beginConnect(ctx, userId, origin, await studioRef(ctx), groups, account, site);
 }
 
-export async function studioStatus(ctx: PluginContext, userId: string, siteOrigin: string) {
-	const ref = await studioRef(ctx, siteOrigin);
+export async function studioStatus(ctx: PluginContext, userId: string) {
+	const ref = await studioRef(ctx);
 	const [{ record }, agent] = await Promise.all([fetchRecord(ctx, ref), sessionAgent(ctx, userId, ref)]);
 	const scope = agent ? await agent.scope() : undefined;
 	const granted = scope ? grantedGroupKeys(record.scopeGroups, scope) : [];
@@ -84,15 +84,15 @@ export async function studioStatus(ctx: PluginContext, userId: string, siteOrigi
 	};
 }
 
-export async function disconnectStudio(ctx: PluginContext, userId: string, siteOrigin: string) {
-	await disconnect(ctx, userId, await studioRef(ctx, siteOrigin));
+export async function disconnectStudio(ctx: PluginContext, userId: string) {
+	await disconnect(ctx, userId, await studioRef(ctx));
 }
 
-export async function publishIntegration(ctx: PluginContext, userId: string, siteOrigin: string, input: Input) {
+export async function publishIntegration(ctx: PluginContext, userId: string, input: Input) {
 	const rkey = recordKey(input.rkey, "Record key");
 	const value = isObject(input.record) ? input.record : {};
 	const record = parseRecord(value);
-	const agent = await requireStudio(ctx, userId, siteOrigin);
+	const agent = await requireStudio(ctx, userId);
 	return agent.call<StrongRef>("com.atproto.repo.putRecord", {
 		input: {
 			repo: agent.account,
@@ -212,7 +212,7 @@ function calls(value: unknown) {
 	});
 }
 
-export async function publishModule(ctx: PluginContext, userId: string, siteOrigin: string, input: Input) {
+export async function publishModule(ctx: PluginContext, userId: string, input: Input) {
 	const rkey = recordKey(input.rkey, "Module key");
 	const session = recordKey(input.session, "Integration");
 	const name = text(input.name, "Name", 640);
@@ -226,7 +226,7 @@ export async function publishModule(ctx: PluginContext, userId: string, siteOrig
 	const sources = sourceFiles(source.files);
 	const moduleActions = actions(input.actions);
 	const allowedCalls = calls(input.calls);
-	const agent = await requireStudio(ctx, userId, siteOrigin);
+	const agent = await requireStudio(ctx, userId);
 	const did = agent.account;
 	const createdAt = new Date().toISOString();
 

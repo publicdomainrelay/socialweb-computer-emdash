@@ -10,8 +10,8 @@ const env = (name: string, fallback?: string) => {
 };
 
 const SITE = env("SITE_URL", "http://127.0.0.1:4321");
-const HANDLE = env("ATPROTO_HANDLE");
-const PASSWORD = env("ATPROTO_PASSWORD");
+const HANDLE = env("E2E_ATPROTO_HANDLE");
+const PASSWORD = env("E2E_ATPROTO_PASSWORD");
 const BROWSER = "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/140.0";
 
 class Jar {
@@ -124,6 +124,28 @@ async function plugin<T>(route: string, body: unknown): Promise<T> {
 
 const log = (step: string, detail: object) => console.log(JSON.stringify({ step, ...detail }));
 
+const EXAMPLES = ["statusphere", "vibescrobble"];
+const passwordSession = await (await fetch(`${env("E2E_ATPROTO_PDS", "https://bsky.social")}/xrpc/com.atproto.server.createSession`, {
+	method: "POST",
+	headers: { "content-type": "application/json" },
+	body: JSON.stringify({ identifier: HANDLE, password: PASSWORD }),
+})).json();
+const bearer = { authorization: `Bearer ${passwordSession.accessJwt}` };
+const did: string = passwordSession.did;
+const pds: string = passwordSession.didDoc.service.find((service: { id: string }) => service.id === "#atproto_pds").serviceEndpoint;
+const pdsDelete = (collection: string, rkey: string) =>
+	fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
+		method: "POST",
+		headers: { ...bearer, "content-type": "application/json" },
+		body: JSON.stringify({ repo: did, collection, rkey }),
+	}).then((response) => response.status);
+const deleted: Record<string, number> = {};
+for (const rkey of EXAMPLES) {
+	deleted[`module ${rkey}`] = await pdsDelete("com.fedfork.exec.wasm.module", rkey);
+	deleted[`integration ${rkey}`] = await pdsDelete("com.fedfork.exec.oauth.clientMetadata", rkey);
+}
+log("delete the examples from the account before the run", deleted);
+
 type Listing = {
 	integrations: Array<{ rkey: string; groups: Array<{ key: string; granted: boolean }>; session: { handle?: string; scope: string } | null }>;
 };
@@ -134,10 +156,42 @@ const signedIn = await approve(loginData.url);
 const landed = await siteFetch(pathOf(signedIn.callback));
 log("site login", { scope: signedIn.scope, status: landed.status, location: landed.headers.get("location") });
 
+const cards = (html: string) => [...html.matchAll(/class="integration__name"[^>]*>([^<]+)</g)].map((match) => match[1]);
 const page = await (await siteFetch("/integrations")).text();
-const did = /data-did="([^"]+)"/.exec(page)?.[1];
-log("integrations page", { did, cards: [...page.matchAll(/class="integration__name"[^>]*>([^<]+)</g)].map((match) => match[1]) });
-if (!did) throw new Error("Integrations page did not list any integrations");
+log("integrations page", { did, cards: cards(page) });
+if (EXAMPLES.some((rkey) => page.includes(`data-rkey="${rkey}"`))) throw new Error("The examples were not deleted before the run");
+
+log("set site integrations", await plugin<object>("admin/site-integrations", { integrations: [`at://${did}/com.fedfork.exec.oauth.clientMetadata/studio`] }));
+const examplesPage = async () => {
+	const html = await (await siteFetch("/studio/examples")).text();
+	return { offersInstall: html.includes("data-install"), alreadyInstalled: html.includes("You have the examples") };
+};
+log("examples page before", await examplesPage());
+
+type StudioStatus = { uri: string; connected: boolean; account?: string; groups: Array<{ key: string; granted: boolean }> };
+const studioSummary = (status: StudioStatus) => ({ uri: status.uri, connected: status.connected, account: status.account, granted: status.groups.filter((group) => group.granted).map((group) => group.key) });
+log("studio status before", studioSummary(await plugin<StudioStatus>("studio/status", {})));
+const studio = await approve((await plugin<{ url: string }>("studio/connect", { account: did, groups: ["integrations", "modules"] })).url);
+const studioCallback = await siteFetch(pathOf(studio.callback));
+log("connect studio", { requested: studio.scope, location: studioCallback.headers.get("location") });
+log("studio status after", studioSummary(await plugin<StudioStatus>("studio/status", {})));
+
+type StrongRef = { uri: string; cid: string };
+type Bundle = {
+	integrations: Array<{ rkey: string; record: Record<string, unknown> }>;
+	modules: Array<{ rkey: string; name: string; source: { files: unknown[]; build: { version: string } } } & Record<string, unknown>>;
+};
+const bundle = (await (await siteFetch("/studio/examples.json")).json()) as Bundle;
+for (const item of bundle.integrations) {
+	log(`install example integration ${item.rkey}`, await plugin<StrongRef>("studio/publish-integration", { did, rkey: item.rkey, record: item.record }));
+}
+for (const item of bundle.modules) {
+	const installed = await plugin<{ module: StrongRef; source: StrongRef; files: number }>("studio/publish-module", { did, ...item });
+	log(`install example module ${item.rkey}`, { module: installed.module.uri, source: installed.source.uri, files: installed.files, build: item.source.build.version });
+}
+log("examples page after", await examplesPage());
+log("integrations page after", { cards: cards(await (await siteFetch("/integrations")).text()) });
+
 
 async function connect(rkey: string, groups: string[]) {
 	const { url } = await plugin<{ url: string }>("connect", { did, rkey, groups });
@@ -158,7 +212,6 @@ const summary = (ran: Ran) => ({
 	result: ran.result,
 });
 
-const pds = (await (await fetch(`https://plc.directory/${did}`)).json()).service.find((service: { id: string }) => service.id === "#atproto_pds").serviceEndpoint;
 const statuses = async () =>
 	(await (await fetch(`${pds}/xrpc/com.atproto.repo.listRecords?${new URLSearchParams({ repo: did, collection: "xyz.statusphere.status", limit: "10" })}`)).json()).records.map(
 		(record: { uri: string; value: { status: string } }) => ({ uri: record.uri, status: record.value.status }),
@@ -173,12 +226,6 @@ const parallel = await Promise.all(
 );
 log("run set_status three times in parallel", { results: parallel.map((ran) => ran.result.status), stored: (await statuses()).length });
 
-const passwordSession = await (await fetch(`${pds}/xrpc/com.atproto.server.createSession`, {
-	method: "POST",
-	headers: { "content-type": "application/json" },
-	body: JSON.stringify({ identifier: HANDLE, password: PASSWORD }),
-})).json();
-const bearer = { authorization: `Bearer ${passwordSession.accessJwt}` };
 const serviceAuth = await (
 	await fetch(`${pds}/xrpc/com.atproto.server.getServiceAuth?${new URLSearchParams({ aud: SITE_DID, lxm: RUN_NSID, exp: String(Math.floor(Date.now() / 1000) + 60) })}`, { headers: bearer })
 ).json();
@@ -227,24 +274,8 @@ log("granted", {
 });
 log("verify socialweb-computer", await plugin<object>("verify", { did, rkey: "socialweb-computer" }));
 
-type StrongRef = { uri: string; cid: string };
 const STUDIO_KEY = "e2e-note";
 const NOTE_COLLECTION = "com.example.note";
-const pdsDelete = (collection: string, rkey: string) =>
-	fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
-		method: "POST",
-		headers: { ...bearer, "content-type": "application/json" },
-		body: JSON.stringify({ repo: did, collection, rkey }),
-	}).then((response) => response.status);
-
-type StudioStatus = { uri: string; connected: boolean; account?: string; groups: Array<{ key: string; granted: boolean }> };
-const studioSummary = (status: StudioStatus) => ({ uri: status.uri, connected: status.connected, account: status.account, granted: status.groups.filter((group) => group.granted).map((group) => group.key) });
-log("studio status before", studioSummary(await plugin<StudioStatus>("studio/status", {})));
-const studio = await approve((await plugin<{ url: string }>("studio/connect", { account: did, groups: ["integrations", "modules"] })).url);
-const studioCallback = await siteFetch(pathOf(studio.callback));
-log("connect studio", { requested: studio.scope, location: studioCallback.headers.get("location") });
-log("studio status after", studioSummary(await plugin<StudioStatus>("studio/status", {})));
-
 const integration = await plugin<StrongRef>("studio/publish-integration", {
 	did,
 	rkey: STUDIO_KEY,
@@ -289,33 +320,6 @@ const noteRkey = String(noted.result?.uri).split("/").pop() ?? "";
 log("run studio module", summary(noted));
 const sourcePage = await (await siteFetch(`/source?uri=${encodeURIComponent(published.module.uri)}`)).text();
 log("source page", { verified: (sourcePage.match(/>verified</g) ?? []).length, mismatched: (sourcePage.match(/>mismatch</g) ?? []).length, rebuild: sourcePage.includes("data-rebuild-button") });
-
-type Bundle = {
-	integrations: Array<{ rkey: string; record: Record<string, unknown> }>;
-	modules: Array<{ rkey: string; session: string; source: { files: unknown[]; build: { version: string } } } & Record<string, unknown>>;
-};
-const bundle = (await (await siteFetch("/studio/examples.json")).json()) as Bundle;
-const EXAMPLE_KEY = "e2e-example-statusphere";
-const exampleIntegration = bundle.integrations.find((item) => item.rkey === "statusphere");
-const exampleModule = bundle.modules.find((item) => item.rkey === "statusphere");
-if (!exampleIntegration || !exampleModule) throw new Error("The examples bundle has no statusphere");
-await plugin("studio/publish-integration", { did, rkey: EXAMPLE_KEY, record: exampleIntegration.record });
-const installed = await plugin<{ module: StrongRef; source: StrongRef; files: number }>("studio/publish-module", {
-	did,
-	...exampleModule,
-	rkey: EXAMPLE_KEY,
-	session: EXAMPLE_KEY,
-});
-log("install example from bundle", { integrations: bundle.integrations.map((item) => item.rkey), module: installed.module.uri, files: installed.files, build: exampleModule.source.build.version });
-await connect(EXAMPLE_KEY, ["status"]);
-log("run installed example", summary(await plugin<Ran>("run", { did, rkey: EXAMPLE_KEY, entry: "set_status", input: { status: "🧩" } })));
-log("clear installed example", summary(await plugin<Ran>("run", { did, rkey: EXAMPLE_KEY, entry: "clear_status", input: {} })));
-await plugin("disconnect", { did, rkey: EXAMPLE_KEY });
-log("example cleanup", {
-	module: await pdsDelete("com.fedfork.exec.wasm.module", EXAMPLE_KEY),
-	manifest: await pdsDelete("com.fedfork.exec.source.manifest", installed.source.uri.split("/").pop() ?? ""),
-	integration: await pdsDelete("com.fedfork.exec.oauth.clientMetadata", EXAMPLE_KEY),
-});
 
 await plugin("disconnect", { did, rkey: STUDIO_KEY });
 log("studio cleanup", {

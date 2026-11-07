@@ -53,18 +53,19 @@ pnpm --filter atproto-integrations-emdash typecheck
 
 ### Live end-to-end run
 
-`scripts/e2e.ts` drives a real site as your test account. It covers:
-- sign-in and connecting each integration;
+`scripts/e2e.ts` drives a real site as a dedicated test account. Use an account you can lose data on, never your main one. The run:
+- **deletes the account's `statusphere` and `vibescrobble` integration and module records first**, then reinstalls them through the studio, the way a new user would;
+- sets the site's `siteIntegrations` setting, so the account must be a site admin;
+- covers sign-in and connecting each integration;
 - module rounds and parallel runs;
 - service auth and a replayed token;
 - the PDS proxy;
 - a scrobble, which it then deletes.
 
+It reads only `E2E_ATPROTO_HANDLE`, `E2E_ATPROTO_PASSWORD` and optionally `E2E_ATPROTO_PDS`, never `ATPROTO_HANDLE`, so credentials in your shell for other tools are never used by mistake.
+
 ```bash
-export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='app-password'
-./scripts/publish-records.sh
-./scripts/publish-wasm.sh statusphere
-./scripts/publish-wasm.sh vibescrobble
+export E2E_ATPROTO_HANDLE=test-account.bsky.social E2E_ATPROTO_PASSWORD='app-password'
 SITE_URL=http://127.0.0.1:4321 pnpm exec node scripts/e2e.ts
 ```
 
@@ -135,7 +136,7 @@ Never run a manifest's command directly on your machine. It comes from someone's
 ### The studio
 
 The studio pages call five plugin routes: `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`. They are declared in `plugins/atproto-integrations-emdash/src/plugin.ts` and implemented in `src/studio.ts`.
-- **The studio is a record.** It is the site integration with record key `studio`, defined in `records/studio.json` and listed in `EMDASH_SITE_INTEGRATIONS`. To change its scopes, edit its groups there and republish with `./scripts/publish-records.sh`. Do not hard-code scopes in the plugin.
+- **The studio is a record.** It is the site integration with record key `studio`, defined in `records/studio.json` and listed in the plugin setting `siteIntegrations`. To change its scopes, edit its groups there and republish with `./scripts/publish-records.sh`. Do not hard-code scopes in the plugin.
 - **Trust rule.** Keep these two checks:
   - `beginConnect` lets an account authorize a record only when the record is in that account's repo or listed in `src/site.ts`'s site integrations.
   - Modules run only with own-record sessions, through `ownSessionAgent`.
@@ -169,7 +170,7 @@ Follow [docs/emdash-fork.md](docs/emdash-fork.md): change and test in `emdash/`,
 
 - **Your own copy:** use the Deploy to Cloudflare button, or `pnpm run deploy`. See [Deploy your own](https://exec.fedfork.com/deploy).
 - **exec.fedfork.com itself:** maintainers deploy it with `pnpm run deploy:fedfork`. Plain `pnpm run deploy` on that account would rebind the production Worker to new, empty resources.
-- **Site integrations:** `EMDASH_SITE_INTEGRATIONS` in `wrangler.jsonc` lists the records every account may connect. Set it in the top level and again in each `env` block, because wrangler environments do not inherit variables. Only list records your operator account controls.
+- **Site integrations:** the plugin setting `siteIntegrations` lists the records every account may connect, one AT-URI per line. An admin sets it in EmDash admin → Plugins → atproto integrations → Settings → Site integrations, or through the plugin route `admin/site-integrations`. A fresh deploy lists nothing, so it has no studio until an admin sets it. Only list records your operator account controls.
 - **After any deploy,** run `scripts/e2e.ts` against the deployed site.
 - **Throwaway Workers:** when you test a deploy on a temporary Worker, delete its D1 database, R2 bucket and KV namespace afterwards as well.
 

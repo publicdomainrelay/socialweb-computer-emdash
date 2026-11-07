@@ -106,7 +106,7 @@ const integrationRecord = `{
 		<h3>Where integrations come from</h3>
 		<ul>
 			<li><strong>Your own records.</strong> Any <code>clientMetadata</code> record in your repo. Only your account can authorize it. A record from another account is refused, so nobody can borrow this site's client identity to ask you for scopes.</li>
-			<li><strong>Site integrations.</strong> Records the site's operator vouches for, by listing their AT-URIs in the Worker variable <code>EMDASH_SITE_INTEGRATIONS</code>. The site serves the list at <code>/integrations/site.json</code>, and the plugin reads it from its own origin and caches it for five minutes. Any signed-in account may authorize a site integration, for itself only. They show on <a href="/integrations">/integrations</a> as offered by this site.</li>
+			<li><strong>Site integrations.</strong> Records the site's operator vouches for, by listing their AT-URIs in the plugin setting <code>siteIntegrations</code>, which an admin sets in the EmDash admin. The plugin reads the list from its own settings. Any signed-in account may authorize a site integration, for itself only. They show on <a href="/integrations">/integrations</a> as offered by this site.</li>
 		</ul>
 		<h3>The studio is just another record</h3>
 		<p>

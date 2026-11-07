@@ -128,7 +128,7 @@ const toc = [
 			A <code>com.fedfork.exec.oauth.clientMetadata</code> record normally connects only the account that published it. That keeps anyone from using this site's name on a consent screen for their own client.
 		</p>
 		<p>
-			The operator can vouch for some records instead. <code>EMDASH_SITE_INTEGRATIONS</code> lists their AT-URIs, the site serves the list at <code>/integrations/site.json</code>, and any signed-in account can connect those records for itself. Each account still gets its own session, with only the scope groups it ticks.
+			The operator can vouch for some records instead. The plugin setting <code>siteIntegrations</code> lists their AT-URIs, an admin sets it in the EmDash admin, and any signed-in account can connect those records for itself. Each account still gets its own session, with only the scope groups it ticks.
 		</p>
 		<p>
 			The studio is one of them. <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/blob/main/records/studio.json">records/studio.json</a> is an ordinary integration record with two scope groups: publishing integration records, and publishing modules with their source. Login asks only for <code>atproto</code>; every extra permission comes from a new session for a record like this one.

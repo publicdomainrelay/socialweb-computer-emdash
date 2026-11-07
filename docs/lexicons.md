@@ -14,7 +14,7 @@ This project defines five lexicons under `com.fedfork.exec`. Four are record typ
 
 ```mermaid
 flowchart LR
-  SITE["EMDASH_SITE_INTEGRATIONS<br/>site integrations, like the studio"]
+  SITE["siteIntegrations setting<br/>site integrations, like the studio"]
   CM["oauth.clientMetadata<br/>key: integration name"]
   RUN["wasm.run<br/>procedure on the site"]
   MOD["wasm.module<br/>key: module name"]
@@ -284,7 +284,7 @@ An `oauth.clientMetadata` record normally connects only the account that publish
 The operator can vouch for some records instead:
 
 1. Publish the record to the operator's account, for example [`records/studio.json`](../records/studio.json) with `scripts/publish-records.sh`.
-2. List its AT-URI in the Worker variable `EMDASH_SITE_INTEGRATIONS` (space separated). The site serves the list at `/integrations/site.json`, and the plugin reads it from the site's own origin.
+2. List its AT-URI, one per line, in the plugin setting `siteIntegrations`: EmDash admin → Plugins → atproto integrations → Settings → Site integrations. Admins can also use the plugin route `admin/site-integrations`. The plugin reads the list from its own settings.
 3. Any signed-in account can now connect that record for itself. Each account gets its own session, keyed to the account and the record, with only the scope groups it ticks.
 
 Modules never run with a site integration's session; they only use sessions that their integration record's own account granted.

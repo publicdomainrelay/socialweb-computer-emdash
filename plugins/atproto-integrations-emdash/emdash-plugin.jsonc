@@ -19,7 +19,13 @@
 	},
 	"admin": {
 		"settingsSchema": {
-			"sessionKey": { "type": "secret", "label": "Session encryption key", "description": "Generated automatically" }
+			"sessionKey": { "type": "secret", "label": "Session encryption key", "description": "Generated automatically" },
+			"siteIntegrations": {
+				"type": "string",
+				"multiline": true,
+				"label": "Site integrations",
+				"description": "AT-URIs of com.fedfork.exec.oauth.clientMetadata records this site offers to every signed-in account, one per line. The one with record key studio is the studio. List only records you control."
+			}
 		}
 	}
 }

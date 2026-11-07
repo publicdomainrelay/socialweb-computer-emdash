@@ -91,7 +91,7 @@ async function connectSite(user: User, options: ConnectOptions = {}) {
 	await queueIdentity(host, didDocument(), 2);
 	await queueAuthorizationServer(host);
 	await queueAuthorizationServer(host);
-	if (callbackSite !== undefined) await queueSite(host, callbackSite, SITE_URL);
+	if (callbackSite !== undefined) await queueSite(host, callbackSite);
 	const query = new URLSearchParams({ code: "code", state: par.get("state") ?? "", iss: ISSUER });
 	const callback = await host.actions.routes.request("oauth/callback", {
 		method: "GET",

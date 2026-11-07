@@ -145,7 +145,7 @@ const guides: Record<string, Guide> = {
 		uses: [
 			"client_id and redirect_uris are placeholders. The site replaces them with its own URLs, and rebases client_uri, logo_uri, tos_uri and policy_uri when they share the placeholder's origin.",
 			"Every scope in a group must also appear in clientMetadata.scope. The plugin requests atproto plus the scopes of the groups a person ticks.",
-			"Only the account that published the record can authorize it, except for site integrations: records the operator lists in EMDASH_SITE_INTEGRATIONS, which any signed-in account may authorize for itself.",
+			"Only the account that published the record can authorize it, except for site integrations: records the operator lists in the plugin setting siteIntegrations, which any signed-in account may authorize for itself.",
 			"The studio is one of these records. records/studio.json is published by the operator and listed as a site integration.",
 		],
 		links: [
@@ -287,7 +287,7 @@ const palette = `
   classDef deny fill:#ef444424,stroke:#ef4444,stroke-width:1.5px`;
 
 export const relationships = `flowchart LR
-  SITE["EMDASH_SITE_INTEGRATIONS<br/>site integrations, like the studio"]:::site
+  SITE["siteIntegrations setting<br/>site integrations, like the studio"]:::site
   CM["oauth.clientMetadata<br/>key: integration name"]:::pds
   RUN["wasm.run<br/>procedure on the site"]:::site
   MOD["wasm.module<br/>key: module name"]:::wasm

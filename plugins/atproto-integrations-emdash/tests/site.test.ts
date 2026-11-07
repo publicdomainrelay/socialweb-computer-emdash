@@ -9,7 +9,6 @@ import {
 	OPERATOR,
 	queueIdentity,
 	queueSite,
-	ROUTE_ORIGIN,
 	recordUri,
 	SITE_URL,
 	STUDIO_RECORD,
@@ -17,7 +16,6 @@ import {
 } from "./network";
 
 const STUDIO_URI = recordUri(OPERATOR, "studio");
-const SITE_JSON = `${ROUTE_ORIGIN}/integrations/site.json`;
 
 let host: PluginRuntimeTestHost;
 
@@ -65,24 +63,21 @@ describe("site integrations", () => {
 		expect(status.error?.message).toContain("no studio integration");
 	});
 
-	it.each([
-		["the list cannot be fetched", undefined],
-		["the list answers with an error", new Response("nope", { status: 500 })],
-		["the list is not JSON", new Response("<html>", { status: 200 })],
-		["the list has no integrations array", json({ integrations: STUDIO_URI })],
-	])("offers no site integrations when %s", async (_name, response) => {
-		if (response) await host.http.respond(SITE_JSON, response);
+	it("offers no site integrations until an admin lists some", async () => {
 		const status = await call(host, await subscriber(), "studio/status", {});
 		expect(status.success).toBe(false);
 		expect(status.error?.message).toContain("no studio integration");
 	});
 
-	it("fetches the list once and reuses it while it is fresh", async () => {
-		await queueSite(host, { integrations: [STUDIO_URI] });
-		await queueStudioRecord(2);
-		const user = await subscriber();
-		expect((await call(host, user, "studio/status", {})).success).toBe(true);
-		expect((await call(host, user, "studio/status", {})).success).toBe(true);
-		expect(host.http.requests().filter((request) => request.url === SITE_JSON)).toHaveLength(1);
+	it("lets only admins set the list, and keeps only clientMetadata record URIs", async () => {
+		const denied = await call(host, await subscriber(), "admin/site-integrations", { integrations: [STUDIO_URI] });
+		expect(denied.success).toBe(false);
+		const admin = await host.fixtures.user({ email: "admin@example.com", role: "admin" });
+		const saved = await call(host, admin, "admin/site-integrations", {
+			integrations: ["junk", `at://${OPERATOR.did}/${MODULE_COLLECTION}/x`, STUDIO_URI],
+		});
+		expect(saved.data).toEqual({ integrations: [STUDIO_URI] });
+		expect(await host.inspect.setting("siteIntegrations")).toBe(STUDIO_URI);
+		expect((await call(host, admin, "admin/site-integrations", {})).data).toEqual({ integrations: [STUDIO_URI] });
 	});
 });

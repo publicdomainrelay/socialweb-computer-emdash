@@ -49,8 +49,11 @@ export async function queueIdentity(host: PluginRuntimeTestHost, document: unkno
 
 export const recordUri = (actor: Actor, rkey: string) => `at://${actor.did}/${COLLECTION}/${rkey}`;
 
-export async function queueSite(host: PluginRuntimeTestHost, integrations: unknown, origin = ROUTE_ORIGIN) {
-	await host.http.respond(`${origin}/integrations/site.json`, json(integrations));
+export async function queueSite(host: PluginRuntimeTestHost, site: unknown) {
+	const listed = typeof site === "object" && site !== null ? (site as { integrations?: unknown }).integrations : undefined;
+	const admin = await host.fixtures.user({ email: `admin-${crypto.randomUUID()}@example.com`, role: "admin" });
+	const response = await call(host, admin, "admin/site-integrations", { integrations: Array.isArray(listed) ? listed.map(String) : [] });
+	if (!response.success) throw new Error(response.error?.message ?? "Could not set site integrations");
 }
 
 export async function queueListing(host: PluginRuntimeTestHost, modules: Array<{ uri: string; cid: string; value: unknown }> = []) {

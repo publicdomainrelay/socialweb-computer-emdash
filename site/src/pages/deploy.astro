@@ -64,18 +64,15 @@ const verify = `SITE=https://your-site.example
 curl -fsS "$SITE/.well-known/did.json" | jq .
 curl -fsS -o /dev/null -w '%{http_code}\\n' "$SITE/integrations"`;
 
-const e2e = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
+const e2e = `export E2E_ATPROTO_HANDLE=test-account.bsky.social E2E_ATPROTO_PASSWORD='app-password'
 SITE_URL=$SITE pnpm exec node scripts/e2e.ts`;
 
-const siteVars = `"vars": {
-  "EMDASH_SITE_INTEGRATIONS": "at://did:plc:…/com.fedfork.exec.oauth.clientMetadata/studio"
-}`;
+const siteSetting = `at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/studio`;
 
 const ownStudio = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
 goat lex validate -c lexicons records/studio.json
 ./scripts/publish-records.sh`;
 
-const checkSite = `curl -fsS "$SITE/integrations/site.json" | jq .`;
 
 const forkPackages = `./scripts/emdash-fork.sh
 ./scripts/release-emdash-fork.sh`;
@@ -187,7 +184,6 @@ const forkPackages = `./scripts/emdash-fork.sh
 					<tr><td><code>LOADER</code></td><td>Worker Loader</td><td>The plugin isolate and one isolate per WebAssembly run</td></tr>
 					<tr><td><code>EMDASH_ENCRYPTION_KEY</code></td><td>Secret, required</td><td>EmDash plugin secret settings, including the key that seals OAuth sessions</td></tr>
 					<tr><td><code>EMDASH_SITE_URL</code></td><td>Variable</td><td>The public origin. Optional on <code>workers.dev</code></td></tr>
-					<tr><td><code>EMDASH_SITE_INTEGRATIONS</code></td><td>Variable</td><td>AT-URIs of the integration records this site offers to every account, separated by spaces</td></tr>
 				</tbody>
 			</table>
 		</div>
@@ -199,27 +195,27 @@ const forkPackages = `./scripts/emdash-fork.sh
 	<section id="site-integrations">
 		<h2>Site integrations</h2>
 		<p>
-			Every signed-in account can connect the integrations you list in <code>EMDASH_SITE_INTEGRATIONS</code>, each for its own account. Everything else on <a href="/integrations">/integrations</a> comes from the visitor's own repo. The studio is the listed record whose key is <code>studio</code>.
+			Every signed-in account can connect the integrations you list in the plugin setting <code>siteIntegrations</code>, each for its own account. Everything else on <a href="/integrations">/integrations</a> comes from the visitor's own repo. The studio is the listed record whose key is <code>studio</code>.
 		</p>
 		<ul>
-			<li><strong>Default.</strong> The top level of <code>wrangler.jsonc</code> lists this project's studio record, so a fresh deploy has a working studio right away.</li>
-			<li><strong>Per environment.</strong> Variables are not inherited by wrangler environments, so set it again in each <code>env</code> block, as <code>env.fedfork</code> does.</li>
-			<li><strong>How the Worker reads it.</strong> The site serves the list at <code>/integrations/site.json</code>. The plugin fetches that from its own origin and caches it for five minutes, so a change shows up within five minutes of a deploy.</li>
+			<li><strong>Where to set it.</strong> Sign in as an admin and open <em>EmDash admin → Plugins → atproto integrations → Settings → Site integrations</em>. Put one AT-URI per line.</li>
+			<li><strong>A fresh deploy lists nothing.</strong> That includes sites made with the Deploy button, because plugin settings live in the database, not in <code>wrangler.jsonc</code>. Until an admin sets it, the site offers no site integrations and no studio.</li>
+			<li><strong>The quickest start.</strong> List this site's studio record, below. To own the studio's definition instead, publish your own, as in the next section.</li>
+			<li><strong>From code.</strong> Admins can also call the plugin route <code>admin/site-integrations</code>: <code>POST</code> with <code>{"{"}"integrations": [...]{"}"}</code> sets the list and <code>{"{}"}</code> reads it. It needs the <code>plugins:manage</code> permission and keeps only valid <code>com.fedfork.exec.oauth.clientMetadata</code> URIs. The plugin reads the list from its own settings, so a change applies on the next request.</li>
 		</ul>
-		<Code title="wrangler.jsonc" code={siteVars} />
+		<Code title="Site integrations" code={siteSetting} />
 		<h3>Offer your own studio</h3>
 		<p>
-			To own the studio's definition, publish <code>records/studio.json</code> from your operator account, change its <code>client_uri</code> to your site, and point the variable at the new record. The record key must stay <code>studio</code>. Only list records you control: whatever you list, every visitor's consent screen shows as coming from your site.
+			To own the studio's definition, publish <code>records/studio.json</code> from your operator account, change its <code>client_uri</code> to your site, and list the new record in the setting instead. The record key must stay <code>studio</code>. Only list records you control: whatever you list, every visitor's consent screen shows as coming from your site.
 		</p>
 		<Code code={ownStudio} />
-		<Code title="check" code={checkSite} />
 	</section>
 
 	<section id="verify">
 		<h2>Check it works</h2>
 		<Code code={verify} />
 		<p>
-			The end-to-end script signs in as you, connects statusphere and vibescrobble, runs every module path including service auth and the PDS proxy, deletes its test scrobble, and signs out. It needs your integration and module records published first.
+			The end-to-end script signs in as a test account that is an admin of the site. It deletes that account's <code>statusphere</code> and <code>vibescrobble</code> integration and module records, lists the studio in the site setting, connects the studio, and installs the examples back the way a new user would. Then it runs every module path, including service auth and the PDS proxy, publishes and runs a module compiled from source, cleans up and signs out. Use a dedicated test account: the script reads only the <code>E2E_</code> variables so it never picks up credentials meant for other tools.
 		</p>
 		<Code code={e2e} />
 	</section>

@@ -9,15 +9,11 @@
 	"worker_loaders": [{ "binding": "LOADER" }],
 	"triggers": { "crons": ["* * * * *"] },
 	"observability": { "enabled": true },
-	"vars": { "EMDASH_SITE_INTEGRATIONS": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/studio" },
 	"env": {
 		"fedfork": {
 			"name": "socialweb-computer-emdash",
 			"routes": [{ "pattern": "exec.fedfork.com", "custom_domain": true }],
-			"vars": {
-				"EMDASH_SITE_URL": "https://exec.fedfork.com",
-				"EMDASH_SITE_INTEGRATIONS": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/studio"
-			},
+			"vars": { "EMDASH_SITE_URL": "https://exec.fedfork.com" },
 			"d1_databases": [
 				{
 					"binding": "DB",

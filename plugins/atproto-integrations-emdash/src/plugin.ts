@@ -1,9 +1,9 @@
 import { type PluginContext, pluginResponse, pluginRoute, type SandboxedPlugin, type SandboxedRouteContext } from "emdash/plugin";
 import { beginConnect, completeConnect, disconnect, listIntegrations, ownSessionAgent, servedMetadata, sessionAgent, sessionOwner } from "./flow";
 import { runModule } from "./modules";
-import { parseRef } from "./record";
+import { parseRef, recordUri } from "./record";
 import { RUN_NSID, ServiceAuthError, siteDid, siteDidDocument, verifyServiceAuth } from "./service-auth";
-import { isSiteIntegration, siteIntegrations } from "./site";
+import { isSiteIntegration, parseSiteIntegrations, SITE_INTEGRATIONS_SETTING, siteIntegrations } from "./site";
 import { connectStudio, disconnectStudio, publishIntegration, publishModule, STUDIO_KEY, studioStatus } from "./studio";
 
 const PERMISSION = "auth:manage_own_credentials" as const;
@@ -34,8 +34,6 @@ const runInput = (input: Input) => {
 	return { entry: input.entry, values };
 };
 
-const requestOrigin = (routeCtx: SandboxedRouteContext) => new URL(routeCtx.request.url).origin;
-
 const account = (input: Input, fallback?: unknown) => parseRef({ did: input.account ?? fallback, rkey: STUDIO_KEY }).did;
 
 const groupsOf = (input: Input) => (Array.isArray(input.groups) ? input.groups.filter((item): item is string => typeof item === "string") : []);
@@ -52,11 +50,11 @@ const plugin: SandboxedPlugin = {
 	routes: {
 		integrations: userRoute(async (input, userId, ctx, routeCtx) => {
 			if (typeof input.did !== "string") throw new Error("did is required");
-			return { integrations: await listIntegrations(ctx, userId, input.did, await siteIntegrations(ctx, requestOrigin(routeCtx))) };
+			return { integrations: await listIntegrations(ctx, userId, input.did, await siteIntegrations(ctx)) };
 		}),
 		connect: userRoute(async (input, userId, ctx, routeCtx) => {
 			const ref = parseRef(input);
-			const site = await siteIntegrations(ctx, requestOrigin(routeCtx));
+			const site = await siteIntegrations(ctx);
 			return { url: await beginConnect(ctx, userId, origin(ctx, routeCtx), ref, groupsOf(input), account(input, ref.did), site) };
 		}),
 		disconnect: userRoute(async (input, userId, ctx) => {
@@ -67,16 +65,28 @@ const plugin: SandboxedPlugin = {
 			const { entry, values } = runInput(input);
 			return runModule(ctx, (session) => ownSessionAgent(ctx, userId, session), parseRef(input), entry, values);
 		}),
-		"studio/status": userRoute(async (_input, userId, ctx, routeCtx) => studioStatus(ctx, userId, requestOrigin(routeCtx))),
+		"studio/status": userRoute(async (_input, userId, ctx, routeCtx) => studioStatus(ctx, userId)),
 		"studio/connect": userRoute(async (input, userId, ctx, routeCtx) => ({
-			url: await connectStudio(ctx, userId, origin(ctx, routeCtx), requestOrigin(routeCtx), account(input), groupsOf(input)),
+			url: await connectStudio(ctx, userId, origin(ctx, routeCtx), account(input), groupsOf(input)),
 		})),
 		"studio/disconnect": userRoute(async (_input, userId, ctx, routeCtx) => {
-			await disconnectStudio(ctx, userId, requestOrigin(routeCtx));
+			await disconnectStudio(ctx, userId);
 			return { ok: true };
 		}),
-		"studio/publish-integration": userRoute(async (input, userId, ctx, routeCtx) => publishIntegration(ctx, userId, requestOrigin(routeCtx), input)),
-		"studio/publish-module": userRoute(async (input, userId, ctx, routeCtx) => publishModule(ctx, userId, requestOrigin(routeCtx), input)),
+		"studio/publish-integration": userRoute(async (input, userId, ctx, routeCtx) => publishIntegration(ctx, userId, input)),
+		"studio/publish-module": userRoute(async (input, userId, ctx, routeCtx) => publishModule(ctx, userId, input)),
+		"admin/site-integrations": {
+			methods: ["POST" as const],
+			permission: "plugins:manage" as const,
+			handler: async (routeCtx: SandboxedRouteContext, ctx: PluginContext) => {
+				const input = inputOf(routeCtx);
+				if (input.integrations !== undefined) {
+					const listed = Array.isArray(input.integrations) ? input.integrations.join("\n") : String(input.integrations);
+					await ctx.settings.set(SITE_INTEGRATIONS_SETTING, parseSiteIntegrations(listed).map(recordUri).join("\n"));
+				}
+				return { integrations: (await siteIntegrations(ctx)).map(recordUri) };
+			},
+		},
 		"service/run": pluginRoute({
 			public: true,
 			methods: ["POST"],
@@ -133,7 +143,7 @@ const plugin: SandboxedPlugin = {
 			response: "raw",
 			handler: async (routeCtx, ctx) => {
 				const params = Object.fromEntries(Object.entries(routeCtx.input).map(([key, value]) => [key, first(value)]));
-				const site = await siteIntegrations(ctx, requestOrigin(routeCtx));
+				const site = await siteIntegrations(ctx);
 				const location = await completeConnect(ctx, params).then(
 					({ ref }) =>
 						ref.rkey === STUDIO_KEY && isSiteIntegration(site, ref)

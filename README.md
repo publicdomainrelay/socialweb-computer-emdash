@@ -10,12 +10,15 @@ Our lexicons are `com.fedfork.exec.*`: `oauth.clientMetadata`, `wasm.module`, `w
 - **Every extra capability is a new OAuth session.** Each is defined by an `oauth.clientMetadata` record and granted one scope group at a time, when the user asks for it. Sessions are sealed per user per record.
 - **Integrations come from two places:**
   - **The user's own records.** Only that account can authorize them, so a third party cannot use this site's client identity to ask someone for scopes.
-  - **Site integrations.** These are records the operator vouches for by listing their AT-URIs, space-separated, in the Worker variable `EMDASH_SITE_INTEGRATIONS`. The site serves the list at `/integrations/site.json`, and the plugin reads it from its own origin and caches it for five minutes. Any signed-in account may authorize a site integration, for itself only.
+  - **Site integrations.** These are records the operator vouches for by listing their AT-URIs, one per line, in the plugin setting `siteIntegrations`. The plugin reads the list from its own settings. Any signed-in account may authorize a site integration, for itself only.
 - **The studio is just another record.** It is the site integration with record key `studio`, defined in `records/studio.json`, with the groups `integrations` and `modules`.
   - On this site it is published by the operator account, currently the test account `did:plc:lpfuqerea3deuoyrn7ojser4`.
   - Publishing always writes to the account the studio session belongs to.
 - **Modules only run with own-record sessions.** A module's `session` must name an integration record in the module's own repo, so a site integration session such as the studio cannot drive a module.
-- **Configuration.** The top level of `wrangler.jsonc` points `EMDASH_SITE_INTEGRATIONS` at this project's studio record, so Deploy-button sites get a working studio. To own it, publish your own `records/studio.json` and point the variable at it, in the top level and in every `env` block.
+- **Configuration.** An admin sets `siteIntegrations` in EmDash admin → Plugins → atproto integrations → Settings → Site integrations, or with the plugin route `admin/site-integrations` (`POST`, needs `plugins:manage`; `{"integrations": [...]}` sets the list, `{}` reads it). It keeps only valid `com.fedfork.exec.oauth.clientMetadata` URIs.
+  - A fresh deploy, including one from the Deploy button, offers no site integrations and so no studio until an admin sets it.
+  - The quickest start is to list this site's studio record, `at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/studio`. To own it, publish your own `records/studio.json` and list that instead.
+  - On exec.fedfork.com the admin is the operator account, and `scripts/e2e.ts` sets the list to that account's studio record.
 
 Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
 
@@ -200,7 +203,7 @@ echo emdash_enc_v1_$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '=') | pnpm
 ```bash
 . ~/.cloudflare_source
 pnpm run deploy:fedfork
-SITE_URL=https://exec.fedfork.com pnpm exec node scripts/e2e.ts
+E2E_ATPROTO_HANDLE=… E2E_ATPROTO_PASSWORD=… SITE_URL=https://exec.fedfork.com pnpm exec node scripts/e2e.ts
 ```
 
 ## EmDash fork packages
@@ -236,7 +239,7 @@ pnpm test
 ```
 
 ```bash
-SITE_URL="https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com" pnpm exec node scripts/e2e.ts
+E2E_ATPROTO_HANDLE=… E2E_ATPROTO_PASSWORD=… SITE_URL="https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com" pnpm exec node scripts/e2e.ts
 ```
 
 ## Client metadata served per record
@@ -391,7 +394,7 @@ Legend: `●` ours, `◐` upstream code we patched, `○` third-party and untouc
 
 ```text
 socialweb-computer-emdash/                    ● github.com/publicdomainrelay/socialweb-computer-emdash
-├── wrangler.jsonc                            ● Worker, auto-provisioned D1, R2, KV, LOADER; EMDASH_SITE_INTEGRATIONS; env.fedfork
+├── wrangler.jsonc                            ● Worker, auto-provisioned D1, R2, KV, LOADER; env.fedfork
 ├── .dev.vars.example                         ● secret the deploy button asks for
 ├── package.json                              ● build, deploy, deploy:fedfork; binding descriptions
 ├── site/                                     ● Astro + EmDash site
@@ -425,7 +428,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   │   ├── lock.ts                           ● storage lease for token refresh
 │   │   ├── modules.ts                        ● blob fetch, CID check, rounds loop
 │   │   ├── service-auth.ts                   ● JWT verify, jti replay, did:web
-│   │   ├── site.ts                           ● site integrations from /integrations/site.json
+│   │   ├── site.ts                           ● site integrations from the siteIntegrations setting
 │   │   ├── studio.ts                         ● studio as the site integration "studio"; publish integration, module, source
 │   │   ├── identity.ts                       ● resolver wiring
 │   │   ├── http.ts                           ● ctx.http as fetch

@@ -95,7 +95,7 @@ overrides:
    ```bash
    pnpm test
    pnpm run deploy:fedfork
-   SITE_URL=https://exec.fedfork.com pnpm exec node scripts/e2e.ts
+   E2E_ATPROTO_HANDLE=… E2E_ATPROTO_PASSWORD=… SITE_URL=https://exec.fedfork.com pnpm exec node scripts/e2e.ts
    git push origin main
    ```
 

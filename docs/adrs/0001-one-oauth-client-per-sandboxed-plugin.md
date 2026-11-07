@@ -12,7 +12,7 @@ EmDash sandboxed plugins already run in isolated workerd services. Each one has 
 
 Each sandboxed plugin is a separate atproto OAuth client:
 
-- `client_id` is `/_emdash/api/plugins/<slug>/oauth-client-metadata.json`, served by a public raw route of that plugin.
+- `client_id` is `/_emdash/api/plugins/<slug>/oauth/client-metadata`, served by a public raw route of that plugin.
 - `redirect_uri` is `/_emdash/api/plugins/<slug>/oauth/callback`, also on the plugin.
 - Tokens, DPoP keys and pending requests stay in that plugin's settings, which no other plugin or the site login can read.
 

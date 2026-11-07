@@ -1,31 +1,12 @@
 import type { Block, BlockResponse } from "@emdash-cms/blocks";
 import type { PluginContext } from "emdash/plugin";
-import { z } from "zod";
 import { clientConfig, type Integration } from "./client";
+import { type Interaction, optionalText, textList } from "./interaction";
 import { beginAuthorization, disconnect } from "./oauth";
 import { grantedGroupIds } from "./scopes";
 import { loadSession, takeNotice } from "./store";
 
 export const CONNECT_PAGE = "/connect";
-
-export const interactionSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("page_load"), page: z.string() }),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.string(),
-		values: z.record(z.string(), z.unknown()).default({}),
-	}),
-	z.object({ type: z.literal("block_action"), action_id: z.string(), value: z.unknown().optional() }),
-]);
-
-export type Interaction = z.infer<typeof interactionSchema>;
-
-const connectValues = z.object({
-	identifier: z.string().trim().min(1),
-	groups: z.array(z.string()).default([]),
-});
-
-const upgradeValues = z.object({ groups: z.array(z.string()).min(1) });
 
 const groupOptions = (integration: Integration, ids: string[]) =>
 	integration.groups
@@ -155,16 +136,15 @@ export async function handleConnect(
 	}
 	if (interaction.type !== "form_submit") return undefined;
 	if (interaction.action_id === "oauth:connect") {
-		const values = connectValues.safeParse(interaction.values);
-		if (!values.success) return { ...(await renderConnect(ctx, integration)), toast: { type: "error", message: "Enter a handle or DID" } };
-		return authorize(ctx, integration, values.data.identifier, values.data.groups);
+		const identifier = optionalText(interaction.values.identifier);
+		if (!identifier) return { ...(await renderConnect(ctx, integration)), toast: { type: "error", message: "Enter a handle or DID" } };
+		return authorize(ctx, integration, identifier, textList(interaction.values.groups));
 	}
 	if (interaction.action_id === "oauth:upgrade") {
 		const session = await loadSession(ctx);
-		const values = upgradeValues.safeParse(interaction.values);
-		if (!session || !values.success) return renderConnect(ctx, integration);
-		const groups = [...grantedGroupIds(integration.groups, session.scope), ...values.data.groups];
-		return authorize(ctx, integration, session.did, groups);
+		const extra = textList(interaction.values.groups);
+		if (!session || !extra.length) return renderConnect(ctx, integration);
+		return authorize(ctx, integration, session.did, [...grantedGroupIds(integration.groups, session.scope), ...extra]);
 	}
 	return undefined;
 }

@@ -26,7 +26,7 @@ export function clientConfig(ctx: PluginContext, integration: Integration) {
 	const loopback = loopbackHosts.has(new URL(siteOrigin(ctx)).hostname);
 	const clientId = loopback
 		? `http://localhost?${new URLSearchParams({ redirect_uri: redirectUri, scope })}`
-		: pluginRoute(ctx, "oauth-client-metadata.json");
+		: pluginRoute(ctx, "oauth/client-metadata");
 	return { clientId, redirectUri, scope, loopback };
 }
 

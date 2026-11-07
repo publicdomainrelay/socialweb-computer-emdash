@@ -4,7 +4,8 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./testing": "./testing.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit",
@@ -12,9 +13,10 @@
 	},
 	"devDependencies": {
 		"@emdash-cms/blocks": "^1.4.0",
+		"@emdash-cms/plugin-test": "^0.2.11",
+		"@types/node": "^26.6.6",
 		"emdash": "^1.4.0",
 		"typescript": "^5.9.3",
-		"vitest": "^4.1.12",
-		"zod": "^4.6.7"
+		"vitest": "^4.1.12"
 	}
 }

@@ -35,7 +35,7 @@ describe("client metadata", () => {
 	it("serves a CIMD on public sites", () => {
 		const { ctx } = fakeContext(fetch);
 		expect(clientMetadata(ctx, integration)).toMatchObject({
-			client_id: "https://site.example/_emdash/api/plugins/statusphere/oauth-client-metadata.json",
+			client_id: "https://site.example/_emdash/api/plugins/statusphere/oauth/client-metadata",
 			redirect_uris: ["https://site.example/_emdash/api/plugins/statusphere/oauth/callback"],
 			dpop_bound_access_tokens: true,
 			token_endpoint_auth_method: "none",

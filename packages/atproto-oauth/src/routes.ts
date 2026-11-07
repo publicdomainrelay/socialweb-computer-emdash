@@ -9,7 +9,7 @@ const asParams = (input: Record<string, string | string[]>) =>
 
 export function oauthRoutes(integration: Integration): Record<string, RouteEntry> {
 	return {
-		"oauth-client-metadata.json": pluginRoute({
+		"oauth/client-metadata": pluginRoute({
 			public: true,
 			methods: ["GET"],
 			request: { body: "none" },

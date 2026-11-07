@@ -27,14 +27,18 @@ created_at="${created_at:-$(date -u +%Y-%m-%dT%H:%M:%S.000Z)}"
 jq -n --tab --argjson blob "$blob" --arg did "$did" --arg cid "$session_cid" --arg createdAt "$created_at" '{
 	"$type": "com.publicdomainrelay.temp.wasm.module",
 	name: "Statusphere",
-	description: "Set your xyz.statusphere.status emoji status.",
+	description: "Set or clear your xyz.statusphere.status emoji status.",
 	module: $blob,
 	abi: "emdash-wasm-json-v1",
 	session: {
 		uri: "at://\($did)/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere",
 		cid: $cid
 	},
-	actions: [{entry: "set_status", label: "Set status", fields: [{key: "status", label: "Emoji"}]}],
+	actions: [
+		{entry: "set_status", label: "Set status", description: "Skips the write when your latest status already matches.", fields: [{key: "status", label: "Emoji"}]},
+		{entry: "clear_status", label: "Clear statuses", description: "Deletes up to 10 of your statuses.", fields: []}
+	],
+	calls: ["com.atproto.repo.listRecords", "com.atproto.repo.createRecord", "com.atproto.repo.deleteRecord"],
 	createdAt: $createdAt
 }' >"$RECORD.tmp"
 mv "$RECORD.tmp" "$RECORD"

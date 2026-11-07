@@ -1,14 +1,14 @@
 {
 	"$type": "com.publicdomainrelay.temp.wasm.module",
 	"name": "Statusphere",
-	"description": "Set your xyz.statusphere.status emoji status.",
+	"description": "Set or clear your xyz.statusphere.status emoji status.",
 	"module": {
 		"$type": "blob",
 		"ref": {
-			"$link": "bafkreictmtxavczjvlhbbe3okiw3ygtjuy2ajnj26izqpnstom4dxfb3ry"
+			"$link": "bafkreibdiavcjab6dzbeuq6aqkb5pdape2is2ckud53yxc3utehdqec6ky"
 		},
 		"mimeType": "application/wasm",
-		"size": 86273
+		"size": 108323
 	},
 	"abi": "emdash-wasm-json-v1",
 	"session": {
@@ -19,13 +19,25 @@
 		{
 			"entry": "set_status",
 			"label": "Set status",
+			"description": "Skips the write when your latest status already matches.",
 			"fields": [
 				{
 					"key": "status",
 					"label": "Emoji"
 				}
 			]
+		},
+		{
+			"entry": "clear_status",
+			"label": "Clear statuses",
+			"description": "Deletes up to 10 of your statuses.",
+			"fields": []
 		}
+	],
+	"calls": [
+		"com.atproto.repo.listRecords",
+		"com.atproto.repo.createRecord",
+		"com.atproto.repo.deleteRecord"
 	],
 	"createdAt": "2026-11-07T02:39:32.000Z"
 }

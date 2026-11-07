@@ -146,28 +146,57 @@ async function connect(rkey: string, groups: string[]) {
 
 await connect("statusphere", []);
 log("verify statusphere", await plugin<object>("verify", { did, rkey: "statusphere" }));
-const ran = await plugin<{ module: string; results: Array<{ output: { uri: string } }> }>("run", {
-	did,
-	rkey: "statusphere",
-	entry: "set_status",
-	input: { status: "🦋" },
+type Ran = { did?: string; module: string; entry: string; rounds: Array<{ entry: string; calls: Array<{ nsid: string; ok: boolean }> }>; result: any };
+const RUN_NSID = "com.publicdomainrelay.temp.wasm.run";
+const MODULE_URI = `at://${did}/com.publicdomainrelay.temp.wasm.module/statusphere`;
+const SITE_DID = `did:web:${new URL(SITE).host.replace(":", "%3A")}`;
+const summary = (ran: Ran) => ({
+	did: ran.did,
+	rounds: ran.rounds.map((round) => `${round.entry}(${round.calls.map((call) => `${call.nsid}${call.ok ? "" : " failed"}`).join(", ")})`),
+	result: ran.result,
 });
-const statusUri = ran.results[0]?.output.uri ?? "";
-const [, , repo, collection, rkey] = statusUri.split("/");
-const pds = (await (await fetch(`https://plc.directory/${repo}`)).json()).service.find((service: { id: string }) => service.id === "#atproto_pds").serviceEndpoint;
-const stored = await (await fetch(`${pds}/xrpc/com.atproto.repo.getRecord?${new URLSearchParams({ repo, collection, rkey })}`)).json();
-log("run statusphere module", { uri: statusUri, record: stored.value });
+
+const pds = (await (await fetch(`https://plc.directory/${did}`)).json()).service.find((service: { id: string }) => service.id === "#atproto_pds").serviceEndpoint;
+const statuses = async () =>
+	(await (await fetch(`${pds}/xrpc/com.atproto.repo.listRecords?${new URLSearchParams({ repo: did, collection: "xyz.statusphere.status", limit: "10" })}`)).json()).records.map(
+		(record: { uri: string; value: { status: string } }) => ({ uri: record.uri, status: record.value.status }),
+	);
+
+const first = await plugin<Ran>("run", { did, rkey: "statusphere", entry: "set_status", input: { status: "🦋" } });
+log("run set_status with site session", { ...summary(first), latest: (await statuses())[0] });
+log("run set_status again", summary(await plugin<Ran>("run", { did, rkey: "statusphere", entry: "set_status", input: { status: "🦋" } })));
+
 const passwordSession = await (await fetch(`${pds}/xrpc/com.atproto.server.createSession`, {
 	method: "POST",
 	headers: { "content-type": "application/json" },
 	body: JSON.stringify({ identifier: HANDLE, password: PASSWORD }),
 })).json();
-const removed = await fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
+const bearer = { authorization: `Bearer ${passwordSession.accessJwt}` };
+const serviceAuth = await (
+	await fetch(`${pds}/xrpc/com.atproto.server.getServiceAuth?${new URLSearchParams({ aud: SITE_DID, lxm: RUN_NSID, exp: String(Math.floor(Date.now() / 1000) + 60) })}`, { headers: bearer })
+).json();
+const [, claims] = String(serviceAuth.token).split(".");
+const { iss, aud, lxm, exp } = JSON.parse(Buffer.from(claims ?? "", "base64url").toString());
+log("getServiceAuth from PDS", { iss, aud, lxm, expiresIn: exp - Math.floor(Date.now() / 1000) });
+
+const direct = (token: string, input: object) =>
+	fetch(`${SITE}/xrpc/${RUN_NSID}`, {
+		method: "POST",
+		headers: { "content-type": "application/json", "user-agent": BROWSER, authorization: `Bearer ${token}` },
+		body: JSON.stringify({ module: MODULE_URI, entry: "set_status", input }),
+	});
+const directRun = await direct(serviceAuth.token, { status: "🌱" });
+log("run with service auth token", { status: directRun.status, ...summary((await directRun.json()) as Ran), latest: (await statuses())[0] });
+const replay = await direct(serviceAuth.token, { status: "🌱" });
+log("replay the same token", { status: replay.status, body: await replay.json() });
+
+const proxied = await fetch(`${pds}/xrpc/${RUN_NSID}`, {
 	method: "POST",
-	headers: { "content-type": "application/json", authorization: `Bearer ${passwordSession.accessJwt}` },
-	body: JSON.stringify({ repo, collection, rkey }),
+	headers: { ...bearer, "content-type": "application/json", "atproto-proxy": `${SITE_DID}#emdash_integrations` },
+	body: JSON.stringify({ module: MODULE_URI, entry: "clear_status", input: {} }),
 });
-log("cleanup status", { deleted: removed.ok });
+const proxiedBody = await proxied.json();
+log("run clear_status through PDS proxy", { status: proxied.status, ...(proxied.ok ? summary(proxiedBody as Ran) : proxiedBody), remaining: (await statuses()).length });
 await connect("socialweb-computer", ["associate"]);
 await connect("socialweb-computer", ["associate", "policy", "atirc"]);
 const listing = await plugin<Listing>("integrations", { did });

@@ -32,6 +32,7 @@
 	"devDependencies": {
 		"@emdash-cms/plugin-cli": "0.13.5",
 		"@emdash-cms/plugin-test": "^0.2.6",
+		"@noble/curves": "2.4.0",
 		"@types/node": "^26.6.6",
 		"emdash": "^1.0.0",
 		"typescript": "^5.9.0",

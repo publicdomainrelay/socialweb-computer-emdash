@@ -1,7 +1,8 @@
 import { type PluginContext, pluginResponse, pluginRoute, type SandboxedPlugin, type SandboxedRouteContext } from "emdash/plugin";
-import { beginConnect, completeConnect, disconnect, listIntegrations, servedMetadata, sessionAgent } from "./flow";
+import { beginConnect, completeConnect, disconnect, listIntegrations, servedMetadata, sessionAgent, sessionOwner } from "./flow";
 import { runModule } from "./modules";
 import { parseRef } from "./record";
+import { RUN_NSID, ServiceAuthError, siteDid, siteDidDocument, verifyServiceAuth } from "./service-auth";
 
 const PERMISSION = "auth:manage_own_credentials" as const;
 
@@ -16,6 +17,20 @@ function callerId(routeCtx: SandboxedRouteContext) {
 	if (!routeCtx.user) throw new Error("Sign in first");
 	return routeCtx.user.id;
 }
+
+const AT_URI = /^at:\/\/(did:[^/]+)\/([^/]+)\/([^/]+)$/;
+
+function parseModuleUri(value: unknown) {
+	const match = typeof value === "string" ? AT_URI.exec(value) : null;
+	if (!match) throw new Error("module must be an at:// URI of a wasm.module record");
+	return { did: match[1], rkey: match[3] };
+}
+
+const runInput = (input: Input) => {
+	if (typeof input.entry !== "string") throw new Error("entry is required");
+	const values = typeof input.input === "object" && input.input !== null ? (input.input as Record<string, unknown>) : {};
+	return { entry: input.entry, values };
+};
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
@@ -40,9 +55,42 @@ const plugin: SandboxedPlugin = {
 			return { ok: true };
 		}),
 		run: userRoute(async (input, userId, ctx) => {
-			if (typeof input.entry !== "string") throw new Error("entry is required");
-			const values = typeof input.input === "object" && input.input !== null ? (input.input as Record<string, unknown>) : {};
-			return runModule(ctx, userId, parseRef(input), input.entry, values);
+			const { entry, values } = runInput(input);
+			return runModule(ctx, (session) => sessionAgent(ctx, userId, session), parseRef(input), entry, values);
+		}),
+		"service/run": pluginRoute({
+			public: true,
+			methods: ["POST"],
+			request: { body: "json" },
+			handler: async (routeCtx, ctx) => {
+				const input = inputOf(routeCtx);
+				try {
+					if (typeof input.token !== "string") throw new ServiceAuthError("Service auth token required");
+					const did = await verifyServiceAuth(ctx, input.token, siteDid(origin(ctx, routeCtx)), RUN_NSID);
+					const { entry, values } = runInput(input);
+					const ran = await runModule(
+						ctx,
+						async (session) => {
+							if (session.did !== did) throw new ServiceAuthError("This module uses another account's session");
+							const userId = await sessionOwner(ctx, session);
+							return userId ? sessionAgent(ctx, userId, session) : undefined;
+						},
+						parseModuleUri(input.module),
+						entry,
+						values,
+					);
+					return { ...ran, did };
+				} catch (error) {
+					const message = error instanceof Error ? error.message : String(error);
+					return { error: error instanceof ServiceAuthError ? "AuthenticationRequired" : "InvalidRequest", message };
+				}
+			},
+		}),
+		"service/did": pluginRoute({
+			public: true,
+			methods: ["GET"],
+			request: { body: "none" },
+			handler: async (routeCtx, ctx) => siteDidDocument(origin(ctx, routeCtx)),
 		}),
 		verify: userRoute(async (input, userId, ctx) => {
 			const agent = await sessionAgent(ctx, userId, parseRef(input));

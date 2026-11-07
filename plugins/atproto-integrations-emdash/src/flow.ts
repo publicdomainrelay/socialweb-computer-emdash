@@ -296,3 +296,11 @@ export async function sessionAgent(ctx: PluginContext, userId: string, ref: Inte
 		call,
 	};
 }
+
+export type SessionAgent = NonNullable<Awaited<ReturnType<typeof sessionAgent>>>;
+
+export async function sessionOwner(ctx: PluginContext, ref: IntegrationRef) {
+	const { items } = await ctx.storage.sessions.query({ where: { did: ref.did }, orderBy: { updatedAt: "desc" }, limit: 50 });
+	const match = items.map((item) => item.data as SessionEntry).find((entry) => entry.rkey === ref.rkey);
+	return match?.userId;
+}

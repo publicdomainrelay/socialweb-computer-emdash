@@ -13,7 +13,8 @@
 	"storage": {
 		"clients": { "indexes": [] },
 		"pending": { "indexes": ["createdAt"] },
-		"sessions": { "indexes": ["userId"] }
+		"sessions": { "indexes": ["userId", "did", "updatedAt"] },
+		"replays": { "indexes": ["exp"] }
 	},
 	"admin": {
 		"settingsSchema": {

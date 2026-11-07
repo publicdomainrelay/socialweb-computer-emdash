@@ -7,6 +7,8 @@ export const prerender = false;
 
 const user = Astro.locals.user;
 const did = await atprotoDid(Astro.locals);
+const siteOrigin = process.env.EMDASH_SITE_URL || Astro.url.origin;
+const siteDid = `did:web:${new URL(siteOrigin).host.replace(":", "%3A")}`;
 const connected = Astro.url.searchParams.get("connected");
 const failure = Astro.url.searchParams.get("error");
 
@@ -123,8 +125,17 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 														<button class="btn" type="submit" disabled={!item.session}>
 															{action.label}
 														</button>
+														{action.description && <span class="module__description">{action.description}</span>}
 													</form>
 												))}
+												<details class="integration__details">
+													<summary>Run from your PDS with service auth</summary>
+													<pre><code>{`curl -X POST "$PDS/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+  -H "Authorization: Bearer $ACCESS_JWT" \\
+  -H "atproto-proxy: ${siteDid}#emdash_integrations" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify({ module: module.uri, entry: module.actions[0]?.entry ?? "", input: {} })}'`}</code></pre>
+												</details>
 											</div>
 										))}
 										{!item.session && <p class="integration__meta">Connect this integration to run its modules.</p>}
@@ -191,8 +202,10 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 						entry: runForm.dataset.entry,
 						input,
 					});
-					const uris = result.results.map((call: { output: { uri?: string } }) => call.output?.uri).filter(Boolean);
-					show(`${result.module} ran ${result.entry}${uris.length ? `: ${uris.join(", ")}` : ""}`);
+					const steps = result.rounds.map((round: { entry: string; calls: Array<{ nsid: string; ok: boolean }> }) =>
+						`${round.entry}(${round.calls.map((call) => `${call.nsid.split(".").pop()}${call.ok ? "" : " failed"}`).join(", ")})`,
+					);
+					show(`${result.module} ran ${steps.join(" · ")}. Result: ${JSON.stringify(result.result)}`);
 				} catch (error) {
 					show(error instanceof Error ? error.message : "Run failed");
 				}

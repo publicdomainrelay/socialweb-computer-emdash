@@ -1,11 +1,14 @@
 import type { PluginContext } from "emdash/plugin";
-import { sessionAgent } from "./flow";
+import type { SessionAgent } from "./flow";
 import { requireHttp } from "./oauth/http";
 import { resolveIdentity } from "./oauth/identity";
 import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
 export const MODULE_COLLECTION = "com.publicdomainrelay.temp.wasm.module";
 export const MODULE_ABI = "emdash-wasm-json-v1";
+export const MAX_ROUNDS = 8;
+export const MAX_CALLS_PER_ROUND = 10;
+export const MAX_CALLS = 25;
 
 export interface ModuleField {
 	key: string;
@@ -25,6 +28,7 @@ export interface WasmModuleRecord {
 	blobCid: string;
 	session: IntegrationRef;
 	actions: ModuleAction[];
+	calls?: string[];
 }
 
 interface XrpcCallPlan {
@@ -39,6 +43,7 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 const text = (value: unknown) => (typeof value === "string" ? value : undefined);
 
 const NSID = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z0-9-]+){2,}$/;
+const ENTRY = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
 
 function parseSessionRef(value: unknown): IntegrationRef {
 	const uri = isObject(value) ? text(value.uri) : undefined;
@@ -75,6 +80,7 @@ export function parseModuleRecord(value: unknown): WasmModuleRecord {
 		blobCid: ref,
 		session: parseSessionRef(value.session),
 		actions: parseActions(value.actions),
+		calls: Array.isArray(value.calls) ? value.calls.filter((nsid): nsid is string => typeof nsid === "string" && NSID.test(nsid)) : undefined,
 	};
 }
 
@@ -123,27 +129,56 @@ export async function listModules(ctx: PluginContext, pds: string, did: string) 
 	});
 }
 
-function parsePlan(output: unknown): XrpcCallPlan[] {
+interface ModuleStep {
+	calls: XrpcCallPlan[];
+	next?: string;
+	state?: unknown;
+	result?: unknown;
+}
+
+export interface CallResult {
+	nsid: string;
+	ok: boolean;
+	output?: unknown;
+	error?: string;
+}
+
+function parseStep(output: unknown, allowed: string[] | undefined): ModuleStep {
 	if (isObject(output) && typeof output.error === "string") throw new Error(output.error);
 	if (!isObject(output) || !Array.isArray(output.calls)) throw new Error("Module output must contain calls");
-	if (output.calls.length > 10) throw new Error("Module requested too many calls");
-	return output.calls.map((call) => {
+	if (output.calls.length > MAX_CALLS_PER_ROUND) throw new Error("Module requested too many calls");
+	const next = output.next === undefined || output.next === null ? undefined : text(output.next);
+	if (output.next !== undefined && output.next !== null && (!next || !ENTRY.test(next))) throw new Error("Module next must be an export name");
+	const calls = output.calls.map((call) => {
 		if (!isObject(call) || typeof call.nsid !== "string" || !NSID.test(call.nsid)) throw new Error("Module call needs an NSID");
+		if (allowed && !allowed.includes(call.nsid)) throw new Error(`Module record does not allow ${call.nsid}`);
 		const params = isObject(call.params)
 			? Object.fromEntries(Object.entries(call.params).map(([key, value]) => [key, String(value)]))
 			: undefined;
 		return { nsid: call.nsid, params, input: call.input };
 	});
+	return { calls, next, state: output.state, result: output.result };
 }
+
+async function perform(agent: SessionAgent, call: XrpcCallPlan): Promise<CallResult> {
+	try {
+		return { nsid: call.nsid, ok: true, output: await agent.call(call.nsid, { params: call.params, input: call.input }) };
+	} catch (error) {
+		return { nsid: call.nsid, ok: false, error: error instanceof Error ? error.message : String(error) };
+	}
+}
+
+export type AgentFor = (session: IntegrationRef) => Promise<SessionAgent | undefined>;
 
 export async function runModule(
 	ctx: PluginContext,
-	userId: string,
+	agentFor: AgentFor,
 	ref: IntegrationRef,
 	entry: string,
 	input: Record<string, unknown>,
 ) {
 	if (!ctx.wasm) throw new Error("The wasm:execute capability is required");
+	const wasm = ctx.wasm;
 	const http = requireHttp(ctx);
 	const identity = await resolveIdentity(http, ref.did);
 	const query = new URLSearchParams({ repo: ref.did, collection: MODULE_COLLECTION, rkey: ref.rkey });
@@ -151,22 +186,29 @@ export async function runModule(
 	if (!recordResponse.ok) throw new Error("Module record not found");
 	const module = parseModuleRecord(((await recordResponse.json()) as { value: unknown }).value);
 	if (!module.actions.some((action) => action.entry === entry)) throw new Error(`Module has no action ${entry}`);
-	const agent = await sessionAgent(ctx, userId, module.session);
+	const agent = await agentFor(module.session);
 	if (!agent) throw new Error("Connect the integration this module uses first");
 	const sha256 = blobSha256(module.blobCid);
 	const blobQuery = new URLSearchParams({ did: ref.did, cid: module.blobCid });
 	const blobResponse = await http.fetch(`${identity.pds}/xrpc/com.atproto.sync.getBlob?${blobQuery}`);
 	if (!blobResponse.ok) throw new Error("Module blob not found");
 	const bytes = new Uint8Array(await blobResponse.arrayBuffer());
-	const output = await ctx.wasm.run({
-		module: bytes,
-		sha256,
-		entry,
-		input: { ...input, did: module.session.did, now: new Date().toISOString() },
-	});
-	const results = [];
-	for (const call of parsePlan(output)) {
-		results.push({ nsid: call.nsid, output: await agent.call(call.nsid, { params: call.params, input: call.input }) });
+	const base = { ...input, did: module.session.did };
+	const rounds: Array<{ entry: string; calls: CallResult[] }> = [];
+	let current = entry;
+	let carried: { state?: unknown; results?: CallResult[] } = {};
+	let total = 0;
+	for (;;) {
+		if (rounds.length >= MAX_ROUNDS) throw new Error(`Module exceeded ${MAX_ROUNDS} rounds`);
+		const output = await wasm.run({ module: bytes, sha256, entry: current, input: { ...base, ...carried, now: new Date().toISOString() } });
+		const step = parseStep(output, module.calls);
+		total += step.calls.length;
+		if (total > MAX_CALLS) throw new Error(`Module exceeded ${MAX_CALLS} calls`);
+		const results: CallResult[] = [];
+		for (const call of step.calls) results.push(await perform(agent, call));
+		rounds.push({ entry: current, calls: results });
+		if (!step.next) return { module: module.name, entry, rounds, result: step.result ?? null };
+		current = step.next;
+		carried = { state: step.state, results };
 	}
-	return { module: module.name, entry, results };
 }

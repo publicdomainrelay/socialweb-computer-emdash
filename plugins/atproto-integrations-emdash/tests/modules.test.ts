@@ -20,10 +20,15 @@ describe("wasm module records", () => {
 	it("parses the published Statusphere module", () => {
 		expect(parseModuleRecord(module)).toMatchObject({
 			name: "Statusphere",
-			blobCid: "bafkreictmtxavczjvlhbbe3okiw3ygtjuy2ajnj26izqpnstom4dxfb3ry",
+			blobCid: module.module.ref.$link,
 			session: { did: "did:plc:lpfuqerea3deuoyrn7ojser4", rkey: "statusphere" },
-			actions: [{ entry: "set_status", label: "Set status", fields: [{ key: "status", label: "Emoji" }] }],
+			actions: [
+				expect.objectContaining({ entry: "set_status", label: "Set status", fields: [{ key: "status", label: "Emoji" }] }),
+				expect.objectContaining({ entry: "clear_status", fields: [] }),
+			],
+			calls: ["com.atproto.repo.listRecords", "com.atproto.repo.createRecord", "com.atproto.repo.deleteRecord"],
 		});
+		expect(parseModuleRecord({ ...module, calls: ["not an nsid"] }).calls).toEqual([]);
 		expect(() => parseModuleRecord({ ...module, abi: "other" })).toThrow("Unsupported module ABI");
 	});
 });

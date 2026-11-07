@@ -58,3 +58,11 @@ export async function callPublicPlugin<T>(locals: App.Locals, url: URL, route: s
 	const target = new URL(`/_emdash/api/plugins/${PLUGIN}/${route}?${new URLSearchParams(query)}`, url);
 	return unwrap<T>(route, await handle(PLUGIN, "GET", `/${route}`, new Request(target)));
 }
+
+export async function postPublicPlugin<T>(locals: App.Locals, url: URL, route: string, input: unknown): Promise<T> {
+	const handle = locals.emdash?.handlePublicPluginApiRoute ?? locals.emdash?.handlePluginApiRoute;
+	if (!handle) throw new Error("EmDash is not initialized");
+	const target = new URL(`/_emdash/api/plugins/${PLUGIN}/${route}`, url);
+	const request = new Request(target, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+	return unwrap<T>(route, await handle(PLUGIN, "POST", `/${route}`, request));
+}

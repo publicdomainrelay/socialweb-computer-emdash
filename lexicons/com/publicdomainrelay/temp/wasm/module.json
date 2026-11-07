@@ -5,7 +5,7 @@
 		"main": {
 			"type": "record",
 			"key": "any",
-			"description": "A sandboxed WebAssembly module that turns user input into XRPC calls made with the session of an OAuth client metadata record.",
+			"description": "A sandboxed WebAssembly module that turns user input into XRPC calls made with the session of an OAuth client metadata record. A module may run over several rounds: each output can name a next entry and state, and the host passes the call results back in.",
 			"record": {
 				"type": "object",
 				"required": [
@@ -52,6 +52,15 @@
 						"items": {
 							"type": "ref",
 							"ref": "#action"
+						}
+					},
+					"calls": {
+						"type": "array",
+						"maxLength": 64,
+						"description": "NSIDs the module may ask the host to call. The host refuses any other call. When absent, the session's granted scopes are the only limit.",
+						"items": {
+							"type": "string",
+							"format": "nsid"
 						}
 					},
 					"createdAt": {

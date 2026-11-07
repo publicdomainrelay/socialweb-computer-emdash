@@ -6,12 +6,14 @@ export interface Identity {
 	pds: string;
 }
 
-interface DidDocument {
+export interface DidDocument {
+	id?: string;
 	alsoKnownAs?: string[];
+	verificationMethod?: Array<{ id: string; type: string; controller?: string; publicKeyMultibase?: string }>;
 	service?: Array<{ id: string; type: string; serviceEndpoint: string }>;
 }
 
-const isDid = (value: string) => /^did:(plc|web):[a-zA-Z0-9._:%-]+$/.test(value);
+export const isDid = (value: string) => /^did:(plc|web):[a-zA-Z0-9._:%-]+$/.test(value);
 
 async function handleFromWellKnown(http: Http, handle: string) {
 	const response = await http.fetch(`https://${handle}/.well-known/atproto-did`).catch(() => undefined);

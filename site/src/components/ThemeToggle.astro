@@ -12,10 +12,11 @@
 	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 	const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : prefersDark.matches);
 
-	for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
-		const sync = () => toggle.setAttribute("aria-checked", String(isDark()));
-		sync();
-		prefersDark.addEventListener("change", sync);
+	const toggles = document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]");
+	const sync = () => toggles.forEach((toggle) => toggle.setAttribute("aria-checked", String(isDark())));
+	sync();
+	prefersDark.addEventListener("change", sync);
+	for (const toggle of toggles) {
 		toggle.addEventListener("click", () => {
 			const theme = isDark() ? "light" : "dark";
 			root.dataset.theme = theme;

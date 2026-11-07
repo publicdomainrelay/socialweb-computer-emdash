@@ -2,6 +2,7 @@
 import AtmosphereSignOut from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignOut.astro";
 import { createPublicPageContext } from "emdash/page";
 import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import SourceLink from "../components/SourceLink.astro";
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { repository } from "../deploy";
 import { guides } from "../guides";
@@ -27,6 +28,7 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{fullTitle}</title>
 		<script is:inline>
+			document.documentElement.classList.add("js");
 			try {
 				const theme = localStorage.getItem("theme");
 				if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
@@ -39,7 +41,7 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 		<header class="site-header">
 			<div class="frame site-header__inner">
 				<a class="site-title" href="/">{siteTitle}</a>
-				<nav class="site-nav" aria-label="Primary">
+				<nav class="site-nav" id="site-nav" aria-label="Primary">
 					{
 						guides.map((guide) => (
 							<a href={guide.href} aria-current={current(guide.href)}>
@@ -48,14 +50,13 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 						))
 					}
 					<a href="/integrations" aria-current={current("/integrations")}>Integrations</a>
+					<div class="site-nav__extras">
+						<SourceLink label="Source code" />
+						<ThemeToggle />
+					</div>
 				</nav>
 				<div class="site-actions">
-					<a class="source-link" href={repository} aria-label="Source code on GitHub">
-						<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" fill="currentColor">
-							<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-						</svg>
-						<span>Source</span>
-					</a>
+					<SourceLink label="Source" />
 					<ThemeToggle />
 					{(user?.role ?? 0) >= 20 && <a class="site-actions__link" href="/_emdash/admin">Admin</a>}
 					{
@@ -68,6 +69,9 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 							<a class="btn" href="/integrations">Sign in</a>
 						)
 					}
+					<button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-menu-toggle>
+						<span class="menu-toggle__bars" aria-hidden="true"></span>
+					</button>
 				</div>
 			</div>
 		</header>
@@ -86,5 +90,24 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 			</div>
 		</footer>
 		<EmDashBodyEnd page={page} />
+		<script>
+			const header = document.querySelector<HTMLElement>(".site-header");
+			const toggle = document.querySelector<HTMLButtonElement>("[data-menu-toggle]");
+			const setOpen = (open: boolean) => {
+				header?.classList.toggle("is-open", open);
+				toggle?.setAttribute("aria-expanded", String(open));
+				toggle?.setAttribute("aria-label", open ? "Close menu" : "Menu");
+			};
+			toggle?.addEventListener("click", () => setOpen(toggle.getAttribute("aria-expanded") !== "true"));
+			document.addEventListener("keydown", (event) => {
+				if (event.key === "Escape" && header?.classList.contains("is-open")) {
+					setOpen(false);
+					toggle?.focus();
+				}
+			});
+			window.matchMedia("(min-width: 64.0625rem)").addEventListener("change", (event) => {
+				if (event.matches) setOpen(false);
+			});
+		</script>
 	</body>
 </html>

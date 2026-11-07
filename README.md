@@ -347,7 +347,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   └── src/
 │       ├── worker.ts                         ● Cloudflare entry, exports PluginBridge
 │       ├── layouts/Base.astro Guide.astro    ● shell titled with the site's host, guide pages with contents and pager
-│       ├── components/                       ● Diagram (Pele), Legend, Code with copy, ThemeToggle
+│       ├── components/                       ● Diagram (Pele), Legend, Code with copy, ThemeToggle, SourceLink
 │       ├── diagrams.ts                       ● every Mermaid diagram and its color classes
 │       ├── guides.ts deploy.ts               ● guide list, deploy button URL
 │       ├── styles/site.css                   ●

@@ -5,14 +5,14 @@ interface Props {
 	code: string;
 	label: string;
 	caption?: string;
-	wide?: boolean;
 }
 
-const { code, label, caption, wide = false } = Astro.props;
+const { code, label, caption } = Astro.props;
 const { svg } = render(code);
+const width = Number(/^<svg[^>]*\swidth="([\d.]+)"/.exec(svg)?.[1] ?? 0);
 ---
 
-<figure class:list={["diagram", { "diagram--wide": wide }]}>
-	<div class="diagram__canvas" role="img" aria-label={label} set:html={svg} />
+<figure class="diagram">
+	<div class="diagram__canvas" role="img" aria-label={label} style={width ? `--diagram-width: ${width}px` : undefined} set:html={svg} />
 	{caption && <figcaption>{caption}</figcaption>}
 </figure>

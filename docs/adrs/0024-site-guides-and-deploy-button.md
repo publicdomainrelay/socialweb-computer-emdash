@@ -30,11 +30,14 @@ Cloudflare's Deploy to Cloudflare button copies a public repo into the user's Gi
   - `blockExoticSubdeps` is off, because pnpm treats these URL overrides as exotic subdependencies.
   - The lockfile still pins every tarball's integrity hash.
   - We chose a release over committing the tarballs, so binaries stay out of the tree.
+- **Title and theme.** The site's title is its own host, so each deploy names itself. A switch in the header picks the light or dark theme, and the choice is stored in `localStorage`.
 - **Encryption key.** `EMDASH_ENCRYPTION_KEY` is listed in `.dev.vars.example`, with a generator command in the binding descriptions in `package.json`.
 
 ## Consequences
 
-- A fresh clone installs without the submodule and deploys with one command. This was verified by cloning into an empty directory, deploying to a throwaway Worker, and running `scripts/e2e.ts` against it.
+- A fresh clone installs without the submodule and deploys with one command. This was verified twice, each time on a throwaway Worker that was then deleted with its resources:
+  - a clone deployed and run through `scripts/e2e.ts`;
+  - a clean `node:24` container that cloned from GitHub, used corepack pnpm 11.9.0, and ran `pnpm install --frozen-lockfile`, `pnpm run build` and `pnpm run deploy`.
 - `EMDASH_ENCRYPTION_KEY` is required in practice. Without it, connecting an integration fails with `Plugin secret settings require EMDASH_ENCRYPTION_KEY`.
 - A brand-new deploy can answer 404 for the first few seconds while D1 migrates.
 - Running plain `pnpm run deploy` on this account would rebind the `socialweb-computer-emdash` Worker to new, empty resources.

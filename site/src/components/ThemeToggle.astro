@@ -1,0 +1,28 @@
+<button class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle>
+	<span class="theme-toggle__track" aria-hidden="true">
+		<span class="theme-toggle__thumb">
+			<span class="theme-toggle__sun">☀</span>
+			<span class="theme-toggle__moon">☾</span>
+		</span>
+	</span>
+</button>
+
+<script>
+	const root = document.documentElement;
+	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+	const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : prefersDark.matches);
+
+	for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
+		const sync = () => toggle.setAttribute("aria-checked", String(isDark()));
+		sync();
+		prefersDark.addEventListener("change", sync);
+		toggle.addEventListener("click", () => {
+			const theme = isDark() ? "light" : "dark";
+			root.dataset.theme = theme;
+			try {
+				localStorage.setItem("theme", theme);
+			} catch {}
+			sync();
+		});
+	}
+</script>

@@ -74,7 +74,7 @@ const integrationRecord = `{
 		<p>
 			You sign in once with the <code>atproto</code> scope. Connecting an integration is a second OAuth flow, made by the plugin, for exactly the scope groups you ticked. The plugin asks only for your own DID, so another account cannot use your record's client to authorize itself.
 		</p>
-		<Diagram wide code={connect} label="Sequence: sign in, list integration records, then a PAR with PKCE and DPoP, approve, token exchange, and sealed storage." />
+		<Diagram code={connect} label="Sequence: sign in, list integration records, then a PAR with PKCE and DPoP, approve, token exchange, and sealed storage." />
 		<p>Ticking more groups later asks for the extra scopes in a new flow. Disconnecting revokes the session and deletes it.</p>
 	</section>
 
@@ -104,7 +104,7 @@ const integrationRecord = `{
 		<p>
 			The site is <code>did:web:&lt;host&gt;</code>, with a service named <code>#emdash_integrations</code>. Any app that can talk to your PDS can run your modules. The site verifies the JWT with <code>@atcute/crypto</code> and checks <code>aud</code>, <code>lxm</code> and <code>exp</code>. Each <code>jti</code> works only once.
 		</p>
-		<Diagram wide code={serviceAuth} label="Sequence: path A, your PDS proxies the call with a fresh JWT; path B, you fetch a JWT with getServiceAuth and call the site. The plugin verifies and burns the jti." />
+		<Diagram code={serviceAuth} label="Sequence: path A, your PDS proxies the call with a fresh JWT; path B, you fetch a JWT with getServiceAuth and call the site. The plugin verifies and burns the jti." />
 		<p><a href="/use#cli">Try both paths from your terminal.</a></p>
 	</section>
 
@@ -113,7 +113,7 @@ const integrationRecord = `{
 		<p>
 			atproto refresh tokens are single use. If two runs refreshed at once, one would lose the session. A lease in plugin storage makes the second run wait, then read the fresh tokens.
 		</p>
-		<Diagram wide code={refresh} label="Sequence: run A takes the lock and refreshes once; run B waits, then reads the fresh tokens without refreshing." />
+		<Diagram code={refresh} label="Sequence: run A takes the lock and refreshes once; run B waits, then reads the fresh tokens without refreshing." />
 	</section>
 
 	<section id="limits">

@@ -200,7 +200,7 @@ goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/not
 	<section id="rounds">
 		<h2>Rounds in practice</h2>
 		<p>Statusphere reads before it writes, so setting the same emoji twice makes no new record.</p>
-		<Diagram wide code={statusphere} label="Sequence: set_status lists your latest status, set_status_write compares and creates a record only for a new emoji, set_status_done returns its URI." />
+		<Diagram code={statusphere} label="Sequence: set_status lists your latest status, set_status_write compares and creates a record only for a new emoji, set_status_done returns its URI." />
 		<p>
 			Source: <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/statusphere">wasm/statusphere</a> and <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/vibescrobble">wasm/vibescrobble</a>.
 		</p>

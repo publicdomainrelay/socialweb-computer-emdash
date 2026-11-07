@@ -2,12 +2,11 @@
 	"$schema": "https://emdashcms.com/seed.schema.json",
 	"version": "1",
 	"meta": {
-		"name": "socialweb.computer",
+		"name": "socialweb-computer-emdash",
 		"description": "Atmosphere sign-in and record-defined integrations",
 		"author": "publicdomainrelay"
 	},
 	"settings": {
-		"title": "socialweb.computer",
 		"tagline": "Atmosphere integrations for EmDash"
 	},
 	"menus": [

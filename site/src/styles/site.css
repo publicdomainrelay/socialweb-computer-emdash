@@ -35,6 +35,14 @@
 	--tone-deny: #ef4444;
 }
 
+:root[data-theme="light"] {
+	color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+	color-scheme: dark;
+}
+
 *,
 *::before,
 *::after {
@@ -206,13 +214,14 @@ pre {
 
 .diagram__canvas {
 	display: flex;
-	justify-content: center;
+	justify-content: safe center;
 	padding: 1.25rem;
 	overflow-x: auto;
 }
 
-.diagram--wide .diagram__canvas svg {
-	min-width: 38rem;
+.diagram__canvas svg {
+	flex: none;
+	min-width: min(var(--diagram-width, 0px), 40rem);
 }
 
 .diagram figcaption {
@@ -547,4 +556,78 @@ a.tile:hover {
 	flex-wrap: wrap;
 	gap: 0.75rem;
 	margin-top: 1.75rem;
+}
+
+.theme-toggle {
+	display: inline-flex;
+	padding: 0;
+	border: 0;
+	border-radius: var(--radius-full);
+	background: none;
+	cursor: pointer;
+}
+
+.theme-toggle:focus-visible {
+	outline: 3px solid var(--color-brand-ring);
+	outline-offset: 2px;
+}
+
+.theme-toggle__track {
+	position: relative;
+	display: inline-block;
+	width: 3.25rem;
+	height: 1.75rem;
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-full);
+	background: light-dark(#e0e7ff, #312e81);
+	transition: background 160ms ease;
+}
+
+.theme-toggle__thumb {
+	position: absolute;
+	top: 0.15rem;
+	left: 0.15rem;
+	display: grid;
+	place-items: center;
+	width: 1.35rem;
+	height: 1.35rem;
+	border-radius: var(--radius-full);
+	background: light-dark(#ffffff, #e0e7ff);
+	box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+	font-size: 0.8rem;
+	line-height: 1;
+	transition: transform 160ms ease;
+}
+
+.theme-toggle__sun {
+	color: #d97706;
+}
+
+.theme-toggle__moon {
+	display: none;
+	color: #4338ca;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle__thumb {
+	transform: translateX(1.5rem);
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle__sun {
+	display: none;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle__moon {
+	display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.theme-toggle__track,
+	.theme-toggle__thumb {
+		transition: none;
+	}
+}
+
+.prose .legend {
+	margin-block: 0.75rem;
+	padding-left: 0;
 }

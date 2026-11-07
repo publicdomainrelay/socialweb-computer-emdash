@@ -1,23 +1,20 @@
 ---
 import AtmosphereSignOut from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignOut.astro";
-import { getSiteSettingsWithCacheHint } from "emdash";
 import { createPublicPageContext } from "emdash/page";
 import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import ThemeToggle from "../components/ThemeToggle.astro";
 import { guides } from "../guides";
 import "../styles/site.css";
 
 interface Props {
-	title: string;
+	title?: string;
 	description?: string;
 }
 
 const { title, description } = Astro.props;
-const { data: settings, cacheHint } = await getSiteSettingsWithCacheHint();
-if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
-
-const siteTitle = settings?.title ?? "socialweb.computer";
-const fullTitle = title === siteTitle ? title : `${title} · ${siteTitle}`;
-const page = createPublicPageContext({ Astro, kind: "custom", pageType: "website", title: fullTitle, pageTitle: title, description, siteName: siteTitle });
+const siteTitle = new URL(process.env.EMDASH_SITE_URL || Astro.url.origin).host;
+const fullTitle = title ? `${title} · ${siteTitle}` : siteTitle;
+const page = createPublicPageContext({ Astro, kind: "custom", pageType: "website", title: fullTitle, pageTitle: title ?? siteTitle, description, siteName: siteTitle });
 const user = Astro.locals.user;
 const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" : undefined);
 ---
@@ -28,6 +25,12 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{fullTitle}</title>
+		<script is:inline>
+			try {
+				const theme = localStorage.getItem("theme");
+				if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+			} catch {}
+		</script>
 		<EmDashHead page={page} />
 	</head>
 	<body>
@@ -44,6 +47,7 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 						))
 					}
 					<a href="/integrations" aria-current={current("/integrations")}>Integrations</a>
+					<ThemeToggle />
 					{(user?.role ?? 0) >= 20 && <a href="/_emdash/admin">Admin</a>}
 					{
 						user ? (

@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@emdash-cms/auth-atproto@0.2.50': 3680d12131a05c987da9bbfab0a4593356c88c1a2c68639ce11851a141f170b6
-
 importers:
 
   .:
@@ -87,9 +84,6 @@ importers:
       '@astrojs/react':
         specifier: ^7.0.0
         version: 7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1)
-      '@emdash-cms/auth-atproto':
-        specifier: ^0.2.50
-        version: 0.2.50(patch_hash=3680d12131a05c987da9bbfab0a4593356c88c1a2c68639ce11851a141f170b6)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@5.9.3)
       '@emdash-cms/sandbox-workerd':
         specifier: ^0.9.6
         version: 0.9.6(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(kysely@0.29.8)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(workerd@1.20261104.1)
@@ -99,6 +93,9 @@ importers:
       atproto-integrations-emdash:
         specifier: workspace:*
         version: link:../plugins/atproto-integrations-emdash
+      auth-atproto-subscriber:
+        specifier: workspace:*
+        version: link:../packages/auth-atproto-subscriber
       emdash:
         specifier: ^1.3.0
         version: 1.4.0(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
@@ -5147,6 +5144,7 @@ snapshots:
       valibot: 1.5.0(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
+    optional: true
 
   '@atcute/oauth-crypto@1.0.1(typescript@6.0.3)':
     dependencies:
@@ -5171,6 +5169,7 @@ snapshots:
       '@atcute/oauth-crypto': 1.0.1(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
+    optional: true
 
   '@atcute/oauth-keyset@0.1.3(typescript@6.0.3)':
     dependencies:
@@ -5188,7 +5187,7 @@ snapshots:
     dependencies:
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@atcute/identity': 2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3)
-      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
+      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@atcute/lexicons': 2.1.1
       '@atcute/oauth-crypto': 1.0.1(typescript@5.9.3)
       '@atcute/oauth-keyset': 0.1.3(typescript@5.9.3)
@@ -5198,6 +5197,7 @@ snapshots:
       valibot: 1.5.0(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
+    optional: true
 
   '@atcute/oauth-node-client@2.0.1(@atcute/identity-resolver@2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)':
     dependencies:
@@ -5237,6 +5237,7 @@ snapshots:
       valibot: 1.5.0(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
+    optional: true
 
   '@atcute/oauth-types@1.0.1(typescript@6.0.3)':
     dependencies:
@@ -5851,7 +5852,7 @@ snapshots:
       - typescript
       - zod
 
-  '@emdash-cms/auth-atproto@0.2.50(patch_hash=3680d12131a05c987da9bbfab0a4593356c88c1a2c68639ce11851a141f170b6)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@5.9.3)':
+  '@emdash-cms/auth-atproto@0.2.50(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@5.9.3)':
     dependencies:
       '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@atcute/oauth-node-client': 2.0.1(@atcute/identity-resolver@2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
@@ -5865,8 +5866,9 @@ snapshots:
       - '@atcute/identity'
       - '@atcute/lexicons'
       - typescript
+    optional: true
 
-  '@emdash-cms/auth-atproto@0.2.50(patch_hash=3680d12131a05c987da9bbfab0a4593356c88c1a2c68639ce11851a141f170b6)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@7.0.2)':
+  '@emdash-cms/auth-atproto@0.2.50(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@7.0.2)':
     dependencies:
       '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(typescript@7.0.2)
       '@atcute/oauth-node-client': 2.0.1(@atcute/identity-resolver@2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(typescript@7.0.2)
@@ -8120,7 +8122,7 @@ snapshots:
       upng-js: 2.1.0
       zod: 4.5.4
     optionalDependencies:
-      '@emdash-cms/auth-atproto': 0.2.50(patch_hash=3680d12131a05c987da9bbfab0a4593356c88c1a2c68639ce11851a141f170b6)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@5.9.3)
+      '@emdash-cms/auth-atproto': 0.2.50(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@5.9.3)
       '@libsql/kysely-libsql': 0.4.1(kysely@0.29.8)
       pg: 8.23.1
     transitivePeerDependencies:
@@ -8212,7 +8214,7 @@ snapshots:
       upng-js: 2.1.0
       zod: 4.5.4
     optionalDependencies:
-      '@emdash-cms/auth-atproto': 0.2.50(patch_hash=3680d12131a05c987da9bbfab0a4593356c88c1a2c68639ce11851a141f170b6)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@7.0.2)
+      '@emdash-cms/auth-atproto': 0.2.50(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@7.0.2))(@atcute/lexicons@2.1.1)(@lingui/react@5.9.5(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@7.0.2)
       '@libsql/kysely-libsql': 0.4.1(kysely@0.29.8)
       pg: 8.23.1
     transitivePeerDependencies:

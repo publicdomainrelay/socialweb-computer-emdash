@@ -162,7 +162,7 @@ const connectedPage = await (await siteFetch("/integrations")).text();
 log("page pills", { pills: [...connectedPage.matchAll(/class="pill[^"]*"[^>]*>\s*([^<]+?)\s*</g)].map((match) => match[1]) });
 
 const header = (html: string) => ({
-	signOut: /<button[^>]*data-sign-out/.test(html),
+	signOut: /<button[^>]*data-atmosphere-signout/.test(html),
 	signIn: html.includes("Sign in with Atmosphere"),
 	integrations: html.includes("data-did="),
 });

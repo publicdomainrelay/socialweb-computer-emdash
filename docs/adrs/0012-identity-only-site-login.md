@@ -1,6 +1,6 @@
 # 0012. Identity-only Atmosphere login for site users
 
-Status: accepted
+Status: superseded by 0014
 
 ## Context
 

@@ -9,6 +9,7 @@ import {
 import { createPublicPageContext } from "emdash/page";
 import LiveSearch from "emdash/ui/search";
 import { Font } from "astro:assets";
+import AtmosphereSignOut from "auth-atproto-subscriber/AtmosphereSignOut.astro";
 import { getSiteLocale } from "../utils/locale";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import "../styles/tokens.css";
@@ -235,9 +236,7 @@ const year = new Date().getFullYear();
 								<a href="/integrations" class="nav-user" title={user.email}>
 									{user.name ?? "Account"}
 								</a>
-								<button type="button" class="btn btn--ghost btn--sm nav-admin" data-sign-out>
-									Sign out
-								</button>
+								<AtmosphereSignOut returnTo="/integrations" class="btn btn--ghost btn--sm nav-admin" />
 							</>
 						) : (
 							<a href="/integrations" class="btn btn--ghost btn--sm nav-admin">
@@ -248,16 +247,6 @@ const year = new Date().getFullYear();
 				</div>
 			</div>
 		</header>
-		<script is:inline>
-			document.querySelector("[data-sign-out]")?.addEventListener("click", function () {
-				fetch("/_emdash/api/auth/logout", {
-					method: "POST",
-					headers: { "X-EmDash-Request": "1" },
-				}).finally(function () {
-					window.location.assign("/integrations");
-				});
-			});
-		</script>
 		<script is:inline>
 			(function () {
 				var header = document.querySelector(".site-header");

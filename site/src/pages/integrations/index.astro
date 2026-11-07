@@ -1,4 +1,5 @@
 ---
+import AtmosphereSignIn from "auth-atproto-subscriber/AtmosphereSignIn.astro";
 import Base from "../../layouts/Base.astro";
 import { atprotoDid, callPlugin, type Integration } from "../../utils/integrations";
 
@@ -49,12 +50,7 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 								? "You are signed in without an Atmosphere account. Sign in with your handle to load integrations from your PDS."
 								: "Sign in with your handle. This site only asks for the atproto scope to know who you are."}
 						</p>
-						<form class="signin__form" data-signin>
-							<label class="sr-only" for="handle">Handle</label>
-							<input id="handle" name="handle" class="field" placeholder="alice.bsky.social" autocomplete="username" required />
-							<button class="btn" type="submit">Sign in</button>
-						</form>
-						<p class="signin__error" data-error hidden></p>
+						<AtmosphereSignIn returnTo="/integrations" class="signin__form" inputClass="field" buttonClass="btn" placeholder="alice.bsky.social" />
 					</div>
 				)
 			}
@@ -141,25 +137,6 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 			return payload.data;
 		});
 
-	const signin = document.querySelector<HTMLFormElement>("[data-signin]");
-	signin?.addEventListener("submit", async (event) => {
-		event.preventDefault();
-		const error = document.querySelector<HTMLElement>("[data-error]");
-		const handle = new FormData(signin).get("handle");
-		const response = await fetch("/_emdash/api/auth/atproto/login?returnTo=/integrations", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ handle }),
-		});
-		const payload = await response.json();
-		if (payload.data?.url) {
-			window.location.href = payload.data.url;
-		} else if (error) {
-			error.textContent = payload.error?.message ?? "Sign in failed";
-			error.hidden = false;
-		}
-	});
-
 	for (const card of document.querySelectorAll<HTMLElement>(".integration")) {
 		const ref = { did: card.dataset.did, rkey: card.dataset.rkey };
 		const result = card.querySelector<HTMLElement>("[data-result]");
@@ -238,12 +215,10 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 	.signin {
 		max-width: 32rem;
 	}
-	.signin__form {
-		display: flex;
-		gap: 0.5rem;
+	.signin :global(.signin__form) {
 		margin-top: 1.25rem;
 	}
-	.field {
+	.signin :global(.field) {
 		flex: 1;
 		min-width: 0;
 		font: inherit;
@@ -252,10 +227,6 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		border: 1px solid var(--color-border-strong);
 		background: var(--color-bg);
 		color: var(--color-text);
-	}
-	.signin__error {
-		margin-top: 0.75rem;
-		color: light-dark(#b91c1c, #fca5a5);
 	}
 	.empty pre {
 		margin-top: 1rem;
@@ -374,8 +345,7 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		font-size: var(--font-size-sm);
 	}
 	@media (max-width: 640px) {
-		.integration__head,
-		.signin__form {
+		.integration__head {
 			flex-direction: column;
 		}
 	}

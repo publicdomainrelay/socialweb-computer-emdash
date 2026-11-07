@@ -1,10 +1,10 @@
 import node from "@astrojs/node";
 import react from "@astrojs/react";
-import { atproto } from "@emdash-cms/auth-atproto";
 import { defineConfig, fontProviders } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
 import atprotoIntegrations from "atproto-integrations-emdash";
+import { atprotoSubscriber } from "auth-atproto-subscriber";
 
 export default defineConfig({
 	output: "server",
@@ -27,7 +27,7 @@ export default defineConfig({
 				directory: "./uploads",
 				baseUrl: "/_emdash/api/media/file",
 			}),
-			authProviders: [atproto({ allowedHandles: ["*"] })],
+			authProviders: [atprotoSubscriber({ allowAnyAccount: true })],
 			sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox",
 			sandboxed: [atprotoIntegrations],
 		}),

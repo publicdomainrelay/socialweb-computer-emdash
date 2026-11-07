@@ -14,6 +14,26 @@ pnpm dev
 xdg-open http://127.0.0.1:4321/integrations
 ```
 
+## Atmosphere login on any EmDash site
+
+```bash
+pnpm add auth-atproto-subscriber
+```
+
+```js
+import { atprotoSubscriber } from "auth-atproto-subscriber";
+
+emdash({ authProviders: [atprotoSubscriber({ allowAnyAccount: true })] });
+```
+
+```astro
+---
+import AtmosphereSignIn from "auth-atproto-subscriber/AtmosphereSignIn.astro";
+import AtmosphereSignOut from "auth-atproto-subscriber/AtmosphereSignOut.astro";
+---
+{Astro.locals.user ? <AtmosphereSignOut returnTo="/" /> : <AtmosphereSignIn returnTo="/integrations" />}
+```
+
 ## Publish integration records
 
 ```bash
@@ -87,7 +107,7 @@ site/                                  EmDash blog theme, Atmosphere login, /int
 plugins/atproto-integrations-emdash/   sandboxed OAuth client per record, encrypted per-user sessions
 lexicons/                              com.publicdomainrelay.temp.oauth.clientMetadata
 records/                               socialweb-computer and statusphere examples
-patches/                               auth-atproto: atproto scope, open signup, returnTo, public origin
+packages/auth-atproto-subscriber/      Atmosphere login: atproto scope only, open signup, sign-in and sign-out components
 scripts/                               publish records, fedproxy tunnel, live e2e
 docs/adrs/                             decisions
 ```

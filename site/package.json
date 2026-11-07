@@ -17,10 +17,10 @@
 	"dependencies": {
 		"@astrojs/node": "^11.1.5",
 		"@astrojs/react": "^7.0.0",
-		"@emdash-cms/auth-atproto": "^0.2.50",
 		"@emdash-cms/sandbox-workerd": "^0.9.6",
 		"astro": "^7.3.2",
 		"atproto-integrations-emdash": "workspace:*",
+		"auth-atproto-subscriber": "workspace:*",
 		"emdash": "^1.3.0",
 		"react": "19.2.4",
 		"react-dom": "19.2.4",

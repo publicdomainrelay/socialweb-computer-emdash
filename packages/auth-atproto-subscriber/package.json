@@ -45,7 +45,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/johnandersen777/auth-atproto-subscriber"
+		"url": "https://github.com/publicdomainrelay/auth-atproto-subscriber"
 	},
 	"keywords": [
 		"emdash",

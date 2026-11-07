@@ -1,0 +1,324 @@
+---
+import StudioSession from "../../components/StudioSession.astro";
+import Base from "../../layouts/Base.astro";
+import { rkeyOf } from "../../utils/atproto";
+import { missingScopes, studioContext } from "../../utils/studio";
+
+export const prerender = false;
+
+const { did, status, integrations, error } = await studioContext(Astro.locals, Astro.url);
+const ready = Boolean(status?.connected && missingScopes(status).length === 0);
+const records = JSON.stringify(integrations.map((record) => ({ rkey: rkeyOf(record.uri), value: record.value }))).replace(/</g, "\\u003c");
+const notReady = !did ? "Sign in to publish." : ready ? "" : "Connect the studio above to publish.";
+---
+
+<Base title="Integration builder" description="Define an OAuth client and its permission groups, then publish it as a record in your own PDS.">
+	<header class="band guide-intro">
+		<div class="frame">
+			<p class="eyebrow">Studio</p>
+			<h1 class="intro__title">Integration builder</h1>
+			<p class="lede">
+				An integration is a <code>com.fedfork.exec.oauth.clientMetadata</code> record: an OAuth client with permission groups people can grant one at a time. Build one here and publish it to your PDS.
+			</p>
+		</div>
+	</header>
+
+	<div class="frame builder" data-builder data-ready={String(ready)}>
+		<StudioSession did={did} status={status} returnTo="/studio/integration" />
+		{error && <p class="notice notice--error" role="alert">{error}</p>}
+		<script type="application/json" data-records set:html={records} />
+
+		<section class="card builder__section">
+			<h2>Record</h2>
+			<div class="form">
+				<div class="form-row">
+					<label for="builder-start">Start from</label>
+					<select class="field" id="builder-start" data-start></select>
+					<p class="form-hint">Pick one of your integration records to edit it, or start a new one.</p>
+				</div>
+				<div class="form-grid">
+					<div class="form-row">
+						<label for="builder-rkey">Record key</label>
+						<input class="field" id="builder-rkey" name="rkey" placeholder="my-app" autocomplete="off" />
+						<p class="form-hint">The last part of the record's URI. Publishing again with the same key replaces it.</p>
+					</div>
+					<div class="form-row">
+						<label for="builder-name">Name</label>
+						<input class="field" id="builder-name" name="name" placeholder="My app" />
+					</div>
+				</div>
+				<div class="form-row">
+					<label for="builder-description">Description</label>
+					<textarea class="field builder__prose" id="builder-description" name="description" rows="2" placeholder="What the integration does with the permissions it asks for."></textarea>
+				</div>
+				<div class="form-grid">
+					<div class="form-row">
+						<label for="builder-client-name">Client name</label>
+						<input class="field" id="builder-client-name" name="clientName" placeholder="Shown on the authorization screen" />
+					</div>
+					<div class="form-row">
+						<label for="builder-client-uri">Client URI</label>
+						<input class="field" id="builder-client-uri" name="clientUri" type="url" placeholder="https://example.com" />
+					</div>
+					<div class="form-row">
+						<label for="builder-logo-uri">Logo URI</label>
+						<input class="field" id="builder-logo-uri" name="logoUri" type="url" placeholder="https://example.com/logo.png" />
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="card builder__section">
+			<h2>Permission groups</h2>
+			<p class="form-hint">People tick groups when they connect. Each group grants its scopes together.</p>
+			<div class="builder__groups" data-groups></div>
+			<div class="toolbar">
+				<button class="btn btn--ghost" type="button" data-add-group>Add group</button>
+			</div>
+		</section>
+
+		<section class="card builder__section">
+			<h2>Scope helper</h2>
+			<p class="form-hint">Compose an atproto permission and add it to a group.</p>
+			<div class="form">
+				<div class="form-grid">
+					<div class="form-row">
+						<label for="helper-kind">Kind</label>
+						<select class="field" id="helper-kind" data-helper-kind>
+							<option value="repo">repo: write records</option>
+							<option value="rpc">rpc: call a method</option>
+							<option value="blob">blob: upload files</option>
+							<option value="account">account</option>
+							<option value="identity">identity</option>
+							<option value="include">include: permission set</option>
+						</select>
+					</div>
+					<div class="form-row">
+						<label for="helper-target">Target</label>
+						<input class="field" id="helper-target" data-helper-target autocomplete="off" />
+					</div>
+					<div class="form-row" data-helper-aud-row hidden>
+						<label for="helper-aud">Audience</label>
+						<input class="field" id="helper-aud" data-helper-aud placeholder="*" autocomplete="off" />
+					</div>
+				</div>
+				<fieldset class="builder__actions" data-helper-actions>
+					<legend class="form-label">Actions (none means all)</legend>
+					<label><input type="checkbox" name="helper-action" value="create" /> create</label>
+					<label><input type="checkbox" name="helper-action" value="update" /> update</label>
+					<label><input type="checkbox" name="helper-action" value="delete" /> delete</label>
+				</fieldset>
+				<p class="builder__helper-preview"><code data-helper-preview></code></p>
+				<div class="builder__add">
+					<select class="field" id="helper-group" aria-label="Group to add the scope to" data-helper-group></select>
+					<button class="btn" type="button" data-helper-add>Add to group</button>
+				</div>
+			</div>
+		</section>
+
+		<section class="card builder__section">
+			<h2>Extra scopes</h2>
+			<div class="form-row">
+				<label for="builder-extra">Always requested, one per line</label>
+				<textarea class="field" id="builder-extra" name="extra" rows="3" placeholder="rpc:com.example.ping?aud=*"></textarea>
+				<p class="form-hint"><code>atproto</code> is always included.</p>
+			</div>
+		</section>
+
+		<section class="card builder__section">
+			<h2>Preview</h2>
+			<div class="form-row">
+				<span class="form-label">Declared scope</span>
+				<pre class="output builder__scope" data-scope></pre>
+			</div>
+			<div class="form-row">
+				<span class="form-label">Record</span>
+				<pre class="output builder__json" data-json></pre>
+				<p class="form-hint">This site serves its own <code>client_id</code> and redirect URI for every integration, so the ones in the record are placeholders built from the client URI.</p>
+			</div>
+			<ul class="notice notice--error builder__problems" data-problems hidden></ul>
+			<div class="toolbar">
+				<button class="btn btn--ghost" type="button" data-copy>Copy JSON</button>
+				<button class="btn" type="button" data-publish disabled>Publish to your PDS</button>
+				{notReady && <span class="form-hint">{notReady}</span>}
+			</div>
+			<div class="notice" data-result role="status" hidden></div>
+		</section>
+	</div>
+</Base>
+
+<script>
+	import { mountIntegrationBuilder } from "../../studio/integration-builder";
+
+	const root = document.querySelector<HTMLElement>("[data-builder]");
+	if (root) mountIntegrationBuilder(root);
+</script>
+
+<style>
+	.builder {
+		display: grid;
+		gap: 1.5rem;
+		padding-bottom: 3rem;
+	}
+
+	.builder :global(.studio-session) {
+		margin-bottom: 0;
+	}
+
+	.builder__section {
+		display: grid;
+		gap: 1rem;
+		min-width: 0;
+	}
+
+	.builder__section h2 {
+		margin-bottom: 0;
+	}
+
+	.builder__groups {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.builder :global(.builder__group) {
+		display: grid;
+		gap: 0.75rem;
+		min-width: 0;
+		padding: 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg);
+	}
+
+	.builder :global(.builder__group legend) {
+		padding-inline: 0.375rem;
+		color: var(--color-muted);
+		font-size: var(--font-size-label);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.builder :global(.builder__chips) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		list-style: none;
+	}
+
+	.builder :global(.builder__chip) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		max-width: 100%;
+		padding: 0.2rem 0.25rem 0.2rem 0.6rem;
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-full);
+		background: var(--color-surface);
+		font-size: var(--font-size-xs);
+	}
+
+	.builder :global(.builder__chip code) {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.builder :global(.builder__chip-remove) {
+		display: grid;
+		flex-shrink: 0;
+		place-items: center;
+		width: 1.4rem;
+		height: 1.4rem;
+		border: 0;
+		border-radius: var(--radius-full);
+		background: var(--color-fill);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		font-size: 0.9rem;
+	}
+
+	.builder :global(.builder__chip-remove:hover) {
+		color: var(--tone-deny);
+	}
+
+	.builder :global(.builder__add) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.builder :global(.builder__add .field) {
+		flex: 1 1 12rem;
+		width: auto;
+	}
+
+	.builder__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.25rem;
+		border: 0;
+		font-size: var(--font-size-sm);
+	}
+
+	.builder__actions[hidden] {
+		display: none;
+	}
+
+	.builder__actions legend {
+		margin-bottom: 0.375rem;
+	}
+
+	.builder__actions label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.builder__helper-preview code {
+		display: inline-block;
+		max-width: 100%;
+		padding: 0.2em 0.5em;
+		border-radius: 0.3em;
+		background: var(--color-fill);
+		font-size: var(--font-size-sm);
+		overflow-wrap: anywhere;
+	}
+
+	.builder__helper-preview :global(.builder__helper-error) {
+		color: var(--tone-deny);
+	}
+
+	.builder__prose {
+		font-family: var(--font-body);
+	}
+
+	.builder__scope {
+		max-height: 8rem;
+	}
+
+	.builder__json {
+		max-height: 28rem;
+		white-space: pre;
+		overflow-wrap: normal;
+	}
+
+	.builder__problems {
+		display: grid;
+		gap: 0.25rem;
+		margin-bottom: 0;
+		padding-left: 2rem;
+		font-size: var(--font-size-sm);
+	}
+
+	.builder__problems[hidden] {
+		display: none;
+	}
+
+	.builder [data-result][hidden] {
+		display: none;
+	}
+
+	.lede code {
+		overflow-wrap: anywhere;
+	}
+</style>

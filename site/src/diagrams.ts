@@ -260,3 +260,33 @@ export const deploySteps = flowchart(
   LOCAL --> REC
   REC --> USE["Sign in and connect"]:::you`,
 );
+
+export const sourceRecords = flowchart(
+	"TD",
+	`
+  MOD["wasm.module<br/>name, actions, calls"]:::pds
+  BLOB[("WebAssembly blob<br/>application/wasm")]:::store
+  MAN["source.manifest<br/>immutable snapshot<br/>build: tool, version, command<br/>output: sha256, size"]:::pds
+  F1["source.file<br/>rkey = sha256 of contents"]:::store
+  F2["source.file<br/>rkey = sha256 of contents"]:::store
+  F3["source.file<br/>shared by many manifests"]:::store
+  CM["oauth.clientMetadata"]:::pds
+  MOD -- "module: blob CID" --> BLOB
+  MOD -- "source: uri + cid" --> MAN
+  MOD -- "session: uri + cid" --> CM
+  MAN -- "path + uri + cid" --> F1
+  MAN -- "path + uri + cid" --> F2
+  MAN -- "path + uri + cid" --> F3`,
+);
+
+export const verifySource = flowchart(
+	"TD",
+	`
+  A["wasm.module record"]:::pds --> B["source.manifest<br/>CID must match module.source"]:::pds
+  B --> C["Each source.file<br/>CID must match the manifest,<br/>sha256 must match the text"]:::store
+  C --> D["Write files to an empty directory"]:::you
+  D --> E["Run build.command in a container<br/>rust:1.97.0 or node:24"]:::wasm
+  E --> F{"Built sha256 equals<br/>manifest output and<br/>published blob?"}:::sandbox
+  F -- yes --> G["Reproducible"]:::site
+  F -- no --> H["Not reproducible"]:::deny`,
+);

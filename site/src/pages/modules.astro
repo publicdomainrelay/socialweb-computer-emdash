@@ -1,7 +1,7 @@
 ---
 import Code from "../components/Code.astro";
 import Diagram from "../components/Diagram.astro";
-import { abi, statusphere } from "../diagrams";
+import { abi, sourceRecords, statusphere, verifySource } from "../diagrams";
 import Guide from "../layouts/Guide.astro";
 
 const toc = [
@@ -12,8 +12,15 @@ const toc = [
 	{ id: "test", label: "Test it" },
 	{ id: "publish", label: "Publish it" },
 	{ id: "rounds", label: "Rounds in practice" },
+	{ id: "built", label: "How our modules are built" },
+	{ id: "source", label: "Source records" },
+	{ id: "verify", label: "Verify a build" },
+	{ id: "browser", label: "In the browser" },
 	{ id: "rules", label: "Rules" },
 ];
+
+const ALICE = "did:plc:lpfuqerea3deuoyrn7ojser4";
+const sourceLink = (module: string) => `/source?uri=${encodeURIComponent(`at://${ALICE}/com.fedfork.exec.wasm.module/${module}`)}`;
 
 const stepInput = `{
   "did": "did:plc:…",
@@ -119,6 +126,92 @@ node --test wasm/*/test.mjs`;
 const publish = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
 ./scripts/publish-wasm.sh note
 goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/note"`;
+
+const buildScript = `#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+CARGO_HOME="\${CARGO_HOME:-$HOME/.cargo}"
+cd "$DIR"
+export RUSTFLAGS="--cfg getrandom_backend=\\"unsupported\\" --remap-path-prefix=$CARGO_HOME=/cargo --remap-path-prefix=$DIR=/wasm"
+cargo build --release --locked --target wasm32-unknown-unknown
+for module in statusphere vibescrobble; do
+	cp "target/wasm32-unknown-unknown/release/$module.wasm" "$module/$module.wasm"
+done`;
+
+const releaseProfile = `[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true`;
+
+const ourBuild = `rustc --version
+# rustc 1.97.0 (2d8144b78 2026-07-07)
+./wasm/build.sh
+sha256sum wasm/*/*.wasm`;
+
+const ourPublish = `export ATPROTO_HANDLE=aliceoa.bsky.social ATPROTO_PASSWORD='app-password'
+./scripts/publish-records.sh
+./scripts/publish-wasm.sh statusphere
+./scripts/publish-wasm.sh vibescrobble`;
+
+const manifestExample = `{
+  "$type": "com.fedfork.exec.source.manifest",
+  "name": "Vibescrobble",
+  "language": "rust",
+  "files": [
+    { "path": "Cargo.toml", "file": { "uri": "at://…/com.fedfork.exec.source.file/<sha256>", "cid": "bafyrei…" } },
+    { "path": "vibescrobble/src/lib.rs", "file": { "uri": "at://…/com.fedfork.exec.source.file/<sha256>", "cid": "bafyrei…" } }
+  ],
+  "build": {
+    "tool": "cargo",
+    "version": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+    "command": "./build.sh",
+    "artifact": "vibescrobble/vibescrobble.wasm"
+  },
+  "output": { "sha256": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a", "size": 129568 },
+  "origin": { "repository": "https://github.com/publicdomainrelay/socialweb-computer-emdash", "commit": "df6c03d…" },
+  "createdAt": "2026-11-07T08:45:00.000Z"
+}`;
+
+const verifyCommand = `./scripts/verify-source.sh aliceoa.bsky.social vibescrobble`;
+
+const verifyResult = `{
+  "built": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a",
+  "manifest": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a",
+  "published": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a",
+  "reproducible": true
+}`;
+
+const asModule = `import { Json, call, done, fail, input, next } from "./abi";
+export { alloc } from "./abi";
+
+const COLLECTION = "com.example.note";
+
+export function note(ptr: usize, len: i32): i64 {
+  const step = input(ptr, len);
+  const text = step.get("text").str;
+  if (text.length == 0) return fail("text is required");
+  const record = Json.object()
+    .set("$type", Json.string(COLLECTION))
+    .set("text", Json.string(text))
+    .set("createdAt", step.get("now"));
+  const create = call(
+    "com.atproto.repo.createRecord",
+    Json.object().set("repo", step.get("did")).set("collection", Json.string(COLLECTION)).set("record", record),
+  );
+  return next([create], "note_done");
+}
+
+export function note_done(ptr: usize, len: i32): i64 {
+  const result = input(ptr, len).get("results").at(0);
+  if (!result.get("ok").bool) return fail(result.get("error").str);
+  const created = result.get("output");
+  return done(Json.object().set("uri", created.get("uri")).set("cid", created.get("cid")));
+}`;
+
+const ascCommand = `npx --yes --package=assemblyscript@0.28.20 asc module.ts --outFile module.wasm --runtime stub --use abort= --optimizeLevel 3 --shrinkLevel 1 --noAssert`;
 ---
 
 <Guide
@@ -188,7 +281,7 @@ goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/note"`;
 	<section id="publish">
 		<h2>Publish it</h2>
 		<p>
-			The script builds, uploads the blob to your PDS, looks up the CID of the integration record named by <code>session</code>, and writes <code>at://you/com.fedfork.exec.wasm.module/note</code>. The module shows up on that integration's card.
+			The script builds every module, then writes three kinds of record to your PDS: one <code>source.file</code> per source file it has not stored before, a new <code>source.manifest</code> describing this build, and <code>at://you/com.fedfork.exec.wasm.module/note</code> with the uploaded blob, the CID of the integration named by <code>session</code>, and a <code>source</code> reference to the manifest. The module shows up on that integration's card, with a link to its source.
 		</p>
 		<Code code={publish} />
 		<div class="callout tone-pds">
@@ -202,8 +295,74 @@ goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/note"`;
 		<p>Statusphere reads before it writes, so setting the same emoji twice makes no new record.</p>
 		<Diagram code={statusphere} label="Sequence: set_status lists your latest status, set_status_write compares and creates a record only for a new emoji, set_status_done returns its URI." />
 		<p>
-			Source: <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/statusphere">wasm/statusphere</a> and <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/vibescrobble">wasm/vibescrobble</a>.
+			Source on GitHub: <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/statusphere">wasm/statusphere</a> and <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/vibescrobble">wasm/vibescrobble</a>. Source in the PDS: <a href={sourceLink("statusphere")}>Statusphere</a> and <a href={sourceLink("vibescrobble")}>Vibescrobble</a>.
 		</p>
+	</section>
+
+	<section id="built">
+		<h2>How our modules are built</h2>
+		<p>
+			Statusphere and Vibescrobble are crates in one Cargo workspace, <code>wasm/</code>, with the shared <code>abi</code> crate. They are compiled with <code>rustc 1.97.0</code> for <code>wasm32-unknown-unknown</code>, with the size-focused release profile below.
+		</p>
+		<Code title="wasm/Cargo.toml" code={releaseProfile} />
+		<p>
+			<code>wasm/build.sh</code> is the only build command. Rust embeds source paths in panic messages, including your home directory for crates from the registry. The script remaps <code>$CARGO_HOME</code> to <code>/cargo</code> and the workspace to <code>/wasm</code>, so the same sources give the same bytes in any directory, on any machine and in any container. Cargo's <code>trim-paths</code> would do this, but it is not stable in Cargo 1.97.
+		</p>
+		<Code title="wasm/build.sh" code={buildScript} />
+		<Code title="build" code={ourBuild} />
+		<p>Each module was published with its sources in one step:</p>
+		<Code title="publish, as the test account" code={ourPublish} />
+		<p>Read them back from the test account's PDS:</p>
+		<ul>
+			<li><a href={sourceLink("statusphere")}>Statusphere source</a></li>
+			<li><a href={sourceLink("vibescrobble")}>Vibescrobble source</a></li>
+		</ul>
+	</section>
+
+	<section id="source">
+		<h2>Source records</h2>
+		<p>
+			A module's source lives in the same PDS as the module, in two record types modeled on how <a href="https://knotless.dev">knotless</a> keeps git repositories in atproto records.
+		</p>
+		<ul>
+			<li><strong><code>com.fedfork.exec.source.file</code></strong> holds one file's contents, inline as text or as a blob. Its record key is the sha256 of the contents, so a file shared by many builds is stored once.</li>
+			<li><strong><code>com.fedfork.exec.source.manifest</code></strong> is an immutable snapshot: each path with a strong reference to its file record, the build tool, compiler version, command and artifact, the sha256 and size of the output, and the commit it came from. A new build makes a new manifest.</li>
+			<li><strong><code>com.fedfork.exec.wasm.module</code></strong> points at its manifest with <code>source</code>, a URI and a CID. Changing the manifest would change its CID, so the reference catches it.</li>
+		</ul>
+		<Diagram code={sourceRecords} label="Flowchart: a wasm.module record points at its blob, its integration record and its source manifest; the manifest points at source.file records keyed by sha256." />
+		<Code title="a manifest, trimmed" code={manifestExample} />
+	</section>
+
+	<section id="verify">
+		<h2>Verify a build</h2>
+		<p>
+			<code>scripts/verify-source.sh</code> needs only the author's handle and the module's record key. It fetches the module, the manifest and every file from the PDS. It checks each CID and each file's sha256, then writes the files to an empty directory and runs the manifest's build command. It compares the result with the manifest's output hash and with the published blob.
+		</p>
+		<Diagram code={verifySource} label="Flowchart: fetch records, check CIDs and sha256, write files, build in a container, compare the built hash with the manifest output and the published blob." />
+		<Code code={verifyCommand} />
+		<Code title="result" code={verifyResult} />
+		<div class="callout tone-deny">
+			<strong>The build runs code from someone's PDS.</strong>
+			The script never runs it on your machine. It runs the build in Podman or Docker, in <code>rust:&lt;version&gt;</code> for Cargo builds or <code>node:24</code> for AssemblyScript.
+		</div>
+		<p>
+			For Vibescrobble, the bytes built in a clean <code>rust:1.97.0</code> container from the PDS records alone match the manifest and the published blob.
+		</p>
+	</section>
+
+	<section id="browser">
+		<h2>In the browser</h2>
+		<p>
+			You do not need Rust to write a module. The <a href="/studio/module">module editor</a> compiles AssemblyScript in your browser with <code>asc</code> 0.28.20. The compiler and Binaryen load only on that page. It runs your entries locally, then publishes the module, its source files and its manifest in one step.
+		</p>
+		<p>
+			Every editor module gets an <code>abi.ts</code> with the helpers. <code>Json</code> parses and builds JSON. <code>input</code> reads a step, <code>output</code> writes one, and <code>call</code> and <code>query</code> plan XRPC calls. <code>next</code> asks for another round, <code>done</code> finishes with a result, and <code>fail</code> stops with an error. Each module must also <code>export {"{"} alloc {"}"} from "./abi"</code>.
+		</p>
+		<Code title="module.ts" code={asModule} />
+		<p>
+			The manifest records the equivalent command line. It produces the same bytes as the browser, so <code>verify-source.sh</code> can rebuild an editor module in <code>node:24</code>, and the <a href="/source">source page</a> can rebuild it in your browser.
+		</p>
+		<Code title="build.command for editor modules" code={ascCommand} />
 	</section>
 
 	<section id="rules">
@@ -213,7 +372,8 @@ goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/note"`;
 			<li>Only NSIDs in the record's <code>calls</code> list, when it has one.</li>
 			<li>The blob's sha256 must match its CID.</li>
 			<li>No imports. A module that imports anything does not instantiate.</li>
-			<li>Keep the blob small. Both shipped modules are under 130 KB with <code>opt-level = "z"</code> and LTO.</li>
+			<li>Keep the blob small. Both shipped modules are under 130 KB with <code>opt-level = "z"</code> and LTO; editor modules are about 12 KB.</li>
+			<li>A module cannot run with the studio session. Its <code>session</code> must name one of your integration records.</li>
 		</ul>
 	</section>
 </Guide>

@@ -1,0 +1,282 @@
+---
+import Code from "../components/Code.astro";
+import Base from "../layouts/Base.astro";
+import { sha256Hex } from "../studio/compile";
+import { getRecord, MANIFEST_COLLECTION, MODULE_COLLECTION, parseAtUri, pdsOf } from "../utils/atproto";
+
+export const prerender = false;
+
+interface StrongRef {
+	uri: string;
+	cid: string;
+}
+
+interface Manifest {
+	name: string;
+	description?: string;
+	language: string;
+	files: Array<{ path: string; file: StrongRef }>;
+	build: { tool: string; version: string; command: string; artifact?: string };
+	output?: { sha256: string; size: number };
+	origin?: { repository: string; commit?: string };
+	createdAt: string;
+}
+
+interface SourceFile {
+	sha256: string;
+	size: number;
+	text?: string;
+}
+
+interface ModuleRecord {
+	name: string;
+	module: { ref: { $link: string } };
+	source?: StrongRef;
+}
+
+const requested = Astro.url.searchParams.get("uri") ?? "";
+let error: string | undefined;
+let manifest: { uri: string; cid: string; value: Manifest } | undefined;
+let moduleRecord: { uri: string; value: ModuleRecord } | undefined;
+let files: Array<{ path: string; text: string; size: number; verified: boolean }> = [];
+let pds = "";
+
+if (requested) {
+	try {
+		const { did, collection } = parseAtUri(requested);
+		pds = await pdsOf(did);
+		let manifestUri = requested;
+		let expectedCid: string | undefined;
+		if (collection === MODULE_COLLECTION) {
+			moduleRecord = await getRecord<ModuleRecord>(requested, pds);
+			if (!moduleRecord.value.source) throw new Error("This module has no source record");
+			manifestUri = moduleRecord.value.source.uri;
+			expectedCid = moduleRecord.value.source.cid;
+		} else if (collection !== MANIFEST_COLLECTION) {
+			throw new Error("Pass a wasm.module or source.manifest record URI");
+		}
+		manifest = await getRecord<Manifest>(manifestUri, pds);
+		if (expectedCid && manifest.cid !== expectedCid) throw new Error("The manifest changed since the module was published");
+		files = await Promise.all(
+			manifest.value.files.map(async ({ path, file }) => {
+				const record = await getRecord<SourceFile>(file.uri, pds);
+				const text = record.value.text ?? "";
+				const verified = record.cid === file.cid && (await sha256Hex(new TextEncoder().encode(text))) === record.value.sha256;
+				return { path, text, size: record.value.size, verified };
+			}),
+		);
+	} catch (cause) {
+		error = cause instanceof Error ? cause.message : String(cause);
+	}
+}
+
+const value = manifest?.value;
+const allVerified = files.length > 0 && files.every((file) => file.verified);
+const owner = manifest ? parseAtUri(manifest.uri).did : "";
+const moduleRkey = moduleRecord ? parseAtUri(moduleRecord.uri).rkey : value?.name;
+const blobCid = moduleRecord?.value.module.ref.$link;
+const openByDefault = (path: string) => /\.(rs|ts)$/.test(path) && !path.startsWith("abi/");
+const verifyCommand = `./scripts/verify-source.sh ${owner} ${moduleRkey ?? "<module>"}`;
+const sources = Object.fromEntries(files.map((file) => [file.path, file.text]));
+---
+
+<Base title={value ? `Source of ${value.name}` : "Source"} description="Source files and build of a WebAssembly module, read from its author's PDS.">
+	<header class="band guide-intro">
+		<div class="frame">
+			<p class="eyebrow">Source</p>
+			<h1 class="intro__title">{value ? value.name : "Module source"}</h1>
+			<p class="lede">
+				{value?.description ?? "Every module can point at a source.manifest record: its files, the compiler, the command and the hash of what it built. All of it lives in the author's PDS."}
+			</p>
+		</div>
+	</header>
+
+	<div class="frame prose source">
+		{
+			!requested && (
+				<form class="source__lookup" method="get">
+					<label for="uri">Module or manifest URI</label>
+					<input class="field" id="uri" name="uri" placeholder="at://did:plc:…/com.fedfork.exec.wasm.module/statusphere" required />
+					<button class="btn" type="submit">Show source</button>
+				</form>
+			)
+		}
+		{error && <p class="callout tone-deny" role="alert">{error}</p>}
+
+		{
+			value && (
+				<>
+					<section>
+						<h2>Build</h2>
+						<div class="table-scroll">
+							<table>
+								<tbody>
+									<tr><th>Language</th><td>{value.language}</td></tr>
+									<tr><th>Compiler</th><td><code>{value.build.version}</code></td></tr>
+									<tr><th>Command</th><td><code>{value.build.command}</code></td></tr>
+									{value.build.artifact && <tr><th>Artifact</th><td><code>{value.build.artifact}</code></td></tr>}
+									{value.output && <tr><th>Output sha256</th><td><code>{value.output.sha256}</code> ({value.output.size} bytes)</td></tr>}
+									{value.origin && (
+										<tr>
+											<th>Origin</th>
+											<td>
+												<a href={value.origin.commit ? `${value.origin.repository}/tree/${value.origin.commit}` : value.origin.repository}>{value.origin.repository}</a>
+												{value.origin.commit && <code> {value.origin.commit.slice(0, 12)}</code>}
+											</td>
+										</tr>
+									)}
+									<tr><th>Manifest</th><td><code>{manifest?.uri}</code></td></tr>
+									<tr><th>Files</th><td>{files.length}, {allVerified ? "each matches its CID and sha256" : "some do not match their CID or sha256"}</td></tr>
+								</tbody>
+							</table>
+						</div>
+					</section>
+
+					<section>
+						<h2>Check the build</h2>
+						{value.build.tool === "asc" ? (
+							<div class="rebuild" data-rebuild data-expected={value.output?.sha256} data-pds={pds} data-did={owner} data-blob={blobCid}>
+								<p>Compile these files in your browser with the same compiler and compare the bytes.</p>
+								<script type="application/json" data-sources set:html={JSON.stringify(sources).replace(/</g, "\\u003c")} />
+								<button class="btn" type="button" data-rebuild-button>Rebuild in this browser</button>
+								<pre class="rebuild__result" data-rebuild-result hidden />
+							</div>
+						) : (
+							<>
+								<p>Rebuild from these records in a container and compare against the manifest and the published blob. The build runs code from the PDS, so the script runs it in Podman or Docker, never on your machine.</p>
+								<Code code={verifyCommand} />
+							</>
+						)}
+					</section>
+
+					<section>
+						<h2>Files</h2>
+						<div class="source__files">
+							{files.map((file) => (
+								<details class="source__file" open={openByDefault(file.path)}>
+									<summary>
+										<code>{file.path}</code>
+										<span class:list={["pill", file.verified ? "pill--on" : "pill--bad"]}>{file.verified ? "verified" : "mismatch"}</span>
+										<span class="source__size">{file.size} bytes</span>
+									</summary>
+									<pre><code>{file.text}</code></pre>
+								</details>
+							))}
+						</div>
+					</section>
+				</>
+			)
+		}
+	</div>
+</Base>
+
+<script>
+	import { compile, sha256Hex } from "../studio/compile";
+
+	for (const box of document.querySelectorAll<HTMLElement>("[data-rebuild]")) {
+		const button = box.querySelector<HTMLButtonElement>("[data-rebuild-button]");
+		const result = box.querySelector<HTMLElement>("[data-rebuild-result]");
+		const sources = JSON.parse(box.querySelector("[data-sources]")?.textContent ?? "{}") as Record<string, string>;
+		button?.addEventListener("click", async () => {
+			if (!result) return;
+			button.disabled = true;
+			result.hidden = false;
+			result.textContent = "Loading the compiler…";
+			const built = await compile(sources);
+			if (!built.binary) {
+				result.textContent = built.log;
+				button.disabled = false;
+				return;
+			}
+			const lines = [`built      ${await sha256Hex(built.binary)}`, `manifest   ${box.dataset.expected ?? "none"}`];
+			if (box.dataset.blob) {
+				const blob = await fetch(`${box.dataset.pds}/xrpc/com.atproto.sync.getBlob?did=${box.dataset.did}&cid=${box.dataset.blob}`)
+					.then(async (response) => (response.ok ? sha256Hex(new Uint8Array(await response.arrayBuffer())) : `HTTP ${response.status}`))
+					.catch(() => "could not download");
+				lines.push(`published  ${blob}`);
+			}
+			const hashes = lines.map((line) => line.split(/\s+/)[1]);
+			lines.push(hashes.every((hash) => hash === hashes[0]) ? "reproducible: every hash matches" : "not reproducible: the hashes differ");
+			result.textContent = lines.join("\n");
+			button.disabled = false;
+		});
+	}
+</script>
+
+<style>
+	.source {
+		padding-bottom: 2rem;
+	}
+
+	.source table {
+		table-layout: fixed;
+	}
+
+	.source th {
+		width: 8.5rem;
+	}
+
+	.source td code,
+	.source td a {
+		word-break: break-all;
+	}
+
+	@media (max-width: 30rem) {
+		.source th {
+			width: 6rem;
+		}
+	}
+
+	.source__lookup {
+		display: grid;
+		gap: 0.5rem;
+		max-width: 40rem;
+	}
+
+	.source__files {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+	}
+
+	.source__file {
+		min-width: 0;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+	}
+
+	.source__file summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.625rem 0.875rem;
+		cursor: pointer;
+	}
+
+	.source__file pre {
+		max-height: 32rem;
+		padding: 1rem;
+		overflow: auto;
+		border-top: 1px solid var(--color-border);
+		background: var(--color-fill);
+		font-size: var(--font-size-sm);
+		line-height: 1.5;
+	}
+
+	.source__size {
+		margin-left: auto;
+		color: var(--color-muted);
+		font-size: var(--font-size-xs);
+	}
+
+	.rebuild__result {
+		margin-top: 1rem;
+		padding: 1rem;
+		overflow-x: auto;
+		border-radius: var(--radius-lg);
+		background: var(--color-fill);
+		font-size: var(--font-size-sm);
+	}
+</style>

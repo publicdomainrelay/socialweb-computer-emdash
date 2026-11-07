@@ -12,7 +12,7 @@ import {
 	type SessionEntry,
 	sessionKey,
 } from "./oauth";
-import { COLLECTION, clientConfig, clientMetadata, type IntegrationRef, parseRecord, recordUri } from "./record";
+import { COLLECTION, clientConfig, clientMetadata, type IntegrationRef, parseRecord, recordUri, STUDIO_RKEY } from "./record";
 import { grantedGroupKeys, requestedScope } from "./scopes";
 
 async function fetchRecord(ctx: PluginContext, pds: string, ref: IntegrationRef) {
@@ -42,6 +42,7 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 		try {
 			const record = parseRecord(value);
 			const ref = { did: actor.did, rkey: uri.split("/").pop() ?? "" };
+			if (ref.rkey === STUDIO_RKEY) return [];
 			const session = connected.get(clientKey(ref));
 			const granted = session ? grantedGroupKeys(record.scopeGroups, session.scope) : [];
 			return [
@@ -73,17 +74,22 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 	});
 }
 
+export async function authorize(ctx: PluginContext, userId: string, entry: ClientEntry, scope: string, did: string) {
+	await ctx.storage.clients.put(clientKey(entry), entry);
+	const { url } = await oauthClient(ctx, entry, userId).authorize({
+		target: { type: "account", identifier: did as Did },
+		scope,
+		state: { did: entry.did, rkey: entry.rkey, userId } satisfies AuthorizeState,
+	});
+	return url.href;
+}
+
 export async function beginConnect(ctx: PluginContext, userId: string, origin: string, ref: IntegrationRef, groupKeys: string[]) {
+	if (ref.rkey === STUDIO_RKEY) throw new Error("Connect the studio from /studio");
 	const actor = await resolveActor(ctx, ref.did);
 	const { record, cid } = await fetchRecord(ctx, actor.pds, ref);
 	const entry: ClientEntry = { ...ref, origin: clientConfig(origin, ref, record).origin, cid, record };
-	await ctx.storage.clients.put(clientKey(ref), entry);
-	const { url } = await oauthClient(ctx, entry, userId).authorize({
-		target: { type: "account", identifier: actor.did },
-		scope: requestedScope(record.clientMetadata.scope, record.scopeGroups, groupKeys),
-		state: { ...ref, userId } satisfies AuthorizeState,
-	});
-	return url.href;
+	return authorize(ctx, userId, entry, requestedScope(record.clientMetadata.scope, record.scopeGroups, groupKeys), actor.did);
 }
 
 export async function completeConnect(ctx: PluginContext, params: Record<string, string | undefined>) {
@@ -107,20 +113,26 @@ export async function sessionAgent(ctx: PluginContext, userId: string, ref: Inte
 	const entry = await clientEntry(ctx, ref);
 	if (!entry || !(await ctx.storage.sessions.exists(sessionKey(userId, ref)))) return undefined;
 	const session = await oauthClient(ctx, entry, userId).restore(ref.did as Did);
-	const call = async <T>(nsid: string, init: { params?: Record<string, string>; input?: unknown } = {}): Promise<T> => {
-		const response = await session.handle(
+	const send = async <T>(nsid: string, path: string, init: RequestInit): Promise<T> => {
+		const response = await session.handle(path, init);
+		const body = (await response.json().catch(() => ({}))) as T & { error?: string; message?: string };
+		if (!response.ok) throw new Error(`${nsid} failed with ${body.error ?? response.status}${body.message ? `: ${body.message}` : ""}`);
+		return body;
+	};
+	const call = <T>(nsid: string, init: { params?: Record<string, string>; input?: unknown } = {}) =>
+		send<T>(
+			nsid,
 			`/xrpc/${nsid}${init.params ? `?${new URLSearchParams(init.params)}` : ""}`,
 			init.input === undefined
 				? { method: "GET" }
 				: { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(init.input) },
 		);
-		const body = (await response.json().catch(() => ({}))) as T & { error?: string };
-		if (!response.ok) throw new Error(`${nsid} failed with ${body.error ?? response.status}`);
-		return body;
-	};
+	const upload = <T>(nsid: string, body: Uint8Array<ArrayBuffer>, contentType: string) =>
+		send<T>(nsid, `/xrpc/${nsid}`, { method: "POST", headers: { "content-type": contentType }, body });
 	return {
 		scope: async () => (await session.getTokenInfo(false)).scope,
 		call,
+		upload,
 	};
 }
 

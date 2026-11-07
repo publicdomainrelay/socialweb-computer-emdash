@@ -1,0 +1,132 @@
+---
+import AtmosphereSignIn from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignIn.astro";
+import { missingScopes, type StudioStatus } from "../utils/studio";
+
+interface Props {
+	did?: string;
+	status?: StudioStatus;
+	returnTo: string;
+}
+
+const { did, status, returnTo } = Astro.props;
+const missing = status?.connected ? missingScopes(status) : [];
+const scopes = (status?.requested ?? "").split(" ").filter((scope) => scope && scope !== "atproto");
+---
+
+<div class="card studio-session" data-studio-did={did}>
+	{
+		!did ? (
+			<>
+				<h2>Sign in first</h2>
+				<p>The studio writes records to your own PDS, so it needs to know who you are.</p>
+				<AtmosphereSignIn returnTo={returnTo} class="studio-session__signin" inputClass="field" buttonClass="btn" placeholder="alice.bsky.social" />
+			</>
+		) : status?.connected && missing.length === 0 ? (
+			<div class="studio-session__row">
+				<div>
+					<h2>
+						Studio connected <span class="pill pill--on">ready</span>
+					</h2>
+					<p>The studio can write your integration, module and source records, and upload WebAssembly blobs.</p>
+				</div>
+				<button class="btn btn--ghost btn--small" type="button" data-studio-disconnect>
+					Disconnect
+				</button>
+			</div>
+		) : (
+			<>
+				<h2>{status?.connected ? "Reconnect the studio" : "Connect the studio"}</h2>
+				<p>The studio is a separate OAuth session for your own account. It asks for these permissions and nothing else:</p>
+				<ul class="studio-session__scopes">
+					{scopes.map((scope) => (
+						<li>
+							<code>{scope}</code>
+						</li>
+					))}
+				</ul>
+				<button class="btn" type="button" data-studio-connect>
+					{status?.connected ? "Grant the missing permissions" : "Connect the studio"}
+				</button>
+				<p class="studio-session__error" data-studio-error hidden />
+			</>
+		)
+	}
+</div>
+
+<script>
+	import { plugin, studioDid } from "../studio/api";
+
+	const error = document.querySelector<HTMLElement>("[data-studio-error]");
+	document.querySelector("[data-studio-connect]")?.addEventListener("click", async () => {
+		try {
+			window.location.href = (await plugin<{ url: string }>("studio/connect", { did: studioDid() })).url;
+		} catch (cause) {
+			if (error) {
+				error.textContent = cause instanceof Error ? cause.message : String(cause);
+				error.hidden = false;
+			}
+		}
+	});
+	document.querySelector("[data-studio-disconnect]")?.addEventListener("click", async () => {
+		await plugin("studio/disconnect", { did: studioDid() });
+		window.location.reload();
+	});
+</script>
+
+<style>
+	.studio-session {
+		margin-bottom: 2rem;
+	}
+
+	.studio-session h2 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.studio-session p {
+		color: var(--color-text-secondary);
+	}
+
+	.studio-session__row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.studio-session__scopes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-block: 0.75rem 1rem;
+		list-style: none;
+	}
+
+	.studio-session__scopes code {
+		padding: 0.15em 0.45em;
+		border-radius: 0.3em;
+		background: var(--color-fill);
+		font-size: var(--font-size-xs);
+		overflow-wrap: anywhere;
+	}
+
+	.studio-session :global(.studio-session__signin) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+
+	.studio-session :global(.studio-session__signin .field) {
+		flex: 1;
+		min-width: 12rem;
+	}
+
+	.studio-session__error {
+		margin-top: 0.75rem;
+		color: var(--tone-deny);
+	}
+</style>

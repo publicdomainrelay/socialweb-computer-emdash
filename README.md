@@ -1,6 +1,8 @@
 # socialweb-computer-emdash
 
-Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.fedfork.exec.oauth.clientMetadata` record in their own PDS.
+Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.fedfork.exec.oauth.clientMetadata` record in their own PDS. On `/studio` they can write those records, compile AssemblyScript modules in the browser, and publish them with their source.
+
+Our lexicons are `com.fedfork.exec.*`: `oauth.clientMetadata`, `wasm.module`, `wasm.run`, `source.file` and `source.manifest`.
 
 Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
 
@@ -43,7 +45,7 @@ import AtmosphereSignOut from "@publicdomainrelay/auth-atproto-subscriber/Atmosp
 ## Publish integration records
 
 ```bash
-go install github.com/bluesky-social/goat@latest
+GOTOOLCHAIN=auto go install github.com/bluesky-social/goat@latest
 export ATPROTO_HANDLE=alice.bsky.social ATPROTO_PASSWORD='app-password'
 ./scripts/publish-records.sh
 ```
@@ -66,12 +68,45 @@ node --test wasm/*/test.mjs
 goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/vibescrobble"
 ```
 
+- **Build.** `wasm/build.sh` builds every module with `rustc 1.97.0`. It sets `RUSTFLAGS` to remap `$CARGO_HOME` to `/cargo` and the workspace to `/wasm`, so the same sources give the same bytes in any directory or container. Cargo's `trim-paths` would do this, but it is not stable in Cargo 1.97.
+- **Publish with source.** `publish-wasm.sh` writes three kinds of record:
+  - a `com.fedfork.exec.source.file` for each source file not stored yet, keyed by the sha256 of its contents;
+  - a new immutable `com.fedfork.exec.source.manifest`, with the paths, `rustc --version`, the command `./build.sh`, the artifact, the output hash and the git commit;
+  - the `wasm.module` record, whose `source` points at that manifest.
+- **Verify.** `verify-source.sh` rebuilds a module from its PDS records alone, in Podman or Docker, never on the host, because the build command comes from a record. It compares the result with the manifest and with the published blob.
+
+```bash
+./scripts/verify-source.sh aliceoa.bsky.social vibescrobble
+```
+
+```json
+{
+  "built": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a",
+  "manifest": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a",
+  "published": "facaba4110ec5a77738955d45d3a2ed79e795f2ceedce5cb5643973045bc3e0a",
+  "reproducible": true
+}
+```
+
+- **Read it.** `/source?uri=<module or manifest at-uri>` shows the files and the build, and checks each file against its CID and sha256. Example: https://exec.fedfork.com/source?uri=at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.wasm.module/vibescrobble
 - `statusphere`: set or clear your `xyz.statusphere.status`.
 - `vibescrobble`: post a `com.vibescrobble.scrobble` record of work you shipped. The text must start with an emoji.
 - **Add a module:**
   1. Add a crate under `wasm/` that uses `abi::entries!`.
   2. Add a `module.json` and a `test.mjs`.
   3. Add the module's name to `wasm/build.sh`.
+
+## Studio
+
+- **`/studio`.** Connect the studio, a separate OAuth session for your own DID that the plugin defines itself. It asks for `repo:` on the four `com.fedfork.exec` record collections and for `blob:application/wasm`.
+- **Reserved key.** The session lives under the reserved key `_studio`. The plugin refuses that key for integration records and for module sessions.
+- **`/studio/integration`.** A form builder for `oauth.clientMetadata` records, with scope groups and a scope helper.
+- **`/studio/module`.**
+  - Write AssemblyScript against the `abi.ts` helpers, then compile it in the browser with `asc` 0.28.20.
+  - Run its entries locally.
+  - Publish the module, its source files and its manifest.
+  - The manifest's command, `npx --yes --package=assemblyscript@0.28.20 asc module.ts …`, produces the same bytes as the browser.
+- **Plugin routes:** `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`.
 
 ## Run a module with atproto service auth
 
@@ -231,7 +266,9 @@ goat record create -n -r example example.json
 - **Service auth.** The site is `did:web:<host>` with service `#emdash_integrations`. `POST /xrpc/com.fedfork.exec.wasm.run` takes a service-auth JWT, which `@atcute/crypto` verifies. The plugin checks `aud`, `lxm` and `exp`, and each `jti` works only once.
 - **Parallel runs.** A lease in plugin storage serializes token refresh. Parallel runs refresh a session once instead of racing single-use refresh tokens.
 - **Scrobbles.** The `vibescrobble` module posts `com.vibescrobble.scrobble` records, matching atirc's emoji rule and record shape.
-- **Bundle.** The plugin bundle is about 93 KB, under the registry's 128 KB per-file cap.
+- **Source.** A module can point at an immutable `source.manifest` whose `source.file` records are keyed by sha256, modeled on how knotless stores repositories. Anyone can rebuild it and compare hashes.
+- **Studio.** A scoped, plugin-defined OAuth session writes integration, module and source records, so the login never asks for more than `atproto`.
+- **Bundle.** The plugin bundle is about 100 KB, under the registry's 128 KB per-file cap.
 
 ### Connect
 
@@ -347,14 +384,18 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   └── src/
 │       ├── worker.ts                         ● Cloudflare entry, exports PluginBridge
 │       ├── layouts/Base.astro Guide.astro    ● shell titled with the site's host, guide pages with contents and pager
-│       ├── components/                       ● Diagram (Pele), Legend, Code with copy, ThemeToggle, SourceLink
+│       ├── components/                       ● Diagram (Pele), Legend, Code with copy, ThemeToggle, SourceLink, StudioSession
 │       ├── diagrams.ts                       ● every Mermaid diagram and its color classes
 │       ├── guides.ts deploy.ts               ● guide list, deploy button URL
+│       ├── studio/                           ● compile.ts (asc in the browser), api.ts, assemblyscript/ abi and templates
 │       ├── styles/site.css                   ●
 │       ├── utils/integrations.ts             ● calls plugin routes
+│       ├── utils/atproto.ts utils/studio.ts  ● public record reads, studio page context
 │       └── pages/
 │           ├── index.astro                   ● overview
 │           ├── how-it-works.astro use.astro modules.astro deploy.astro  ● guides
+│           ├── studio/                       ● studio, integration builder, module editor
+│           ├── source.astro                  ● source viewer and in-browser rebuild
 │           ├── integrations/index.astro      ● connect, run, rounds UI
 │           ├── integrations/[did]/[rkey]/oauth-client-metadata.json.ts  ● client metadata per record
 │           ├── .well-known/did.json.ts       ● did:web document with #emdash_integrations
@@ -368,6 +409,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   │   ├── lock.ts                           ● storage lease for token refresh
 │   │   ├── modules.ts                        ● blob fetch, CID check, rounds loop
 │   │   ├── service-auth.ts                   ● JWT verify, jti replay, did:web
+│   │   ├── studio.ts                         ● studio session, publish integration, module, source
 │   │   ├── identity.ts                       ● resolver wiring
 │   │   ├── http.ts                           ● ctx.http as fetch
 │   │   └── record.ts scopes.ts seal.ts       ● record parsing, scope groups, AES-GCM
@@ -376,10 +418,10 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   ├── abi/                                  ● shared JSON ABI: Did, CallResult, entries!
 │   ├── statusphere/                          ● set_status, clear_status
 │   └── vibescrobble/                         ● scrobble
-├── lexicons/com/fedfork/exec/      ● oauth.clientMetadata, wasm.module, wasm.run
+├── lexicons/com/fedfork/exec/                ● oauth.clientMetadata, wasm.module, wasm.run, source.file, source.manifest
 ├── records/                                  ● statusphere, vibescrobble, socialweb-computer; records/wasm/ module records
 ├── celld/                                    ● celld Worker using the fork runtime
-├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, emdash-fork.sh, release-emdash-fork.sh
+├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, verify-source.sh, emdash-fork.sh, release-emdash-fork.sh
 ├── docs/adrs/                                ● decisions
 └── emdash/ (submodule)                       ◐ github.com/publicdomainrelay/emdash @ wasm-blob-sandbox
     ├── proposals/sandboxed-wasm-modules.md   ● spec
@@ -405,6 +447,9 @@ external
 ├── @scure/base, @noble/curves (tests only)      ○
 ├── astro, the rest of emdash                    ○
 ├── pele                                         ○ Mermaid to SVG on the server
+├── assemblyscript, binaryen                     ○ module compiler, loaded only on the module editor
+├── codemirror                                   ○ module editor
+├── @atcute/identity, identity-resolver (site)   ○ public record reads
 ├── @astrojs/cloudflare, wrangler, unicode-segmentation, atproto-record   ○
 └── celld, rustfs, goat, fedproxy                ○ tooling
 ```

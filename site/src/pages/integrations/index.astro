@@ -116,6 +116,11 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 												<p class="module__name">
 													{module.name}
 													{module.description && <span class="module__description">{module.description}</span>}
+													{module.source && (
+														<a class="module__source" href={`/source?uri=${encodeURIComponent(module.uri)}`}>
+															View source and build
+														</a>
+													)}
 												</p>
 												{module.actions.map((action) => (
 													<form class="module__action" data-run data-did={module.did} data-rkey={module.rkey} data-entry={action.entry}>
@@ -397,6 +402,12 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		margin: 0 0 0.5rem;
 		font-weight: 500;
 		color: var(--color-text);
+	}
+	.module__source {
+		display: block;
+		margin-top: 0.25rem;
+		color: var(--color-brand-text);
+		font-size: var(--font-size-sm);
 	}
 	.module__description {
 		display: block;

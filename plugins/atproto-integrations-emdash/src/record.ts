@@ -1,6 +1,8 @@
 import { BASE_SCOPE, type ScopeGroup, scopeList } from "./scopes";
 
 export const COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
+export const STUDIO_RKEY = "_studio";
+export const RKEY = /^[a-zA-Z0-9._:~-]{1,512}$/;
 const PLUGIN_ID = "atproto-integrations";
 
 export interface IntegrationRecord {
@@ -33,7 +35,7 @@ export const recordUri = ({ did, rkey }: IntegrationRef) => `at://${did}/${COLLE
 export function parseRef(input: { did?: unknown; rkey?: unknown }): IntegrationRef {
 	const { did, rkey } = input;
 	if (typeof did !== "string" || !/^did:(plc|web):[a-zA-Z0-9._:%-]+$/.test(did)) throw new Error("Invalid DID");
-	if (typeof rkey !== "string" || !/^[a-zA-Z0-9._:~-]{1,512}$/.test(rkey)) throw new Error("Invalid record key");
+	if (typeof rkey !== "string" || !RKEY.test(rkey) || rkey === "." || rkey === "..") throw new Error("Invalid record key");
 	return { did, rkey };
 }
 

@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
 import type { IncomingHttpHeaders } from "node:http";
 import { request as httpsRequest } from "node:https";
+import { compile } from "../site/src/studio/compile.ts";
 
 const env = (name: string, fallback?: string) => {
 	const value = process.env[name] ?? fallback;
@@ -224,6 +226,78 @@ log("granted", {
 	})),
 });
 log("verify socialweb-computer", await plugin<object>("verify", { did, rkey: "socialweb-computer" }));
+
+type StrongRef = { uri: string; cid: string };
+const STUDIO_KEY = "e2e-note";
+const NOTE_COLLECTION = "com.example.note";
+const pdsDelete = (collection: string, rkey: string) =>
+	fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
+		method: "POST",
+		headers: { ...bearer, "content-type": "application/json" },
+		body: JSON.stringify({ repo: did, collection, rkey }),
+	}).then((response) => response.status);
+
+log("studio status before", await plugin<object>("studio/status", { did }));
+const studio = await approve((await plugin<{ url: string }>("studio/connect", { did })).url);
+const studioCallback = await siteFetch(pathOf(studio.callback));
+log("connect studio", { requested: studio.scope, location: studioCallback.headers.get("location") });
+const studioStatus = await plugin<{ connected: boolean; scope?: string; requested: string }>("studio/status", { did });
+log("studio status after", { connected: studioStatus.connected, granted: studioStatus.scope === studioStatus.requested || studioStatus.requested.split(" ").every((scope) => studioStatus.scope?.split(" ").includes(scope)) });
+
+const integration = await plugin<StrongRef>("studio/publish-integration", {
+	did,
+	rkey: STUDIO_KEY,
+	record: {
+		name: "E2E note",
+		description: "Published by scripts/e2e.ts through the studio.",
+		clientMetadata: {
+			client_id: "https://example.com/oauth-client-metadata.json",
+			redirect_uris: ["https://example.com/oauth/callback"],
+			scope: `atproto repo:${NOTE_COLLECTION}?action=create`,
+		},
+		scopeGroups: [{ key: "notes", label: "Write notes", scopes: [`repo:${NOTE_COLLECTION}?action=create`] }],
+	},
+});
+log("studio publish integration", integration);
+
+const sources = {
+	"abi.ts": await readFile(new URL("../site/src/studio/assemblyscript/abi.as", import.meta.url), "utf8"),
+	"module.ts": await readFile(new URL("../site/src/studio/assemblyscript/note.as", import.meta.url), "utf8"),
+};
+const built = await compile(sources);
+if (!built.binary) throw new Error(built.log);
+const published = await plugin<{ module: StrongRef; source: StrongRef; files: number }>("studio/publish-module", {
+	did,
+	rkey: STUDIO_KEY,
+	name: "E2E note",
+	session: STUDIO_KEY,
+	actions: [{ entry: "note", label: "Write note", fields: [{ key: "text", label: "Text" }] }],
+	calls: ["com.atproto.repo.createRecord"],
+	wasm: Buffer.from(built.binary).toString("base64"),
+	source: {
+		language: "assemblyscript",
+		files: Object.entries(sources).map(([path, text]) => ({ path, text })),
+		build: { tool: "asc", version: built.version, command: built.command, artifact: "module.wasm" },
+	},
+});
+log("studio publish module", { module: published.module.uri, source: published.source.uri, files: published.files, bytes: built.binary.length });
+
+await connect(STUDIO_KEY, ["notes"]);
+const noted = await plugin<Ran>("run", { did, rkey: STUDIO_KEY, entry: "note", input: { text: "🧪 written by a module compiled in the studio" } });
+const noteRkey = String(noted.result?.uri).split("/").pop() ?? "";
+log("run studio module", summary(noted));
+const sourcePage = await (await siteFetch(`/source?uri=${encodeURIComponent(published.module.uri)}`)).text();
+log("source page", { verified: (sourcePage.match(/>verified</g) ?? []).length, mismatched: (sourcePage.match(/>mismatch</g) ?? []).length, rebuild: sourcePage.includes("data-rebuild-button") });
+
+await plugin("disconnect", { did, rkey: STUDIO_KEY });
+log("studio cleanup", {
+	note: await pdsDelete(NOTE_COLLECTION, noteRkey),
+	module: await pdsDelete("com.fedfork.exec.wasm.module", STUDIO_KEY),
+	manifest: await pdsDelete("com.fedfork.exec.source.manifest", published.source.uri.split("/").pop() ?? ""),
+	integration: await pdsDelete("com.fedfork.exec.oauth.clientMetadata", STUDIO_KEY),
+});
+await plugin("studio/disconnect", { did });
+log("studio disconnected", await plugin<object>("studio/status", { did }));
 
 const connectedPage = await (await siteFetch("/integrations")).text();
 log("page pills", { pills: [...connectedPage.matchAll(/class="pill[^"]*"[^>]*>\s*([^<]+?)\s*</g)].map((match) => match[1]) });

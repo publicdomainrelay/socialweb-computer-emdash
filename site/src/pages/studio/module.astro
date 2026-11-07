@@ -1,0 +1,253 @@
+---
+import StudioSession from "../../components/StudioSession.astro";
+import Base from "../../layouts/Base.astro";
+import { rkeyOf } from "../../utils/atproto";
+import { missingScopes, studioContext } from "../../utils/studio";
+
+export const prerender = false;
+
+const { did, status, integrations, error } = await studioContext(Astro.locals, Astro.url);
+const ready = Boolean(status?.connected && missingScopes(status).length === 0);
+const sessions = integrations.map((record) => ({ rkey: rkeyOf(record.uri), name: record.value.name }));
+---
+
+<Base title="Module editor" description="Write an AssemblyScript module, compile it to WebAssembly in your browser, try it, and publish it with its source to your PDS.">
+	<header class="band guide-intro">
+		<div class="frame">
+			<p class="eyebrow">Studio</p>
+			<h1 class="intro__title">Module editor</h1>
+			<p class="lede">
+				Write AssemblyScript and compile it to WebAssembly right here, in your browser. A module has no imports: each entry gets one JSON object and returns one. The <code>abi.ts</code> helpers parse the input, build JSON, and plan XRPC calls with <code>call</code>, <code>query</code>, <code>next</code> and <code>done</code>.
+			</p>
+		</div>
+	</header>
+
+	<div class="frame module-editor" data-module-editor data-did={did} data-ready={String(ready)}>
+		<StudioSession did={did} status={status} returnTo="/studio/module" />
+		{error && <p class="notice notice--error" role="alert">{error}</p>}
+
+		<section class="editor-section" aria-labelledby="code-heading">
+			<div class="editor-section__head">
+				<h2 id="code-heading">Code</h2>
+				<div class="toolbar">
+					<label class="form-label" for="template">Template</label>
+					<select class="field editor-template" id="template" data-template>
+						<option value="note">Write a note</option>
+						<option value="echo">Echo</option>
+					</select>
+				</div>
+			</div>
+			<div class="editor-frame">
+				<div class="editor-tabs" role="tablist" aria-label="Files">
+					<button type="button" role="tab" aria-selected="true" data-tab="module">module.ts</button>
+					<button type="button" role="tab" aria-selected="false" data-tab="abi">abi.ts <span class="pill pill--off">read only</span></button>
+				</div>
+				<div class="editor-host" role="tabpanel" data-editor="module"></div>
+				<div class="editor-host" role="tabpanel" data-editor="abi" hidden></div>
+			</div>
+			<p class="form-hint">Your draft stays in this browser until you publish it.</p>
+		</section>
+
+		<section class="editor-section" aria-labelledby="compile-heading">
+			<h2 id="compile-heading">Compile</h2>
+			<div class="toolbar">
+				<button class="btn" type="button" data-compile>Compile</button>
+				<span class="editor-status" data-compile-status role="status">Not compiled yet.</span>
+			</div>
+			<pre class="output" data-compile-output hidden></pre>
+		</section>
+
+		<section class="editor-section" aria-labelledby="try-heading">
+			<h2 id="try-heading">Try it here</h2>
+			<p class="form-hint">
+				Runs in this browser with no network. Planned calls are not made: each gets a mock success, so you can follow the rounds.
+			</p>
+			<div class="form">
+				<div class="form-grid">
+					<div class="form-row">
+						<label for="entry">Entry</label>
+						<select class="field" id="entry" data-entry disabled></select>
+					</div>
+				</div>
+				<div class="form-row">
+					<label for="input">Input fields, as JSON</label>
+					<textarea class="field" id="input" data-input rows="4" spellcheck="false">{`{"text":"hello"}`}</textarea>
+					<span class="form-hint"><code>did</code> and <code>now</code> are added for you, as the host does.</span>
+				</div>
+				<div class="toolbar">
+					<button class="btn btn--ghost" type="button" data-run disabled>Run</button>
+				</div>
+				<pre class="output" data-run-output hidden></pre>
+			</div>
+		</section>
+
+		<section class="editor-section" aria-labelledby="publish-heading">
+			<h2 id="publish-heading">Publish</h2>
+			<form class="form card" data-publish>
+				<div class="form-grid">
+					<div class="form-row">
+						<label for="rkey">Module key</label>
+						<input class="field" id="rkey" name="rkey" required maxlength="512" pattern="[A-Za-z0-9._:~\-]+" />
+						<span class="form-hint">The record key in com.fedfork.exec.wasm.module.</span>
+					</div>
+					<div class="form-row">
+						<label for="name">Name</label>
+						<input class="field" id="name" name="name" required maxlength="640" />
+					</div>
+				</div>
+				<div class="form-row">
+					<label for="description">Description</label>
+					<input class="field" id="description" name="description" maxlength="3000" />
+				</div>
+				<div class="form-row">
+					<label for="session">Integration</label>
+					<select class="field" id="session" name="session" required>
+						{sessions.length === 0 && <option value="">No integrations yet</option>}
+						{sessions.map((session) => <option value={session.rkey}>{session.name} ({session.rkey})</option>)}
+					</select>
+					<span class="form-hint">The module's calls run with the session you connect for this integration.</span>
+				</div>
+				<div class="form-row">
+					<span class="form-label">Actions</span>
+					<div class="actions-list" data-actions></div>
+					<div class="toolbar">
+						<button class="btn btn--ghost btn--small" type="button" data-add-action>Add action</button>
+					</div>
+				</div>
+				<div class="form-row">
+					<label for="calls">Allowed calls</label>
+					<textarea class="field" id="calls" data-calls rows="3" spellcheck="false" placeholder="com.atproto.repo.createRecord"></textarea>
+					<span class="form-hint">One NSID per line. The host refuses any call not listed here.</span>
+					<div class="toolbar">
+						<button class="btn btn--ghost btn--small" type="button" data-scan-calls>Find calls in the code</button>
+					</div>
+				</div>
+				<p class="callout tone-pds">
+					<strong>The integration needs the scopes too.</strong>
+					An allowed call still fails unless the integration's session holds the repo scopes the module writes. Add them in the <a href="/studio/integration">integration builder</a>.
+				</p>
+				<div class="toolbar">
+					<button class="btn" type="submit" data-publish-submit disabled>Publish module and source</button>
+					<span class="form-hint" data-publish-hint></span>
+				</div>
+				<div class="output publish-result" data-publish-result role="status" hidden></div>
+			</form>
+		</section>
+	</div>
+</Base>
+
+<script>
+	import "../../studio/editor";
+</script>
+
+<style>
+	.module-editor {
+		padding-bottom: 2rem;
+	}
+
+	.editor-section + .editor-section {
+		margin-top: 2.5rem;
+	}
+
+	.editor-section h2 {
+		margin-bottom: 0.75rem;
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-heading);
+	}
+
+	.editor-section__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.editor-template {
+		width: auto;
+	}
+
+	.editor-frame {
+		min-width: 0;
+		-webkit-text-size-adjust: 100%;
+		text-size-adjust: 100%;
+		overflow: hidden;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+	}
+
+	.editor-tabs {
+		display: flex;
+		overflow-x: auto;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-fill);
+	}
+
+	.editor-tabs button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1rem;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		background: none;
+		color: var(--color-text-secondary);
+		font: 500 var(--font-size-sm) / 1.2 var(--font-mono);
+		white-space: nowrap;
+		cursor: pointer;
+	}
+
+	.editor-tabs button[aria-selected="true"] {
+		border-bottom-color: var(--color-brand);
+		background: var(--color-surface);
+		color: var(--color-text);
+	}
+
+	.editor-host {
+		min-width: 0;
+	}
+
+	.editor-status {
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
+	}
+
+	.output[data-state="error"] {
+		border-left: 3px solid var(--tone-deny);
+	}
+
+	.output[data-state="ok"] {
+		border-left: 3px solid var(--tone-wasm);
+	}
+
+	.actions-list {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.actions-list :global(.action-row) {
+		display: grid;
+		gap: 0.75rem;
+		min-width: 0;
+		padding: 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+
+	.actions-list :global(.action-row legend) {
+		padding-inline: 0.25rem;
+	}
+
+	.actions-list :global(.action-row .btn) {
+		justify-self: start;
+	}
+
+	.publish-result :global(p + p) {
+		margin-top: 0.5rem;
+	}
+
+	.publish-result :global(a) {
+		color: var(--color-brand-text);
+	}
+</style>

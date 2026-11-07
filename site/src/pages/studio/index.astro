@@ -1,0 +1,143 @@
+---
+import StudioSession from "../../components/StudioSession.astro";
+import Base from "../../layouts/Base.astro";
+import { rkeyOf } from "../../utils/atproto";
+import { studioContext } from "../../utils/studio";
+
+export const prerender = false;
+
+const { did, status, integrations, modules, error } = await studioContext(Astro.locals, Astro.url);
+const connected = Astro.url.searchParams.get("connected") === "studio";
+const sessionOf = (uri: string) => rkeyOf(uri);
+---
+
+<Base title="Studio" description="Write integration records and WebAssembly modules and publish them, with their source, to your own PDS.">
+	<header class="band guide-intro">
+		<div class="frame">
+			<p class="eyebrow">Studio</p>
+			<h1 class="intro__title">Build integrations from your browser</h1>
+			<p class="lede">
+				Define an OAuth client and its scope groups, write a module in AssemblyScript, compile it here, and publish the module and its source to your own PDS. Nothing is stored on this site.
+			</p>
+		</div>
+	</header>
+
+	<div class="frame studio">
+		{connected && <p class="notice notice--success" role="status">Studio connected.</p>}
+		{error && <p class="notice notice--error" role="alert">{error}</p>}
+		<StudioSession did={did} status={status} returnTo="/studio" />
+
+		<div class="grid">
+			<a class="tile tone-pds" href="/studio/integration">
+				<h3>Integration builder</h3>
+				<p>Name an OAuth client, group its scopes so people can grant them one at a time, preview the record and publish it.</p>
+			</a>
+			<a class="tile tone-wasm" href="/studio/module">
+				<h3>Module editor</h3>
+				<p>Write AssemblyScript, compile it to WebAssembly in this browser, try it with mock calls, and publish it with its source.</p>
+			</a>
+			<a class="tile tone-site" href="/source">
+				<h3>Source viewer</h3>
+				<p>Read any module's source from its author's PDS, check every file against its hash, and rebuild it to compare bytes.</p>
+			</a>
+		</div>
+
+		{
+			did && (
+				<section class="studio__mine">
+					<h2 class="section-title">Your records</h2>
+					<div class="form-grid">
+						<div class="card">
+							<h3>Integrations</h3>
+							{integrations.length === 0 ? (
+								<p>None yet. Start one in the integration builder.</p>
+							) : (
+								<ul class="studio__list" role="list">
+									{integrations.map((record) => (
+										<li>
+											<span>
+												<strong>{record.value.name}</strong> <code>{rkeyOf(record.uri)}</code>
+											</span>
+											<span class="studio__count">{(record.value.scopeGroups ?? []).length} groups</span>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
+						<div class="card">
+							<h3>Modules</h3>
+							{modules.length === 0 ? (
+								<p>None yet. Write one in the module editor.</p>
+							) : (
+								<ul class="studio__list" role="list">
+									{modules.map((record) => (
+										<li>
+											<span>
+												<strong>{record.value.name}</strong> <code>{rkeyOf(record.uri)}</code>
+												<span class="studio__count">runs with {sessionOf(record.value.session.uri)}</span>
+											</span>
+											{record.value.source ? (
+												<a class="btn btn--ghost btn--small" href={`/source?uri=${encodeURIComponent(record.uri)}`}>
+													Source
+												</a>
+											) : (
+												<span class="pill pill--off">no source</span>
+											)}
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
+					</div>
+				</section>
+			)
+		}
+	</div>
+</Base>
+
+<style>
+	.studio {
+		padding-bottom: 2rem;
+	}
+
+	.studio__mine {
+		margin-top: 3rem;
+	}
+
+	.studio__list {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		list-style: none;
+	}
+
+	.studio__list li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.studio__list code {
+		color: var(--color-muted);
+		font-size: var(--font-size-xs);
+	}
+
+	.studio__count {
+		display: block;
+		color: var(--color-muted);
+		font-size: var(--font-size-xs);
+	}
+
+	.card h3 {
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-heading);
+	}
+
+	.card p {
+		color: var(--color-text-secondary);
+	}
+</style>

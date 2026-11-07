@@ -13,6 +13,7 @@ interface IntegrationModule {
 	uri: string;
 	name: string;
 	description?: string;
+	source?: string;
 	actions: Array<{ entry: string; label: string; description?: string; fields: Array<{ key: string; label: string }> }>;
 }
 

@@ -7,8 +7,9 @@ This repo is an EmDash site, the sandboxed `atproto-integrations` plugin, Rust W
 You need:
 - Node 24.12 or later;
 - pnpm 11.9.0. Corepack picks it up from `packageManager`;
-- Rust stable with `rustup target add wasm32-unknown-unknown`, for modules;
-- `goat`, `jq` and `curl`, for records and the CLI examples;
+- Rust 1.97.0 with `rustup target add wasm32-unknown-unknown`, for the Rust modules. Another version builds fine but gives different bytes than the published manifests;
+- `goat`, `jq` and `curl`, for records and the CLI examples. Install goat with `GOTOOLCHAIN=auto go install github.com/bluesky-social/goat@latest`, since it needs Go 1.27;
+- Podman or Docker, to verify module builds;
 - an atproto test account with an app password. Never use your main password.
 
 ```bash
@@ -26,13 +27,14 @@ pnpm dev
 
 | Path | What |
 | --- | --- |
-| `site/` | Astro and EmDash site: guide pages, `/integrations`, `did:web`, the `wasm.run` XRPC endpoint |
+| `site/` | Astro and EmDash site: guide pages, `/integrations`, `/studio`, `/source`, `did:web`, the `wasm.run` XRPC endpoint |
+| `site/src/studio/` | In-browser AssemblyScript compiler wrapper and the `abi.ts` helpers and templates for editor modules |
 | `site/src/diagrams.ts` | Every Mermaid diagram on the site, drawn by [Pele](https://pele.run) |
-| `plugins/atproto-integrations-emdash/` | The sandboxed plugin: OAuth, sealed sessions, module rounds, service auth |
+| `plugins/atproto-integrations-emdash/` | The sandboxed plugin: OAuth, sealed sessions, module rounds, service auth, the studio session |
 | `wasm/` | Cargo workspace: `abi`, `statusphere`, `vibescrobble`, plus `harness.mjs` for tests |
 | `lexicons/` | `com.fedfork.exec.*` lexicons |
 | `records/` | Integration records, and module records in `records/wasm/` |
-| `scripts/` | Publishing, e2e, fedproxy, celld, fork packaging |
+| `scripts/` | Publishing, source verification, e2e, fedproxy, celld, fork packaging |
 | `emdash/` | The EmDash fork, as a submodule. See [docs/emdash-fork.md](docs/emdash-fork.md) |
 | `docs/adrs/` | Architecture decision records |
 
@@ -100,6 +102,42 @@ chromium-browser --headless=new --window-size=390,2400 --screenshot=mobile.png h
 4. Publish with `./scripts/publish-wasm.sh <name>`.
 
 The [Write a module](https://exec.fedfork.com/modules) guide walks through a complete example.
+
+### Change a Rust module and republish it
+
+1. Edit the crate, then run `./wasm/build.sh` and `node --test wasm/*/test.mjs`.
+2. Commit and push first. The manifest records `git rev-parse HEAD`, so the commit it names should hold the files it lists.
+3. Publish. The script publishes each new source file once, keyed by its sha256, then a new manifest, then the module record pointing at both the blob and the manifest. Old manifests stay as they were.
+
+   ```bash
+   ./scripts/publish-wasm.sh vibescrobble
+   ```
+
+4. Commit the regenerated `records/wasm/<name>.json`. The plugin tests read the blob CID from it.
+
+Always build with `./wasm/build.sh`, not plain `cargo build`. The script remaps `$CARGO_HOME` and the workspace path in `RUSTFLAGS`. Without that, the module embeds your home directory and no one else can reproduce it.
+
+### Verify a module's build
+
+```bash
+./scripts/verify-source.sh aliceoa.bsky.social vibescrobble
+```
+
+The script:
+1. fetches the module, its manifest and every file from the author's PDS;
+2. checks each CID and sha256;
+3. writes the files to an empty directory;
+4. runs the manifest's build command in a container (`rust:<version>` for Cargo, `node:24` for AssemblyScript);
+5. compares the result with the manifest and the published blob. It exits non-zero when they differ.
+
+Never run a manifest's command directly on your machine. It comes from someone's PDS.
+
+### The studio
+
+The studio pages call five plugin routes: `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`. They are declared in `plugins/atproto-integrations-emdash/src/plugin.ts` and implemented in `src/studio.ts`.
+- **Reserved key.** The studio session is stored under the reserved record key `_studio`. Keep the guards that refuse that key in `beginConnect`, `listIntegrations` and the module session parser.
+- **Editor templates.** These live in `site/src/studio/assemblyscript/` as `.as` files, so the site's TypeScript check skips them. The editor hands them to `asc` as `.ts`.
+- **Compiler version.** If you upgrade `assemblyscript`, keep its version pinned exactly in `site/package.json`. Manifests record it, and rebuilds need the same compiler.
 
 ### An integration record
 

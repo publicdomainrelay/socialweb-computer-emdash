@@ -5,15 +5,19 @@
 	"module": {
 		"$type": "blob",
 		"ref": {
-			"$link": "bafkreidry5ck5hepxgai6fwbkzp4qwpxyqyvqqzt34hv3bntmryjegzhea"
+			"$link": "bafkreifwyipfinw6dhr2tmvd64hlch4nba7yifjo5s2ndrhzalv6z5xdqi"
 		},
 		"mimeType": "application/wasm",
-		"size": 108672
+		"size": 108480
 	},
 	"abi": "emdash-wasm-json-v1",
 	"session": {
 		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/statusphere",
-		"cid": "bafyreift6pbrjsvtskefh6zcpv2ymuonycresa6x6a2ob55xkroqrhc5dy"
+		"cid": "bafyreiezpitidablsewsew3jzpnoqov6kgspk3lcjtj6rkb6spgfnewx44"
+	},
+	"source": {
+		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.manifest/statusphere.1794040916947",
+		"cid": "bafyreigmaqd6e5mapxrtujykr2ppgrnpvnemybk2j3spcznjk2gowxxyyy"
 	},
 	"actions": [
 		{

@@ -1,24 +1,38 @@
-export interface CompileResult {
-	binary?: Uint8Array;
-	log: string;
-}
+export const ENTRY_FILE = "module.ts";
+export const ARTIFACT = "module.wasm";
 
 const FLAGS = ["--runtime", "stub", "--use", "abort=", "--optimizeLevel", "3", "--shrinkLevel", "1", "--noAssert"];
 
-export async function compile(files: Record<string, string>, entry: string): Promise<CompileResult> {
-	const { default: asc } = await import("assemblyscript/asc");
-	let binary: Uint8Array | undefined;
+export interface CompileResult {
+	binary?: Uint8Array<ArrayBuffer>;
+	log: string;
+	version: string;
+	command: string;
+}
+
+export async function compile(files: Record<string, string>): Promise<CompileResult> {
+	const asc = await import("assemblyscript/asc");
+	let binary: Uint8Array<ArrayBuffer> | undefined;
 	let log = "";
-	const stream = { write: (text: string | Uint8Array) => ((log += typeof text === "string" ? text : new TextDecoder().decode(text)), true) };
-	const { error } = await asc.main([entry, "--outFile", "module.wasm", ...FLAGS], {
+	const stream = { write: (chunk: string | Uint8Array) => ((log += typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk)), true) };
+	const { error } = await asc.main([ENTRY_FILE, "--outFile", ARTIFACT, ...FLAGS], {
 		stdout: stream,
 		stderr: stream,
 		readFile: (name: string) => files[name.replace(/^\.\//, "")] ?? null,
 		writeFile: (name: string, contents: Uint8Array | string) => {
-			if (name.endsWith("module.wasm") && typeof contents !== "string") binary = contents;
+			if (name.endsWith(ARTIFACT) && typeof contents !== "string") binary = new Uint8Array(contents);
 		},
 		listFiles: () => [],
 	});
 	if (error) log += `${error.message}\n`;
-	return { binary: error ? undefined : binary, log };
+	return {
+		binary: error ? undefined : binary,
+		log,
+		version: `assemblyscript ${asc.version}`,
+		command: `npx --yes --package=assemblyscript@${asc.version} asc ${ENTRY_FILE} --outFile ${ARTIFACT} ${FLAGS.join(" ")}`,
+	};
+}
+
+export async function sha256Hex(bytes: Uint8Array<ArrayBuffer>) {
+	return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }

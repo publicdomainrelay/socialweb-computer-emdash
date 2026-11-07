@@ -14,10 +14,11 @@ const toc = [
 	{ id: "run", label: "Run a module" },
 	{ id: "cli", label: "From your terminal" },
 	{ id: "own", label: "Your own integration" },
+	{ id: "studio", label: "Use the studio" },
 	{ id: "troubleshooting", label: "Troubleshooting" },
 ];
 
-const tools = `go install github.com/bluesky-social/goat@latest
+const tools = `GOTOOLCHAIN=auto go install github.com/bluesky-social/goat@latest
 git clone https://github.com/publicdomainrelay/socialweb-computer-emdash
 cd socialweb-computer-emdash
 export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'`;
@@ -165,6 +166,31 @@ goat record create -n -r example example.json`;
 		<p>To give it a module, see <a href="/modules">Write a module</a>.</p>
 	</section>
 
+	<section id="studio">
+		<h2>Use the studio</h2>
+		<p>
+			Everything above also works without a terminal. The studio is part of this site and writes to your own PDS with a separate, narrowly scoped session.
+		</p>
+		<ol class="steps">
+			<li>
+				<strong>Connect the studio</strong>
+				On <a href="/studio">/studio</a>, approve one more OAuth request. It can write only your integration, module and source records, and upload WebAssembly blobs.
+			</li>
+			<li>
+				<strong>Build an integration</strong>
+				<a href="/studio/integration">/studio/integration</a> is a form for a <code>clientMetadata</code> record: name, client details and scope groups, with a helper that writes scope strings for you. Load one of your records to edit it, or start a new one.
+			</li>
+			<li>
+				<strong>Write a module</strong>
+				<a href="/studio/module">/studio/module</a> compiles AssemblyScript in your browser, runs its entries locally, and publishes the module with its source files and manifest.
+			</li>
+			<li>
+				<strong>Read any module's source</strong>
+				<a href="/source">/source</a> shows the files and build of any module that has a source record, checks every file against its hash, and can rebuild AssemblyScript modules in your browser.
+			</li>
+		</ol>
+	</section>
+
 	<section id="troubleshooting">
 		<h2>Troubleshooting</h2>
 		<div class="table-scroll">
@@ -175,6 +201,7 @@ goat record create -n -r example example.json`;
 					<tr><td>Module missing from a card</td><td>The module record's <code>session.uri</code> must name that integration. Republish with <code>publish-wasm.sh</code>.</td></tr>
 					<tr><td><code>Service auth token was already used</code></td><td>Fetch a new token. Each <code>jti</code> works once.</td></tr>
 					<tr><td><code>text must start with an emoji</code></td><td>Start the scrobble with an emoji.</td></tr>
+					<tr><td><code>Connect the studio first</code></td><td>Open <a href="/studio">/studio</a> and connect it. If it says some permissions are missing, connect again.</td></tr>
 					<tr><td>A run fails after you changed scopes</td><td>Press <em>Verify</em>, then reconnect with the groups the module needs.</td></tr>
 				</tbody>
 			</table>

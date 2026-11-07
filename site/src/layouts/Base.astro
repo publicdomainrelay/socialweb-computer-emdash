@@ -50,6 +50,7 @@ const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" 
 						))
 					}
 					<a href="/integrations" aria-current={current("/integrations")}>Integrations</a>
+					<a href="/studio" aria-current={current("/studio")}>Studio</a>
 					<div class="site-nav__extras">
 						<SourceLink label="Source code" />
 						<ThemeToggle />

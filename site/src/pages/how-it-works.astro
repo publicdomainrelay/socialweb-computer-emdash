@@ -2,7 +2,7 @@
 import Code from "../components/Code.astro";
 import Diagram from "../components/Diagram.astro";
 import Legend from "../components/Legend.astro";
-import { connect, records, refresh, rounds, serviceAuth, trust } from "../diagrams";
+import { connect, records, refresh, rounds, serviceAuth, sourceRecords, trust } from "../diagrams";
 import Guide from "../layouts/Guide.astro";
 
 const toc = [
@@ -10,6 +10,7 @@ const toc = [
 	{ id: "records", label: "Records define it" },
 	{ id: "connect", label: "Connecting" },
 	{ id: "trust", label: "Who holds what" },
+	{ id: "studio", label: "The studio session" },
 	{ id: "rounds", label: "Running a module" },
 	{ id: "service-auth", label: "Service auth" },
 	{ id: "refresh", label: "Parallel runs" },
@@ -60,13 +61,18 @@ const integrationRecord = `{
 	<section id="records">
 		<h2>Records define it</h2>
 		<p>
-			Two record types describe an integration. An <code>oauth.clientMetadata</code> record is an OAuth client: its scopes and its scope groups. A <code>wasm.module</code> record names a WebAssembly blob, the client record it runs with, the actions it offers, and the NSIDs it may call.
+			Two record types describe an integration. An <code>oauth.clientMetadata</code> record is an OAuth client: its scopes and its scope groups. A <code>wasm.module</code> record names a WebAssembly blob, the client record it runs with, the actions it offers, and the NSIDs it may call. All of our lexicons live under <code>com.fedfork.exec.*</code>.
 		</p>
 		<Diagram code={records} label="A wasm.module record points to its client metadata record by URI and CID, and to its blob by CID." />
 		<Code title="records/vibescrobble.json (trimmed)" code={integrationRecord} />
 		<p>
 			The site serves each record as its own client at <code>/integrations/&lt;did&gt;/&lt;rkey&gt;/oauth-client-metadata.json</code>. Its <code>client_id</code> and <code>redirect_uris</code> are rewritten to the site's origin, so the record's own URLs are placeholders.
 		</p>
+		<h3>Source records</h3>
+		<p>
+			A module can also point at its source. <code>source.file</code> records hold file contents, keyed by their sha256, and an immutable <code>source.manifest</code> lists the paths, the compiler, the build command and the hash of what it built. Anyone can read them back on the <a href="/source">source page</a> and rebuild the module to check that the blob came from that code. See <a href="/modules#source">Source records</a>.
+		</p>
+		<Diagram code={sourceRecords} label="A wasm.module record points at its blob, its integration record and its source manifest; the manifest points at source.file records keyed by sha256." />
 	</section>
 
 	<section id="connect">
@@ -89,6 +95,22 @@ const integrationRecord = `{
 			<li><strong>Isolation.</strong> On Cloudflare each run gets its own Worker Loader isolate with <code>globalOutbound: null</code>. On Node it runs in a workerd sandbox.</li>
 			<li><strong>Scopes.</strong> Even an allowed call can only do what your OAuth session's scopes permit.</li>
 		</ul>
+	</section>
+
+	<section id="studio">
+		<h2>The studio session</h2>
+		<p>
+			Signing in asks only for <code>atproto</code>, so the site cannot write to your repo. The <a href="/studio">studio</a> asks for write access separately, as its own OAuth session that the plugin defines itself rather than reading it from a record. It requests exactly these scopes:
+		</p>
+		<ul>
+			<li><code>repo:com.fedfork.exec.oauth.clientMetadata</code>, for your integration records;</li>
+			<li><code>repo:com.fedfork.exec.wasm.module</code>, for your module records;</li>
+			<li><code>repo:com.fedfork.exec.source.file</code> and <code>repo:com.fedfork.exec.source.manifest</code>, for module sources;</li>
+			<li><code>blob:application/wasm</code>, to upload compiled modules.</li>
+		</ul>
+		<p>
+			Like every other session, it can authorize only your own DID, and it is sealed in plugin storage. It is stored under the reserved record key <code>_studio</code>. The plugin refuses that key everywhere else: a <code>clientMetadata</code> record named <code>_studio</code> is not listed or connectable, and a module whose <code>session</code> names it does not run. So no module can borrow the studio's write access.
+		</p>
 	</section>
 
 	<section id="rounds">

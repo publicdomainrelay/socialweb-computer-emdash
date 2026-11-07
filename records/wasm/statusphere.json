@@ -1,0 +1,25 @@
+{
+	"$type": "com.publicdomainrelay.temp.wasm.module",
+	"name": "Statusphere",
+	"description": "Set your xyz.statusphere.status emoji status.",
+	"module": {
+		"$type": "blob",
+		"ref": {
+			"$link": "bafkreictmtxavczjvlhbbe3okiw3ygtjuy2ajnj26izqpnstom4dxfb3ry"
+		},
+		"mimeType": "application/wasm",
+		"size": 86273
+	},
+	"abi": "emdash-wasm-json-v1",
+	"session": {
+		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere",
+		"cid": "bafyreift6pbrjsvtskefh6zcpv2ymuonycresa6x6a2ob55xkroqrhc5dy"
+	},
+	"actions": [
+		{
+			"entry": "set_status",
+			"label": "Set status"
+		}
+	],
+	"createdAt": "2026-11-07T02:39:32.000Z"
+}

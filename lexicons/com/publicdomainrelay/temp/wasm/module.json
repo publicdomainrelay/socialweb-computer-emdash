@@ -1,0 +1,41 @@
+{
+	"lexicon": 1,
+	"id": "com.publicdomainrelay.temp.wasm.module",
+	"defs": {
+		"main": {
+			"type": "record",
+			"key": "any",
+			"description": "A sandboxed WebAssembly module that turns user input into XRPC calls made with the session of an OAuth client metadata record.",
+			"record": {
+				"type": "object",
+				"required": ["name", "module", "abi", "session", "actions", "createdAt"],
+				"properties": {
+					"name": { "type": "string", "maxLength": 640, "maxGraphemes": 64 },
+					"description": { "type": "string", "maxLength": 3000, "maxGraphemes": 300 },
+					"module": { "type": "blob", "accept": ["application/wasm"], "maxSize": 4194304 },
+					"abi": { "type": "string", "maxLength": 64, "knownValues": ["emdash-wasm-json-v1"] },
+					"session": {
+						"type": "ref",
+						"ref": "com.atproto.repo.strongRef",
+						"description": "The com.publicdomainrelay.temp.oauth.clientMetadata record whose session the module's calls use."
+					},
+					"actions": {
+						"type": "array",
+						"maxLength": 64,
+						"items": { "type": "ref", "ref": "#action" }
+					},
+					"createdAt": { "type": "string", "format": "datetime" }
+				}
+			}
+		},
+		"action": {
+			"type": "object",
+			"required": ["entry", "label"],
+			"properties": {
+				"entry": { "type": "string", "maxLength": 128 },
+				"label": { "type": "string", "maxLength": 640, "maxGraphemes": 64 },
+				"description": { "type": "string", "maxLength": 3000, "maxGraphemes": 300 }
+			}
+		}
+	}
+}

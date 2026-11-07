@@ -8,7 +8,8 @@ import { plugin, studioDid } from "./api";
 import abiSource from "./assemblyscript/abi.as?raw";
 import echoSource from "./assemblyscript/echo.as?raw";
 import noteSource from "./assemblyscript/note.as?raw";
-import { ARTIFACT, type CompileResult, compile, ENTRY_FILE, sha256Hex } from "./compile";
+import { ARTIFACT, type CompileResult, compile, ENTRY_FILE } from "./compile";
+import { sha256Hex } from "./hash";
 
 interface Template {
 	label: string;

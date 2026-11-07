@@ -1,7 +1,7 @@
 ---
 import Code from "../components/Code.astro";
 import Base from "../layouts/Base.astro";
-import { sha256Hex } from "../studio/compile";
+import { sha256Hex } from "../studio/hash";
 import { getRecord, MANIFEST_COLLECTION, MODULE_COLLECTION, parseAtUri, pdsOf } from "../utils/atproto";
 
 export const prerender = false;
@@ -171,7 +171,8 @@ const sources = Object.fromEntries(files.map((file) => [file.path, file.text]));
 </Base>
 
 <script>
-	import { compile, sha256Hex } from "../studio/compile";
+	import { compile } from "../studio/compile";
+	import { sha256Hex } from "../studio/hash";
 
 	for (const box of document.querySelectorAll<HTMLElement>("[data-rebuild]")) {
 		const button = box.querySelector<HTMLButtonElement>("[data-rebuild-button]");

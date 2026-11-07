@@ -1,6 +1,6 @@
 # 0015. WebAssembly modules stored as atproto blobs
 
-Status: accepted
+Status: accepted, amended by 0018 (rounds) and 0019 (service auth)
 
 ## Context
 

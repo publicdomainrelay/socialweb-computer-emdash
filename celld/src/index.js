@@ -5,6 +5,11 @@ const ABI = "emdash-wasm-json-v1";
 const BASE32 = "abcdefghijklmnopqrstuvwxyz234567";
 const RESERVED = new Set(["did", "rkey", "entry", "now"]);
 const CPU_LIMIT = /exceeded CPU (time )?limit/i;
+const NSID = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z0-9-]+){2,}$/;
+const ENTRY = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+const MAX_ROUNDS = 8;
+const MAX_CALLS_PER_ROUND = 10;
+const MAX_CALLS = 25;
 
 const runnerSource = `import { WorkerEntrypoint } from "cloudflare:workers";
 import compiled from "./module.wasm";
@@ -119,13 +124,62 @@ async function run(url, env) {
 	input.now = url.searchParams.get("now") ?? new Date().toISOString();
 	input.did = did;
 
+	const allowed = Array.isArray(value.calls) ? value.calls : undefined;
+	const step = (current, carried) => runStep(env, module, sha256, current, { ...input, ...carried });
+	const rounds = [];
+	let current = entry;
+	let carried = {};
+	let total = 0;
+	for (;;) {
+		if (rounds.length >= MAX_ROUNDS) throw new HttpError(422, `module exceeded ${MAX_ROUNDS} rounds`);
+		const output = await step(current, carried);
+		const calls = parseCalls(output, allowed);
+		total += calls.length;
+		if (total > MAX_CALLS) throw new HttpError(422, `module exceeded ${MAX_CALLS} calls`);
+		const next = output.next ?? undefined;
+		if (next !== undefined && (typeof next !== "string" || !ENTRY.test(next))) {
+			throw new HttpError(422, "module next must be an export name");
+		}
+		const headers = { "x-wasm-sha256": sha256, "x-wasm-cid": cid, "x-atproto-pds": pds };
+		if (calls.some((call) => call.input !== undefined)) {
+			return json({ rounds, pending: { entry: current, calls, next, state: output.state } }, 200, headers);
+		}
+		const results = [];
+		for (const call of calls) results.push(await publicQuery(pds, call));
+		rounds.push({ entry: current, calls: results });
+		if (!next) return json({ rounds, result: output.result ?? null }, 200, headers);
+		current = next;
+		carried = { state: output.state, results };
+	}
+}
+
+function parseCalls(output, allowed) {
+	if (typeof output?.error === "string") throw new HttpError(422, output.error);
+	if (!Array.isArray(output?.calls)) throw new HttpError(422, "module output must contain calls");
+	if (output.calls.length > MAX_CALLS_PER_ROUND) throw new HttpError(422, "module requested too many calls");
+	return output.calls.map((call) => {
+		if (typeof call?.nsid !== "string" || !NSID.test(call.nsid)) throw new HttpError(422, "module call needs an NSID");
+		if (allowed && !allowed.includes(call.nsid)) throw new HttpError(422, `module record does not allow ${call.nsid}`);
+		return call;
+	});
+}
+
+async function publicQuery(pds, call) {
+	const params = new URLSearchParams(Object.entries(call.params ?? {}).map(([key, value]) => [key, String(value)]));
+	const response = await fetch(`${pds}/xrpc/${call.nsid}?${params}`, { headers: { accept: "application/json" } });
+	const output = await response.json().catch(() => ({}));
+	return response.ok
+		? { nsid: call.nsid, ok: true, output }
+		: { nsid: call.nsid, ok: false, error: `${call.nsid} failed with ${output.error ?? response.status}` };
+}
+
+async function runStep(env, module, sha256, entry, input) {
 	let prepared;
 	try {
-		prepared = await prepareWasmRun({ module, entry, input, sha256 });
+		prepared = await prepareWasmRun({ module, entry, input: { ...input, now: input.now ?? new Date().toISOString() }, sha256 });
 	} catch (error) {
 		throw new HttpError(422, error.message);
 	}
-
 	const worker = env.LOADER.get(`emdash-wasm-${prepared.sha256}`, () => ({
 		compatibilityDate: "2026-04-01",
 		mainModule: "runner.js",
@@ -146,11 +200,7 @@ async function run(url, env) {
 		throw error;
 	});
 	if (!result.ok) throw new HttpError(422, result.error);
-	return json(JSON.parse(result.output), 200, {
-		"x-wasm-sha256": prepared.sha256,
-		"x-wasm-cid": cid,
-		"x-atproto-pds": pds,
-	});
+	return JSON.parse(result.output);
 }
 
 export default {

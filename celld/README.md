@@ -1,8 +1,8 @@
 # WebAssembly modules on celld
 
-A Worker for [celld](https://github.com/denoland/celld). The bucket is [rustfs](https://github.com/rustfs/rustfs). `GET /run` loads a `com.publicdomainrelay.temp.wasm.module` record and its blob from the owner's PDS, checks the blob CID's SHA-256, and runs the module in a Dynamic Worker with `globalOutbound: null`. It runs the same `emdash-wasm-json-v1` runtime as the fork's Cloudflare runner. It returns the planned XRPC calls.
+A Worker for [celld](https://github.com/denoland/celld). The bucket is [rustfs](https://github.com/rustfs/rustfs). `GET /run` loads a `com.publicdomainrelay.temp.wasm.module` record and its blob from the owner's PDS, checks the blob CID's SHA-256, and runs the module in a Dynamic Worker with `globalOutbound: null`. It runs the same `emdash-wasm-json-v1` runtime as the fork's Cloudflare runner, over rounds (ADR 0018).
 
-It holds no OAuth sessions and makes none of the calls.
+It holds no OAuth sessions. It makes a round's calls itself only when they are all unauthenticated queries, such as `listRecords`. At the first call with an input, it stops and returns that round as `pending`.
 
 ## Run
 
@@ -11,7 +11,11 @@ NOW=2026-11-06T12:34:56.789Z ./scripts/celld.sh
 ```
 
 ```text
-{"calls":[{"input":{"collection":"xyz.statusphere.status","record":{"$type":"xyz.statusphere.status","createdAt":"2026-11-06T12:34:56.789Z","status":"🦋"},"repo":"did:plc:lpfuqerea3deuoyrn7ojser4"},"nsid":"com.atproto.repo.createRecord"}]}
+{"rounds":[{"entry":"set_status","calls":[{"nsid":"com.atproto.repo.listRecords","ok":true,"output":{"records":[]}}]}],"pending":{"entry":"set_status_write","calls":[{"input":{"collection":"xyz.statusphere.status","record":{"$type":"xyz.statusphere.status","createdAt":"2026-11-06T12:34:56.789Z","status":"🦋"},"repo":"did:plc:lpfuqerea3deuoyrn7ojser4"},"nsid":"com.atproto.repo.createRecord"}],"next":"set_status_done","state":{"status":"🦋"}}}
+```
+
+```bash
+MODULE_ENTRY=clear_status ./scripts/celld.sh run | jq -c .result
 ```
 
 ## Call
@@ -65,4 +69,5 @@ celld/vendor/emdash/        dist/plugins/wasm.mjs from the packed emdash tarball
 
 ```text
 module 4 MiB   input 1 MiB   output 1 MiB   memory 1024 pages   cpuMs 5000   wall 5000 ms
+rounds 8   calls per round 10   calls per run 25
 ```

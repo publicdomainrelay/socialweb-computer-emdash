@@ -747,7 +747,7 @@ packages:
       react-dom: ^18.0.0 || ^19.0.0
 
   '@emdash-cms/cloudflare@file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz':
-    resolution: {integrity: sha512-DVXx1mAFs2xDKlY9fT9ASUj9Pj4jvKvwsBA1eTNnVjMicf5wLf3dGAoQ9Z/eLGASzmfZbeoJ1OhNfBknzTMBww==, tarball: file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz}
+    resolution: {integrity: sha512-IxTMJsUyihni8+PNJhmd+isYr84TYGzYPD7Ms2lDajaIvnxCFuKkJnDWF+B9o/nZEkXC4FwJxkbNzGdCwpC3lw==, tarball: file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz}
     version: 1.4.0
     peerDependencies:
       '@astrojs/cloudflare': '>=12.0.0'
@@ -776,12 +776,12 @@ packages:
     resolution: {integrity: sha512-WanDT+G6wtYRb9TZDTm/XvCqQyjkWa85slZVgWH39BaZ0j2WjuipD6IFaFdMPDiVlk6yxs6lL6zDw1xUu96Qgg==}
 
   '@emdash-cms/plugin-cli@file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz':
-    resolution: {integrity: sha512-MtwPMhfk4LMtviNxG5/z3jBgo2ESOHhN+zKR8TYbKdRmunf10jiq3283hXusrVozzH+JUBwkc9Ghr2nzJG23rg==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz}
+    resolution: {integrity: sha512-qTjbrQ5nHQmanN0TNu3bzKNehI+5M1C0AaYtKN7V1vJz7czR82FS/CHOYV7r5xawUCo6twGlVdLf7LnbWiQflQ==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz}
     version: 0.13.5
     hasBin: true
 
   '@emdash-cms/plugin-test@file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz':
-    resolution: {integrity: sha512-wy9yycOwmHij+RgjBX7TXdWQA4a5IgyXsdQDwG6ArxGj009+1FCMMQNurR1FSbLujVvpwXFl6JS0dkT+9ohifw==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz}
+    resolution: {integrity: sha512-M99cWpqHqCOxqp6PbAQ69zI25oqZ+p5BINLOKhJVdDQt9ywoqRDuXz47g8BHNHr9VEm9K/VqNjAsmFAXqO7Cig==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz}
     version: 0.2.11
     peerDependencies:
       vite: ^8.0.0
@@ -805,7 +805,7 @@ packages:
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   '@emdash-cms/sandbox-workerd@file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz':
-    resolution: {integrity: sha512-qnMHnIN4BkuiekcwXe3SXVyfjohBtCEcUzj5x28cTceTQQOE+2i9X7jpif6jNtV1buvOA5sxe8MLPG6vGrSl6w==, tarball: file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz}
+    resolution: {integrity: sha512-mw5MgvUBjrYChyZ185Prshy9G6mlwHMwkyJN6dBiD+qIPg8tdkbVEgBl/LGrO9deRYrE+KV8kQi3XOqw8h/Gfw==, tarball: file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz}
     version: 0.9.6
     peerDependencies:
       kysely: '>=0.29.0'
@@ -2990,7 +2990,7 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
   emdash@file:vendor/emdash-fork/emdash-1.4.0.tgz:
-    resolution: {integrity: sha512-8ooh/KdHlIgz8hJpIJ638qX+q+iLK/jmgl+sU9yUJdKGQTun5MVC0mdbp94om3OTwV1EfvtRlpbhQ6jMSf3bPw==, tarball: file:vendor/emdash-fork/emdash-1.4.0.tgz}
+    resolution: {integrity: sha512-H2XuVFQJA7fu7N11HQWeZDwEiniwe3uOkAuPmcBfnH9UBWA1hdc32ADf7fjqtk75shrXyliS9P6g/M7vwOtIpg==, tarball: file:vendor/emdash-fork/emdash-1.4.0.tgz}
     version: 1.4.0
     engines: {node: '>=22.16'}
     hasBin: true

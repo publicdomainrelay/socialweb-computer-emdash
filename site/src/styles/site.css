@@ -178,6 +178,18 @@ pre {
 	.site-actions {
 		gap: 0.5rem;
 	}
+
+	.site-actions .btn {
+		padding: 0.4rem 0.75rem;
+	}
+
+	.site-actions .theme-toggle__track {
+		width: 2.75rem;
+	}
+
+	.site-actions .theme-toggle[aria-checked="true"] .theme-toggle__thumb {
+		transform: translateX(1rem);
+	}
 }
 
 .band {

@@ -1,6 +1,6 @@
 # socialweb-computer-emdash
 
-Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.publicdomainrelay.temp.oauth.clientMetadata` record in their own PDS.
+Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.fedfork.exec.oauth.clientMetadata` record in their own PDS.
 
 Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
 
@@ -50,7 +50,7 @@ export ATPROTO_HANDLE=alice.bsky.social ATPROTO_PASSWORD='app-password'
 
 ```bash
 goat lex validate -c lexicons records/statusphere.json
-goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere"
+goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.oauth.clientMetadata/statusphere"
 ```
 
 ## WebAssembly integrations
@@ -63,7 +63,7 @@ node --test wasm/*/test.mjs
 ```
 
 ```bash
-goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/vibescrobble"
+goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/vibescrobble"
 ```
 
 - `statusphere`: set or clear your `xyz.statusphere.status`.
@@ -80,7 +80,7 @@ SITE="${SITE_URL:-https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com}"
 SITE_DID="did:web:${SITE#https://}"
 DOC=$(goat resolve "$ATPROTO_HANDLE")
 PDS=$(jq -r '.service[] | select(.id == "#atproto_pds") | .serviceEndpoint' <<<"$DOC")
-MODULE="at://$(jq -r .id <<<"$DOC")/com.publicdomainrelay.temp.wasm.module/statusphere"
+MODULE="at://$(jq -r .id <<<"$DOC")/com.fedfork.exec.wasm.module/statusphere"
 ACCESS_JWT=$(curl -fsS -X POST -H 'content-type: application/json' \
   -d "{\"identifier\":\"$ATPROTO_HANDLE\",\"password\":\"$ATPROTO_PASSWORD\"}" \
   $PDS/xrpc/com.atproto.server.createSession | jq -r .accessJwt)
@@ -89,7 +89,7 @@ ACCESS_JWT=$(curl -fsS -X POST -H 'content-type: application/json' \
 Through your PDS:
 
 ```bash
-curl -fsS -X POST $PDS/xrpc/com.publicdomainrelay.temp.wasm.run \
+curl -fsS -X POST $PDS/xrpc/com.fedfork.exec.wasm.run \
   -H "Authorization: Bearer $ACCESS_JWT" \
   -H "atproto-proxy: $SITE_DID#emdash_integrations" \
   -H 'content-type: application/json' \
@@ -100,8 +100,8 @@ With a token from `getServiceAuth`:
 
 ```bash
 TOKEN=$(curl -fsS -H "Authorization: Bearer $ACCESS_JWT" \
-  "$PDS/xrpc/com.atproto.server.getServiceAuth?aud=$SITE_DID&lxm=com.publicdomainrelay.temp.wasm.run" | jq -r .token)
-curl -fsS -X POST "$SITE/xrpc/com.publicdomainrelay.temp.wasm.run" \
+  "$PDS/xrpc/com.atproto.server.getServiceAuth?aud=$SITE_DID&lxm=com.fedfork.exec.wasm.run" | jq -r .token)
+curl -fsS -X POST "$SITE/xrpc/com.fedfork.exec.wasm.run" \
   -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
   -d "{\"module\":\"$MODULE\",\"entry\":\"clear_status\"}" | jq .result
 ```
@@ -199,7 +199,7 @@ curl -s "http://127.0.0.1:4321/integrations/$DID/statusphere/oauth-client-metada
 
 ```json
 {
-	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"$type": "com.fedfork.exec.oauth.clientMetadata",
 	"name": "Example",
 	"clientMetadata": {
 		"client_id": "https://example.com/oauth-client-metadata.json",
@@ -222,13 +222,13 @@ goat record create -n -r example example.json
 ## How it works
 
 - **Sign-in.** Users sign in with the `atproto` scope only, through `@publicdomainrelay/auth-atproto-subscriber`.
-- **Integrations.** Each `com.publicdomainrelay.temp.oauth.clientMetadata` record in the user's PDS becomes its own OAuth client. `@atcute/oauth-node-client` does PAR, PKCE, DPoP and refresh.
+- **Integrations.** Each `com.fedfork.exec.oauth.clientMetadata` record in the user's PDS becomes its own OAuth client. `@atcute/oauth-node-client` does PAR, PKCE, DPoP and refresh.
 - **Sessions.** Sessions are AES-GCM sealed in plugin storage, one per user per integration. Only the record's own DID can authorize one.
-- **Modules.** A `com.publicdomainrelay.temp.wasm.module` record points to a WebAssembly blob. The plugin checks the blob's sha256 against its CID, then runs it with `ctx.wasm.run`.
+- **Modules.** A `com.fedfork.exec.wasm.module` record points to a WebAssembly blob. The plugin checks the blob's sha256 against its CID, then runs it with `ctx.wasm.run`.
 - **No ambient authority.** The module has no imports, no network and no tokens.
 - **Rounds.** A module returns `{calls, next, state, result}`. The plugin makes the calls with the user's session and passes the results to `next`.
 - **Limits.** 8 rounds, 10 calls per round, 25 calls in total. The record can list which NSIDs the module may call.
-- **Service auth.** The site is `did:web:<host>` with service `#emdash_integrations`. `POST /xrpc/com.publicdomainrelay.temp.wasm.run` takes a service-auth JWT, which `@atcute/crypto` verifies. The plugin checks `aud`, `lxm` and `exp`, and each `jti` works only once.
+- **Service auth.** The site is `did:web:<host>` with service `#emdash_integrations`. `POST /xrpc/com.fedfork.exec.wasm.run` takes a service-auth JWT, which `@atcute/crypto` verifies. The plugin checks `aud`, `lxm` and `exp`, and each `jti` works only once.
 - **Parallel runs.** A lease in plugin storage serializes token refresh. Parallel runs refresh a session once instead of racing single-use refresh tokens.
 - **Scrobbles.** The `vibescrobble` module posts `com.vibescrobble.scrobble` records, matching atirc's emoji rule and record shape.
 - **Bundle.** The plugin bundle is about 93 KB, under the registry's 128 KB per-file cap.
@@ -358,7 +358,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │           ├── integrations/index.astro      ● connect, run, rounds UI
 │           ├── integrations/[did]/[rkey]/oauth-client-metadata.json.ts  ● client metadata per record
 │           ├── .well-known/did.json.ts       ● did:web document with #emdash_integrations
-│           └── xrpc/com.publicdomainrelay.temp.wasm.run.ts  ● Bearer token to plugin service/run
+│           └── xrpc/com.fedfork.exec.wasm.run.ts  ● Bearer token to plugin service/run
 ├── plugins/atproto-integrations-emdash/      ● sandboxed plugin
 │   ├── emdash-plugin.jsonc                   ● capabilities; storage clients, pending, sessions, replays, locks
 │   ├── src/
@@ -376,7 +376,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │   ├── abi/                                  ● shared JSON ABI: Did, CallResult, entries!
 │   ├── statusphere/                          ● set_status, clear_status
 │   └── vibescrobble/                         ● scrobble
-├── lexicons/com/publicdomainrelay/temp/      ● oauth.clientMetadata, wasm.module, wasm.run
+├── lexicons/com/fedfork/exec/      ● oauth.clientMetadata, wasm.module, wasm.run
 ├── records/                                  ● statusphere, vibescrobble, socialweb-computer; records/wasm/ module records
 ├── celld/                                    ● celld Worker using the fork runtime
 ├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, emdash-fork.sh, release-emdash-fork.sh

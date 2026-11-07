@@ -6,8 +6,8 @@ export const SITE_URL = "https://site.example";
 export const ALICE = { did: "did:plc:ewvi7nxzyoun6zhxrhs64oiz", handle: "alice.example", pds: "https://pds.example" };
 export const ISSUER = "https://auth.example";
 export const RECORDS = { "socialweb-computer": socialweb, statusphere } as const;
-export const COLLECTION = "com.publicdomainrelay.temp.oauth.clientMetadata";
-export const MODULE_COLLECTION = "com.publicdomainrelay.temp.wasm.module";
+export const COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
+export const MODULE_COLLECTION = "com.fedfork.exec.wasm.module";
 
 type User = Awaited<ReturnType<PluginRuntimeTestHost["fixtures"]["user"]>>;
 

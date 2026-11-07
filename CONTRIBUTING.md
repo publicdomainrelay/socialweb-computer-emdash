@@ -30,7 +30,7 @@ pnpm dev
 | `site/src/diagrams.ts` | Every Mermaid diagram on the site, drawn by [Pele](https://pele.run) |
 | `plugins/atproto-integrations-emdash/` | The sandboxed plugin: OAuth, sealed sessions, module rounds, service auth |
 | `wasm/` | Cargo workspace: `abi`, `statusphere`, `vibescrobble`, plus `harness.mjs` for tests |
-| `lexicons/` | `com.publicdomainrelay.temp.*` lexicons |
+| `lexicons/` | `com.fedfork.exec.*` lexicons |
 | `records/` | Integration records, and module records in `records/wasm/` |
 | `scripts/` | Publishing, e2e, fedproxy, celld, fork packaging |
 | `emdash/` | The EmDash fork, as a submodule. See [docs/emdash-fork.md](docs/emdash-fork.md) |
@@ -119,7 +119,7 @@ Follow [docs/emdash-fork.md](docs/emdash-fork.md): change and test in `emdash/`,
 - **Use vetted libraries through their public exports.** For example, `@atcute/*` for OAuth, identity and crypto, and `@scure/base` for encodings.
   - Never hand-roll crypto or re-declare a library's constants.
   - Prefer clear code over a smaller bundle. The one hard limit is EmDash's 128 KB per-file cap on plugin bundles.
-- **Lexicons are temporary.** NSIDs under `com.publicdomainrelay.temp.*` may change.
+- **Lexicons are temporary.** NSIDs under `com.fedfork.exec.*` may change.
 - **Commit messages** use a type and scope, such as `feat(site): …` or `fix(deploy): …`. The body says why.
 - **Keep the README runnable.** Explanations belong on the site's guide pages.
 

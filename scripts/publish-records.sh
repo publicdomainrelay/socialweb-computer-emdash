@@ -3,7 +3,7 @@ set -euo pipefail
 
 : "${ATPROTO_HANDLE:?Set ATPROTO_HANDLE}"
 : "${ATPROTO_PASSWORD:?Set ATPROTO_PASSWORD}"
-COLLECTION=com.publicdomainrelay.temp.oauth.clientMetadata
+COLLECTION=com.fedfork.exec.oauth.clientMetadata
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 goat account login -u "$ATPROTO_HANDLE" -p "$ATPROTO_PASSWORD" >/dev/null

@@ -1,6 +1,6 @@
 import { BASE_SCOPE, type ScopeGroup, scopeList } from "./scopes";
 
-export const COLLECTION = "com.publicdomainrelay.temp.oauth.clientMetadata";
+export const COLLECTION = "com.fedfork.exec.oauth.clientMetadata";
 const PLUGIN_ID = "atproto-integrations";
 
 export interface IntegrationRecord {

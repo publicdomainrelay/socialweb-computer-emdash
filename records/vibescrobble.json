@@ -1,5 +1,5 @@
 {
-	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"$type": "com.fedfork.exec.oauth.clientMetadata",
 	"name": "Vibescrobble",
 	"description": "Post com.vibescrobble.scrobble records of work you shipped.",
 	"clientMetadata": {

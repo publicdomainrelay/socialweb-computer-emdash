@@ -118,7 +118,7 @@ node --test wasm/*/test.mjs`;
 
 const publish = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
 ./scripts/publish-wasm.sh note
-goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/note"`;
+goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/note"`;
 ---
 
 <Guide
@@ -188,7 +188,7 @@ goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/not
 	<section id="publish">
 		<h2>Publish it</h2>
 		<p>
-			The script builds, uploads the blob to your PDS, looks up the CID of the integration record named by <code>session</code>, and writes <code>at://you/com.publicdomainrelay.temp.wasm.module/note</code>. The module shows up on that integration's card.
+			The script builds, uploads the blob to your PDS, looks up the CID of the integration record named by <code>session</code>, and writes <code>at://you/com.fedfork.exec.wasm.module/note</code>. The module shows up on that integration's card.
 		</p>
 		<Code code={publish} />
 		<div class="callout tone-pds">

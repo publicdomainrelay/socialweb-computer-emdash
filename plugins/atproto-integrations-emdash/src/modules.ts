@@ -5,7 +5,7 @@ import { requireHttp, xrpcUrl } from "./http";
 import { resolveActor } from "./identity";
 import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
-export const MODULE_COLLECTION = "com.publicdomainrelay.temp.wasm.module";
+export const MODULE_COLLECTION = "com.fedfork.exec.wasm.module";
 const MODULE_ABI = "emdash-wasm-json-v1";
 const MAX_ROUNDS = 8;
 const MAX_CALLS_PER_ROUND = 10;
@@ -28,6 +28,7 @@ interface WasmModuleRecord {
 	description?: string;
 	blobCid: string;
 	session: IntegrationRef;
+	source?: string;
 	actions: ModuleAction[];
 	calls?: string[];
 }
@@ -80,6 +81,7 @@ export function parseModuleRecord(value: unknown): WasmModuleRecord {
 		description: text(value.description),
 		blobCid: ref,
 		session: parseSessionRef(value.session),
+		source: isObject(value.source) ? text(value.source.uri) : undefined,
 		actions: parseActions(value.actions),
 		calls: Array.isArray(value.calls) ? value.calls.filter((nsid): nsid is string => typeof nsid === "string" && NSID.test(nsid)) : undefined,
 	};

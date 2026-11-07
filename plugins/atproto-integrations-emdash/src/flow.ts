@@ -55,13 +55,14 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 					session: session ? { handle, scope: session.scope, updatedAt: session.updatedAt } : null,
 					modules: modules
 						.filter((module) => module.session.did === ref.did && module.session.rkey === ref.rkey)
-						.map(({ did: moduleDid, rkey, uri: moduleUri, name, description, actions }) => ({
+						.map(({ did: moduleDid, rkey, uri: moduleUri, name, description, actions, source }) => ({
 							did: moduleDid,
 							rkey,
 							uri: moduleUri,
 							name,
 							description,
 							actions,
+							source,
 						})),
 				},
 			];

@@ -15,7 +15,7 @@ const STATUS = "xyz.statusphere.status";
 const MODULE_URI = `at://${ALICE.did}/${MODULE_COLLECTION}/statusphere`;
 const aliceModule = {
 	...module,
-	session: { ...module.session, uri: `at://${ALICE.did}/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere` },
+	session: { ...module.session, uri: `at://${ALICE.did}/com.fedfork.exec.oauth.clientMetadata/statusphere` },
 };
 
 const b64url = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");

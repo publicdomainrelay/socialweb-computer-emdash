@@ -147,8 +147,8 @@ async function connect(rkey: string, groups: string[]) {
 await connect("statusphere", []);
 log("verify statusphere", await plugin<object>("verify", { did, rkey: "statusphere" }));
 type Ran = { did?: string; module: string; entry: string; rounds: Array<{ entry: string; calls: Array<{ nsid: string; ok: boolean }> }>; result: any };
-const RUN_NSID = "com.publicdomainrelay.temp.wasm.run";
-const MODULE_URI = `at://${did}/com.publicdomainrelay.temp.wasm.module/statusphere`;
+const RUN_NSID = "com.fedfork.exec.wasm.run";
+const MODULE_URI = `at://${did}/com.fedfork.exec.wasm.module/statusphere`;
 const SITE_DID = `did:web:${new URL(SITE).host.replace(":", "%3A")}`;
 const summary = (ran: Ran) => ({
 	did: ran.did,

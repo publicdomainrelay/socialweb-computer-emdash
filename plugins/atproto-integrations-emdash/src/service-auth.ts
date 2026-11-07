@@ -3,7 +3,7 @@ import { base64urlnopad } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
 import { atprotoSigningMaterial, isAtprotoDid } from "./identity";
 
-export const RUN_NSID = "com.publicdomainrelay.temp.wasm.run";
+export const RUN_NSID = "com.fedfork.exec.wasm.run";
 const SERVICE_ID = "emdash_integrations";
 const SERVICE_TYPE = "EmDashAtprotoIntegrations";
 const MAX_LIFETIME_SECONDS = 3600;

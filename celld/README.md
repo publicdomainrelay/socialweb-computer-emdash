@@ -1,6 +1,6 @@
 # WebAssembly modules on celld
 
-A Worker for [celld](https://github.com/denoland/celld). The bucket is [rustfs](https://github.com/rustfs/rustfs). `GET /run` loads a `com.publicdomainrelay.temp.wasm.module` record and its blob from the owner's PDS, checks the blob CID's SHA-256, and runs the module in a Dynamic Worker with `globalOutbound: null`. It runs the same `emdash-wasm-json-v1` runtime as the fork's Cloudflare runner, over rounds (ADR 0018).
+A Worker for [celld](https://github.com/denoland/celld). The bucket is [rustfs](https://github.com/rustfs/rustfs). `GET /run` loads a `com.fedfork.exec.wasm.module` record and its blob from the owner's PDS, checks the blob CID's SHA-256, and runs the module in a Dynamic Worker with `globalOutbound: null`. It runs the same `emdash-wasm-json-v1` runtime as the fork's Cloudflare runner, over rounds (ADR 0018).
 
 It holds no OAuth sessions. It makes a round's calls itself only when they are all unauthenticated queries, such as `listRecords`. At the first call with an input, it stops and returns that round as `pending`.
 

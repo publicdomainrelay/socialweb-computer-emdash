@@ -1,5 +1,5 @@
 {
-	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"$type": "com.fedfork.exec.oauth.clientMetadata",
 	"name": "Statusphere",
 	"description": "Set your xyz.statusphere.status emoji status.",
 	"clientMetadata": {

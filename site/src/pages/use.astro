@@ -28,8 +28,8 @@ const publishModules = `rustup target add wasm32-unknown-unknown
 ./scripts/publish-wasm.sh statusphere
 ./scripts/publish-wasm.sh vibescrobble`;
 
-const check = `goat record ls --collection com.publicdomainrelay.temp.oauth.clientMetadata "$ATPROTO_HANDLE"
-goat record ls --collection com.publicdomainrelay.temp.wasm.module "$ATPROTO_HANDLE"`;
+const check = `goat record ls --collection com.fedfork.exec.oauth.clientMetadata "$ATPROTO_HANDLE"
+goat record ls --collection com.fedfork.exec.wasm.module "$ATPROTO_HANDLE"`;
 
 const cliSetup = `SITE=${origin}
 SITE_DID=${siteDid}
@@ -40,21 +40,21 @@ ACCESS_JWT=$(curl -fsS -X POST "$PDS/xrpc/com.atproto.server.createSession" \\
   -H 'content-type: application/json' \\
   -d "{\\"identifier\\":\\"$ATPROTO_HANDLE\\",\\"password\\":\\"$ATPROTO_PASSWORD\\"}" | jq -r .accessJwt)`;
 
-const viaProxy = `curl -fsS -X POST "$PDS/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+const viaProxy = `curl -fsS -X POST "$PDS/xrpc/com.fedfork.exec.wasm.run" \\
   -H "Authorization: Bearer $ACCESS_JWT" \\
   -H "atproto-proxy: $SITE_DID#emdash_integrations" \\
   -H 'content-type: application/json' \\
-  -d "{\\"module\\":\\"at://$DID/com.publicdomainrelay.temp.wasm.module/statusphere\\",\\"entry\\":\\"set_status\\",\\"input\\":{\\"status\\":\\"🦋\\"}}" | jq .result`;
+  -d "{\\"module\\":\\"at://$DID/com.fedfork.exec.wasm.module/statusphere\\",\\"entry\\":\\"set_status\\",\\"input\\":{\\"status\\":\\"🦋\\"}}" | jq .result`;
 
 const viaToken = `TOKEN=$(curl -fsS -H "Authorization: Bearer $ACCESS_JWT" \\
-  "$PDS/xrpc/com.atproto.server.getServiceAuth?aud=$SITE_DID&lxm=com.publicdomainrelay.temp.wasm.run" | jq -r .token)
-curl -fsS -X POST "$SITE/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+  "$PDS/xrpc/com.atproto.server.getServiceAuth?aud=$SITE_DID&lxm=com.fedfork.exec.wasm.run" | jq -r .token)
+curl -fsS -X POST "$SITE/xrpc/com.fedfork.exec.wasm.run" \\
   -H "Authorization: Bearer $TOKEN" \\
   -H 'content-type: application/json' \\
-  -d "{\\"module\\":\\"at://$DID/com.publicdomainrelay.temp.wasm.module/vibescrobble\\",\\"entry\\":\\"scrobble\\",\\"input\\":{\\"text\\":\\"🚀 deployed my own site\\"}}" | jq .result`;
+  -d "{\\"module\\":\\"at://$DID/com.fedfork.exec.wasm.module/vibescrobble\\",\\"entry\\":\\"scrobble\\",\\"input\\":{\\"text\\":\\"🚀 deployed my own site\\"}}" | jq .result`;
 
 const ownRecord = `{
-  "$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+  "$type": "com.fedfork.exec.oauth.clientMetadata",
   "name": "Example",
   "clientMetadata": {
     "client_id": "https://example.com/oauth-client-metadata.json",
@@ -92,7 +92,7 @@ goat record create -n -r example example.json`;
 			</li>
 			<li>
 				<strong>See your integrations</strong>
-				The site lists the <code>com.publicdomainrelay.temp.oauth.clientMetadata</code> records in your repo. With none, the list is empty until you publish one.
+				The site lists the <code>com.fedfork.exec.oauth.clientMetadata</code> records in your repo. With none, the list is empty until you publish one.
 			</li>
 		</ol>
 	</section>

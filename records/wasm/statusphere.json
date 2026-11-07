@@ -1,5 +1,5 @@
 {
-	"$type": "com.publicdomainrelay.temp.wasm.module",
+	"$type": "com.fedfork.exec.wasm.module",
 	"name": "Statusphere",
 	"description": "Set or clear your xyz.statusphere.status emoji status.",
 	"module": {
@@ -12,7 +12,7 @@
 	},
 	"abi": "emdash-wasm-json-v1",
 	"session": {
-		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere",
+		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/statusphere",
 		"cid": "bafyreift6pbrjsvtskefh6zcpv2ymuonycresa6x6a2ob55xkroqrhc5dy"
 	},
 	"actions": [

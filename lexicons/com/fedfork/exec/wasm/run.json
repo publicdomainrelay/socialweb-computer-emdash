@@ -1,10 +1,10 @@
 {
 	"lexicon": 1,
-	"id": "com.publicdomainrelay.temp.wasm.run",
+	"id": "com.fedfork.exec.wasm.run",
 	"defs": {
 		"main": {
 			"type": "procedure",
-			"description": "Run an action of a com.publicdomainrelay.temp.wasm.module record for the calling account, using the session that account connected on this site. Requires atproto service auth from the caller's PDS, with lxm set to this method.",
+			"description": "Run an action of a com.fedfork.exec.wasm.module record for the calling account, using the session that account connected on this site. Requires atproto service auth from the caller's PDS, with lxm set to this method.",
 			"input": {
 				"encoding": "application/json",
 				"schema": {

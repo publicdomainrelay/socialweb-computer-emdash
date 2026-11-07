@@ -1,5 +1,5 @@
 {
-	"$type": "com.publicdomainrelay.temp.wasm.module",
+	"$type": "com.fedfork.exec.wasm.module",
 	"name": "Vibescrobble",
 	"description": "Post a com.vibescrobble.scrobble record of work you shipped.",
 	"module": {
@@ -12,7 +12,7 @@
 	},
 	"abi": "emdash-wasm-json-v1",
 	"session": {
-		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.publicdomainrelay.temp.oauth.clientMetadata/vibescrobble",
+		"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/vibescrobble",
 		"cid": "bafyreibf6dhj6ojm23u6i2ldcqyucsalc6atrgt3v6koibgyxieq3qqahi"
 	},
 	"actions": [

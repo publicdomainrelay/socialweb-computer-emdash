@@ -1,6 +1,6 @@
 {
 	"lexicon": 1,
-	"id": "com.publicdomainrelay.temp.wasm.module",
+	"id": "com.fedfork.exec.wasm.module",
 	"defs": {
 		"main": {
 			"type": "record",
@@ -44,7 +44,12 @@
 					"session": {
 						"type": "ref",
 						"ref": "com.atproto.repo.strongRef",
-						"description": "The com.publicdomainrelay.temp.oauth.clientMetadata record whose session the module's calls use."
+						"description": "The com.fedfork.exec.oauth.clientMetadata record whose session the module's calls use."
+					},
+					"source": {
+						"type": "ref",
+						"ref": "com.atproto.repo.strongRef",
+						"description": "The com.fedfork.exec.source.manifest record listing the source files and the build that produced the module blob."
 					},
 					"actions": {
 						"type": "array",

@@ -6,7 +6,7 @@ import { ALICE, call, connect, queueListing, SITE_URL, useEncryptionKey } from "
 
 const aliceModule = {
 	...module,
-	session: { ...module.session, uri: `at://${ALICE.did}/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere` },
+	session: { ...module.session, uri: `at://${ALICE.did}/com.fedfork.exec.oauth.clientMetadata/statusphere` },
 };
 
 describe("wasm module records", () => {

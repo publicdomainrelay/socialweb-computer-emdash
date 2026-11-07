@@ -19,7 +19,7 @@ export function sandboxFetch(ctx: PluginContext): typeof fetch {
 	const http = requireHttp(ctx);
 	return async (input, init) => {
 		const request = new Request(input, { ...init, cache: undefined });
-		const body = request.method === "GET" || request.method === "HEAD" ? undefined : new TextDecoder().decode(await request.arrayBuffer());
+		const body = request.method === "GET" || request.method === "HEAD" ? undefined : new Uint8Array(await request.arrayBuffer());
 		const response = await http.fetch(request.url, { method: request.method, headers: plainHeaders(request.headers), body, redirect: init?.redirect });
 		return new Response(await response.arrayBuffer(), { status: response.status, statusText: response.statusText, headers: response.headers });
 	};

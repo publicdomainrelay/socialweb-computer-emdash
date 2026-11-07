@@ -32,7 +32,7 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 			<p class="eyebrow">Integrations</p>
 			<h1 class="intro__title">Connect your Atmosphere apps</h1>
 			<p class="integrations-lede">
-				Integrations are <code>com.publicdomainrelay.temp.oauth.clientMetadata</code> records in your own PDS. Each one becomes its own OAuth client on this site, and you choose which permissions it gets.
+				Integrations are <code>com.fedfork.exec.oauth.clientMetadata</code> records in your own PDS. Each one becomes its own OAuth client on this site, and you choose which permissions it gets.
 			</p>
 		</div>
 	</header>
@@ -130,7 +130,7 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 												))}
 												<details class="integration__details">
 													<summary>Run from your PDS with service auth</summary>
-													<pre><code>{`curl -X POST "$PDS/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+													<pre><code>{`curl -X POST "$PDS/xrpc/com.fedfork.exec.wasm.run" \\
   -H "Authorization: Bearer $ACCESS_JWT" \\
   -H "atproto-proxy: ${siteDid}#emdash_integrations" \\
   -H "Content-Type: application/json" \\

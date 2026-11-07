@@ -1,0 +1,118 @@
+{
+	"lexicon": 1,
+	"id": "com.fedfork.exec.source.manifest",
+	"defs": {
+		"main": {
+			"type": "record",
+			"key": "any",
+			"description": "An immutable snapshot of the source files of a WebAssembly module and the build that turns them into its blob. Never updated: a new build is a new manifest.",
+			"record": {
+				"type": "object",
+				"required": ["name", "language", "files", "build", "createdAt"],
+				"properties": {
+					"name": {
+						"type": "string",
+						"maxLength": 640,
+						"maxGraphemes": 64
+					},
+					"description": {
+						"type": "string",
+						"maxLength": 3000,
+						"maxGraphemes": 300
+					},
+					"language": {
+						"type": "string",
+						"maxLength": 64,
+						"knownValues": ["assemblyscript", "rust"]
+					},
+					"files": {
+						"type": "array",
+						"minLength": 1,
+						"maxLength": 200,
+						"items": { "type": "ref", "ref": "#entry" }
+					},
+					"build": { "type": "ref", "ref": "#build" },
+					"output": { "type": "ref", "ref": "#output" },
+					"origin": { "type": "ref", "ref": "#origin" },
+					"createdAt": {
+						"type": "string",
+						"format": "datetime"
+					}
+				}
+			}
+		},
+		"entry": {
+			"type": "object",
+			"required": ["path", "file"],
+			"properties": {
+				"path": {
+					"type": "string",
+					"maxLength": 512,
+					"description": "Path relative to the build's working directory, with forward slashes and no '..' segments."
+				},
+				"file": {
+					"type": "ref",
+					"ref": "com.atproto.repo.strongRef",
+					"description": "The com.fedfork.exec.source.file record holding the contents."
+				}
+			}
+		},
+		"build": {
+			"type": "object",
+			"required": ["tool", "version", "command"],
+			"properties": {
+				"tool": {
+					"type": "string",
+					"maxLength": 64,
+					"knownValues": ["asc", "cargo"]
+				},
+				"version": {
+					"type": "string",
+					"maxLength": 256,
+					"description": "The compiler version, for example 'assemblyscript 0.28.20' or 'rustc 1.91.0 (f8297e351 2025-10-28)'."
+				},
+				"command": {
+					"type": "string",
+					"maxLength": 2048,
+					"description": "The command run in the working directory to produce the module."
+				},
+				"artifact": {
+					"type": "string",
+					"maxLength": 512,
+					"description": "Path of the built module, relative to the working directory."
+				}
+			}
+		},
+		"output": {
+			"type": "object",
+			"required": ["sha256", "size"],
+			"properties": {
+				"sha256": {
+					"type": "string",
+					"minLength": 64,
+					"maxLength": 64,
+					"description": "Lowercase hex sha256 of the module the build produced."
+				},
+				"size": {
+					"type": "integer",
+					"minimum": 0
+				}
+			}
+		},
+		"origin": {
+			"type": "object",
+			"required": ["repository"],
+			"properties": {
+				"repository": {
+					"type": "string",
+					"format": "uri",
+					"maxLength": 2048
+				},
+				"commit": {
+					"type": "string",
+					"maxLength": 64
+				}
+			}
+		}
+	}
+}

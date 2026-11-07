@@ -1,5 +1,5 @@
 {
-	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"$type": "com.fedfork.exec.oauth.clientMetadata",
 	"name": "socialweb.computer requester",
 	"description": "Request compute, associate DID keys and publish policies through publicdomainrelay and socialweb.computer lexicons.",
 	"clientMetadata": {

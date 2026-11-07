@@ -1,7 +1,7 @@
 import { base32nopad, hex } from "@scure/base";
 import { generateWasmAbiRuntimeSource, prepareWasmRun, WASM_LIMITS } from "emdash/internal/plugins/wasm";
 
-const COLLECTION = "com.publicdomainrelay.temp.wasm.module";
+const COLLECTION = "com.fedfork.exec.wasm.module";
 const ABI = "emdash-wasm-json-v1";
 const RESERVED = new Set(["did", "rkey", "entry", "now"]);
 const CPU_LIMIT = /exceeded CPU (time )?limit/i;

@@ -1,0 +1,43 @@
+{
+	"lexicon": 1,
+	"id": "com.fedfork.exec.source.file",
+	"defs": {
+		"main": {
+			"type": "record",
+			"key": "any",
+			"description": "The contents of one source file, keyed by the lowercase hex sha256 of its bytes so identical files are stored once. Paths live in the manifests that reference it. Exactly one of text and blob is present.",
+			"record": {
+				"type": "object",
+				"required": ["sha256", "size", "createdAt"],
+				"properties": {
+					"sha256": {
+						"type": "string",
+						"minLength": 64,
+						"maxLength": 64,
+						"description": "Lowercase hex sha256 of the file's bytes. Equal to the record key."
+					},
+					"size": {
+						"type": "integer",
+						"minimum": 0,
+						"description": "Length of the file in bytes."
+					},
+					"text": {
+						"type": "string",
+						"maxLength": 262144,
+						"description": "The file inline, as UTF-8 text."
+					},
+					"blob": {
+						"type": "blob",
+						"accept": ["text/plain", "application/octet-stream"],
+						"maxSize": 5000000,
+						"description": "The file as a blob, for files too large or not text."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "datetime"
+					}
+				}
+			}
+		}
+	}
+}

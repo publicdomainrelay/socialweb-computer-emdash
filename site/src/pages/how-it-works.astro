@@ -18,7 +18,7 @@ const toc = [
 ];
 
 const integrationRecord = `{
-  "$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+  "$type": "com.fedfork.exec.oauth.clientMetadata",
   "name": "Vibescrobble",
   "clientMetadata": {
     "client_id": "https://vibescrobble.example.com/oauth-client-metadata.json",
@@ -47,7 +47,7 @@ const integrationRecord = `{
 			<table>
 				<thead><tr><th>Piece</th><th>What it does</th></tr></thead>
 				<tbody>
-					<tr><td>EmDash site</td><td>Astro and EmDash. Serves <code>/integrations</code>, client metadata per record, a <code>did:web</code> document and <code>/xrpc/com.publicdomainrelay.temp.wasm.run</code>.</td></tr>
+					<tr><td>EmDash site</td><td>Astro and EmDash. Serves <code>/integrations</code>, client metadata per record, a <code>did:web</code> document and <code>/xrpc/com.fedfork.exec.wasm.run</code>.</td></tr>
 					<tr><td><code>@publicdomainrelay/auth-atproto-subscriber</code></td><td>The login provider. Atmosphere OAuth with the <code>atproto</code> scope only.</td></tr>
 					<tr><td><code>atproto-integrations</code> plugin</td><td>A sandboxed EmDash plugin. It runs <code>@atcute/oauth-node-client</code>, seals sessions, verifies service auth and drives module rounds.</td></tr>
 					<tr><td>WebAssembly module</td><td>A blob in your repo with a JSON ABI. It gets JSON in and returns JSON out, and nothing else.</td></tr>

@@ -1,0 +1,3 @@
+[submodule "emdash"]
+	path = emdash
+	url = https://github.com/publicdomainrelay/emdash.git

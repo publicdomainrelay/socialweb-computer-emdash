@@ -40,9 +40,37 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 		</div>
 	</header>
 
-	<div class="frame examples" data-existing={JSON.stringify(existing)} data-ready={String(ready)}>
+	<div class="frame examples" data-studio-did={did} data-existing={JSON.stringify(existing)} data-ready={String(ready)}>
 		{error && <p class="notice notice--error" role="alert">{error}</p>}
 		{!did && <StudioSession did={did} status={status} needs={STUDIO_GROUPS.examples} returnTo="/studio/examples" />}
+
+		{
+			did && (
+				<div class="card examples__install">
+					<h2>{allInstalled ? "You have the examples" : "Add them to your account"}</h2>
+					<p>
+						{ready
+							? "The studio is connected. Records you already have are left as they are."
+							: "This first connects the studio, a separate permission to write these record types to your PDS. You come back here and the examples are added right away."}
+					</p>
+					<div class="toolbar">
+						{!allInstalled && (
+							<button class="btn" type="button" data-install>
+								Add the examples to my account
+							</button>
+						)}
+						<a class="btn btn--ghost" href="/integrations">
+							Open integrations
+						</a>
+					</div>
+					<p class="examples__error" role="alert" data-error hidden />
+					<ol class="examples__steps" data-steps hidden />
+					<p class="examples__next" data-next hidden>
+						Done. Open <a href="/integrations">integrations</a>, connect Statusphere or Vibescrobble, and run their modules.
+					</p>
+				</div>
+			)
+		}
 
 		<div class="grid">
 			{
@@ -65,32 +93,6 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 			}
 		</div>
 
-		{
-			did && (
-				<div class="card examples__install">
-					<h2>{allInstalled ? "You have the examples" : "Add them to your account"}</h2>
-					<p>
-						{ready
-							? "The studio is connected. Records you already have are left as they are."
-							: "This first connects the studio, a separate permission to write these record types to your PDS. You come back here and the examples are added right away."}
-					</p>
-					<div class="toolbar">
-						{!allInstalled && (
-							<button class="btn" type="button" data-install>
-								Add the examples to my account
-							</button>
-						)}
-						<a class="btn btn--ghost" href="/integrations">
-							Open integrations
-						</a>
-					</div>
-					<ol class="examples__steps" data-steps hidden />
-					<p class="examples__next" data-next hidden>
-						Done. Open <a href="/integrations">integrations</a>, connect Statusphere or Vibescrobble, and run their modules.
-					</p>
-				</div>
-			)
-		}
 	</div>
 </Base>
 
@@ -102,6 +104,12 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 	const button = document.querySelector<HTMLButtonElement>("[data-install]");
 	const list = document.querySelector<HTMLOListElement>("[data-steps]");
 	const next = document.querySelector<HTMLElement>("[data-next]");
+	const error = document.querySelector<HTMLElement>("[data-error]");
+	const showError = (cause: unknown) => {
+		if (!error) return;
+		error.textContent = cause instanceof Error ? cause.message : String(cause);
+		error.hidden = false;
+	};
 	const existing = JSON.parse(root?.dataset.existing ?? '{"integrations":[],"modules":[]}') as { integrations: string[]; modules: string[] };
 	const ready = root?.dataset.ready === "true";
 
@@ -134,13 +142,22 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 	}
 
 	button?.addEventListener("click", async () => {
-		if (ready) return install();
-		await connectStudio(["integrations", "modules"], "/studio/examples?install=1");
+		if (error) error.hidden = true;
+		try {
+			if (ready) await install();
+			else await connectStudio(["integrations", "modules"], "/studio/examples?install=1");
+		} catch (cause) {
+			if (button) {
+				button.disabled = false;
+				button.textContent = "Try again";
+			}
+			showError(cause);
+		}
 	});
 
 	if (ready && button && new URLSearchParams(window.location.search).get("install") === "1") {
 		history.replaceState(null, "", "/studio/examples");
-		void install();
+		install().catch(showError);
 	}
 </script>
 
@@ -209,6 +226,11 @@ const allInstalled = examples.every((example) => has(existing.integrations, exam
 
 	.examples__step.is-failed {
 		border-left-color: var(--tone-deny);
+	}
+
+	.examples__error {
+		margin-top: 1rem;
+		color: var(--tone-deny);
 	}
 
 	.examples__next {

@@ -17,19 +17,19 @@ xdg-open http://127.0.0.1:4321/integrations
 ## Atmosphere login on any EmDash site
 
 ```bash
-pnpm add auth-atproto-subscriber
+pnpm add @publicdomainrelay/auth-atproto-subscriber
 ```
 
 ```js
-import { atprotoSubscriber } from "auth-atproto-subscriber";
+import { atprotoSubscriber } from "@publicdomainrelay/auth-atproto-subscriber";
 
 emdash({ authProviders: [atprotoSubscriber({ allowAnyAccount: true })] });
 ```
 
 ```astro
 ---
-import AtmosphereSignIn from "auth-atproto-subscriber/AtmosphereSignIn.astro";
-import AtmosphereSignOut from "auth-atproto-subscriber/AtmosphereSignOut.astro";
+import AtmosphereSignIn from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignIn.astro";
+import AtmosphereSignOut from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignOut.astro";
 ---
 {Astro.locals.user ? <AtmosphereSignOut returnTo="/" /> : <AtmosphereSignIn returnTo="/integrations" />}
 ```

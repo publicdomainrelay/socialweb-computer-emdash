@@ -20,6 +20,6 @@ ADR 0012 changed `@emdash-cms/auth-atproto` with a pnpm patch. Patches break on 
 
 ## Consequences
 
-- Install is `pnpm add auth-atproto-subscriber` plus `authProviders: [atprotoSubscriber({ allowAnyAccount: true })]`.
+- Install is `pnpm add @publicdomainrelay/auth-atproto-subscriber` plus `authProviders: [atprotoSubscriber({ allowAnyAccount: true })]`.
 - Rows in `auth:atproto/sessions` written by the old provider are no longer read. They can be deleted.
 - The changes still make sense upstream as options (`scope`, open signup, `returnTo`) plus the origin bug fix.

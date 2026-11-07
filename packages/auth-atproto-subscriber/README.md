@@ -1,13 +1,13 @@
-# auth-atproto-subscriber
+# @publicdomainrelay/auth-atproto-subscriber
 
 Identity-only Atmosphere login for EmDash. Asks for the `atproto` scope, keeps no token after login, lets any Atmosphere account join as a Subscriber, and returns users to the page they came from.
 
 ```bash
-pnpm add auth-atproto-subscriber
+pnpm add @publicdomainrelay/auth-atproto-subscriber
 ```
 
 ```js
-import { atprotoSubscriber } from "auth-atproto-subscriber";
+import { atprotoSubscriber } from "@publicdomainrelay/auth-atproto-subscriber";
 
 emdash({
 	authProviders: [atprotoSubscriber({ allowAnyAccount: true })],
@@ -16,8 +16,8 @@ emdash({
 
 ```astro
 ---
-import AtmosphereSignIn from "auth-atproto-subscriber/AtmosphereSignIn.astro";
-import AtmosphereSignOut from "auth-atproto-subscriber/AtmosphereSignOut.astro";
+import AtmosphereSignIn from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignIn.astro";
+import AtmosphereSignOut from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignOut.astro";
 ---
 {Astro.locals.user ? <AtmosphereSignOut returnTo="/" /> : <AtmosphereSignIn returnTo="/account" />}
 ```

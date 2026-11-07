@@ -1,5 +1,5 @@
 {
-	"name": "auth-atproto-subscriber",
+	"name": "@publicdomainrelay/auth-atproto-subscriber",
 	"version": "0.1.0",
 	"description": "Identity-only Atmosphere login for EmDash sites: atproto scope, open Subscriber signup, return-to, and drop-in Astro sign-in and sign-out components.",
 	"license": "MIT",

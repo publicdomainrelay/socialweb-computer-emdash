@@ -4,7 +4,7 @@ import { defineConfig, fontProviders } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
 import atprotoIntegrations from "atproto-integrations-emdash";
-import { atprotoSubscriber } from "auth-atproto-subscriber";
+import { atprotoSubscriber } from "@publicdomainrelay/auth-atproto-subscriber";
 
 export default defineConfig({
 	output: "server",

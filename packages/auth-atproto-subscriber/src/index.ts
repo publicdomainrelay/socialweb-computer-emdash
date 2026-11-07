@@ -3,7 +3,7 @@ import { type AtprotoSubscriberConfig, PROVIDER_ID, STORAGE } from "./policy";
 
 export type { AtprotoSubscriberConfig } from "./policy";
 
-const PACKAGE = "auth-atproto-subscriber";
+const PACKAGE = "@publicdomainrelay/auth-atproto-subscriber";
 
 export function atprotoSubscriber(config: AtprotoSubscriberConfig = {}): AuthProviderDescriptor {
 	return {

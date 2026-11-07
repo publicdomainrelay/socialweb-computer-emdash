@@ -1,0 +1,59 @@
+---
+import AtmosphereSignOut from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignOut.astro";
+import { getSiteSettingsWithCacheHint } from "emdash";
+import { createPublicPageContext } from "emdash/page";
+import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import "../styles/site.css";
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description } = Astro.props;
+const { data: settings, cacheHint } = await getSiteSettingsWithCacheHint();
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const siteTitle = settings?.title ?? "socialweb.computer";
+const fullTitle = title === siteTitle ? title : `${title} · ${siteTitle}`;
+const page = createPublicPageContext({ Astro, kind: "custom", pageType: "website", title: fullTitle, pageTitle: title, description, siteName: siteTitle });
+const user = Astro.locals.user;
+const current = (path: string) => (Astro.url.pathname.startsWith(path) ? "page" : undefined);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{fullTitle}</title>
+		{description && <meta name="description" content={description} />}
+		<EmDashHead page={page} />
+	</head>
+	<body>
+		<EmDashBodyStart page={page} />
+		<header class="site-header">
+			<div class="frame site-header__inner">
+				<a class="site-title" href="/">{siteTitle}</a>
+				<nav class="site-nav" aria-label="Primary">
+					<a href="/integrations" aria-current={current("/integrations")}>Integrations</a>
+					{(user?.role ?? 0) >= 20 && <a href="/_emdash/admin">Admin</a>}
+					{
+						user ? (
+							<>
+								<span title={user.email}>{user.name ?? "Account"}</span>
+								<AtmosphereSignOut returnTo="/integrations" class="btn btn--ghost" />
+							</>
+						) : (
+							<a class="btn" href="/integrations">Sign in</a>
+						)
+					}
+				</nav>
+			</div>
+		</header>
+		<main>
+			<slot />
+		</main>
+		<EmDashBodyEnd page={page} />
+	</body>
+</html>

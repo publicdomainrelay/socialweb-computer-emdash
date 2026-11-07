@@ -1,0 +1,141 @@
+{
+	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"name": "socialweb.computer requester",
+	"description": "Request compute, associate DID keys and publish policies through publicdomainrelay and socialweb.computer lexicons.",
+	"clientMetadata": {
+		"client_id": "https://qr.fedfork.com/oauth-client-metadata.json",
+		"dpop_bound_access_tokens": true,
+		"application_type": "web",
+		"redirect_uris": [
+			"https://qr.fedfork.com"
+		],
+		"grant_types": [
+			"authorization_code",
+			"refresh_token"
+		],
+		"response_types": [
+			"code"
+		],
+		"token_endpoint_auth_method": "none",
+		"client_name": "DID Key Associator",
+		"client_uri": "https://qr.fedfork.com",
+		"scope": "atproto repo:com.publicdomainrelay.temp.auth.allowlist.rbacDid?action=create repo:com.publicdomainrelay.temp.market.bid?action=create repo:com.publicdomainrelay.temp.market.bids.free?action=create repo:com.publicdomainrelay.temp.market.receipt?action=create repo:com.publicdomainrelay.temp.market.event?action=create repo:com.publicdomainrelay.temp.compute.config.wif.simple?action=create repo:com.publicdomainrelay.temp.compute.vm?action=create repo:com.publicdomainrelay.temp.market.rfp?action=create repo:com.publicdomainrelay.temp.market.accept?action=create repo:com.publicdomainrelay.temp.compute.events.vm.delete?action=create repo:com.publicdomainrelay.temp.compute.events.vm.onNetwork?action=create repo:com.publicdomainrelay.temp.compute.events.vm.terminated?action=create repo:com.publicdomainrelay.temp.compute.events.vm.hostKeys?action=create repo:com.publicdomainrelay.temp.compute.events.guest.publicKey?action=create repo:com.publicdomainrelay.temp.compute.events.guest.signalWebRTC?action=create repo:com.publicdomainrelay.temp.compute.events.guest.secretsApplied?action=create repo:com.publicdomainrelay.temp.compute.events.guest.secretsRequested?action=create repo:com.publicdomainrelay.temp.compute.events.guest.requesterDid?action=create repo:com.publicdomainrelay.temp.compute.events.guest.r2Released?action=create repo:com.fedproxy.rbac?action=create repo:com.publicdomainrelay.temp.market.bidderAssociation?action=create repo:computer.socialweb.temp.policy.ghalite?action=create repo:computer.socialweb.temp.policy.typescript?action=create repo:com.publicdomainrelay.temp.market.offering?action=create&action=update repo:com.publicdomainrelay.temp.market.heartbeat?action=create&action=update repo:com.publicdomainrelay.temp.badgeBlueKeys?action=create&action=update&action=delete repo:com.publicdomainrelay.temp.market.association?action=create&action=update&action=delete rpc:com.publicdomainrelay.temp.market.submitRfp?aud=* rpc:com.publicdomainrelay.temp.market.submitAccept?aud=* rpc:com.publicdomainrelay.temp.market.submitBid?aud=* rpc:com.publicdomainrelay.temp.market.submitEvent?aud=* repo:com.publicdomainrelay.temp.compute.vm?action=create&action=update repo:com.publicdomainrelay.temp.market.rfp?action=create&action=update repo:com.publicdomainrelay.temp.market.accept?action=create&action=update repo:com.publicdomainrelay.temp.market.event?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.vm.delete?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.vm.onNetwork?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.publicKey?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.signalWebRTC?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.secrets?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.agentStart?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.secretsUpdated?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.r2Start?action=create&action=update repo:com.publicdomainrelay.temp.compute.events.guest.r2Release?action=create&action=update repo:computer.socialweb.temp.policy.ghalite?action=create&action=update repo:computer.socialweb.temp.policy.typescript?action=create&action=update repo:com.fedproxy.rbac?action=create&action=update&action=delete repo:com.publicdomainrelay.temp.market.associationRequest?action=create&action=update&action=delete repo:computer.socialweb.infra?action=create&action=update&action=delete repo:computer.socialweb.ephemeralInfra?action=create&action=update&action=delete rpc:chat.atirc.mint?aud=did:web:irc.fedfork.com%23atirc rpc:chat.atirc.revoke?aud=did:web:irc.fedfork.com%23atirc repo:sh.tangled.graph.vouch?action=create&action=update rpc:com.publicdomainrelay.temp.requester.associateConfirm?aud=*"
+	},
+	"scopeGroups": [
+		{
+			"key": "associate",
+			"label": "Confirm requester association",
+			"scopes": [
+				"rpc:com.publicdomainrelay.temp.requester.associateConfirm?aud=*"
+			]
+		},
+		{
+			"key": "compute",
+			"label": "Describe compute to request",
+			"scopes": [
+				"repo:com.publicdomainrelay.temp.compute.vm?action=create",
+				"repo:com.publicdomainrelay.temp.compute.vm?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.config.wif.simple?action=create"
+			]
+		},
+		{
+			"key": "market",
+			"label": "Submit RFPs, accepts, bids and receipts",
+			"scopes": [
+				"repo:com.publicdomainrelay.temp.market.rfp?action=create",
+				"repo:com.publicdomainrelay.temp.market.rfp?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.market.accept?action=create",
+				"repo:com.publicdomainrelay.temp.market.accept?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.market.bid?action=create",
+				"repo:com.publicdomainrelay.temp.market.bids.free?action=create",
+				"repo:com.publicdomainrelay.temp.market.receipt?action=create",
+				"repo:com.publicdomainrelay.temp.market.event?action=create",
+				"repo:com.publicdomainrelay.temp.market.event?action=create&action=update",
+				"rpc:com.publicdomainrelay.temp.market.submitRfp?aud=*",
+				"rpc:com.publicdomainrelay.temp.market.submitAccept?aud=*",
+				"rpc:com.publicdomainrelay.temp.market.submitBid?aud=*",
+				"rpc:com.publicdomainrelay.temp.market.submitEvent?aud=*"
+			]
+		},
+		{
+			"key": "events",
+			"label": "Report compute lifecycle events",
+			"scopes": [
+				"repo:com.publicdomainrelay.temp.compute.events.vm.terminated?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.vm.hostKeys?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.secretsApplied?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.secretsRequested?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.requesterDid?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.r2Released?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.vm.delete?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.vm.delete?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.vm.onNetwork?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.vm.onNetwork?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.publicKey?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.publicKey?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.signalWebRTC?action=create",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.signalWebRTC?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.secrets?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.agentStart?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.secretsUpdated?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.r2Start?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.compute.events.guest.r2Release?action=create&action=update"
+			]
+		},
+		{
+			"key": "offering",
+			"label": "Offer compute as a bidder",
+			"scopes": [
+				"repo:com.publicdomainrelay.temp.market.offering?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.market.heartbeat?action=create&action=update",
+				"repo:com.publicdomainrelay.temp.market.bidderAssociation?action=create",
+				"repo:com.publicdomainrelay.temp.market.association?action=create&action=update&action=delete",
+				"repo:com.publicdomainrelay.temp.market.associationRequest?action=create&action=update&action=delete"
+			]
+		},
+		{
+			"key": "policy",
+			"label": "Publish evaluation policies",
+			"scopes": [
+				"repo:computer.socialweb.temp.policy.ghalite?action=create",
+				"repo:computer.socialweb.temp.policy.ghalite?action=create&action=update",
+				"repo:computer.socialweb.temp.policy.typescript?action=create",
+				"repo:computer.socialweb.temp.policy.typescript?action=create&action=update"
+			]
+		},
+		{
+			"key": "access",
+			"label": "Manage RBAC, allowlists and badge keys",
+			"scopes": [
+				"repo:com.fedproxy.rbac?action=create",
+				"repo:com.fedproxy.rbac?action=create&action=update&action=delete",
+				"repo:com.publicdomainrelay.temp.auth.allowlist.rbacDid?action=create",
+				"repo:com.publicdomainrelay.temp.badgeBlueKeys?action=create&action=update&action=delete"
+			]
+		},
+		{
+			"key": "infra",
+			"label": "Declare infrastructure",
+			"scopes": [
+				"repo:computer.socialweb.infra?action=create&action=update&action=delete",
+				"repo:computer.socialweb.ephemeralInfra?action=create&action=update&action=delete"
+			]
+		},
+		{
+			"key": "atirc",
+			"label": "Mint atirc chat credentials",
+			"scopes": [
+				"rpc:chat.atirc.mint?aud=did:web:irc.fedfork.com%23atirc",
+				"rpc:chat.atirc.revoke?aud=did:web:irc.fedfork.com%23atirc"
+			]
+		},
+		{
+			"key": "tangled",
+			"label": "Vouch on Tangled",
+			"scopes": [
+				"repo:sh.tangled.graph.vouch?action=create&action=update"
+			]
+		}
+	],
+	"createdAt": "2026-11-06T00:00:00.000Z"
+}

@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"target": "ES2023",
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"esModuleInterop": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"types": [
+			"node"
+		],
+		"lib": [
+			"ES2023",
+			"DOM"
+		]
+	},
+	"include": [
+		"src/**/*",
+		"tests/**/*",
+		"vitest.config.ts"
+	],
+	"exclude": [
+		"node_modules"
+	]
+}

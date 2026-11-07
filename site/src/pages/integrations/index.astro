@@ -1,0 +1,442 @@
+---
+import AtmosphereSignIn from "@publicdomainrelay/auth-atproto-subscriber/AtmosphereSignIn.astro";
+import Base from "../../layouts/Base.astro";
+import { atprotoDid, callPlugin, type Integration } from "../../utils/integrations";
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+const did = await atprotoDid(Astro.locals);
+const siteOrigin = process.env.EMDASH_SITE_URL || Astro.url.origin;
+const siteDid = `did:web:${new URL(siteOrigin).host.replace(":", "%3A")}`;
+const connected = Astro.url.searchParams.get("connected");
+const failure = Astro.url.searchParams.get("error");
+
+let integrations: Integration[] = [];
+let loadError: string | undefined;
+if (did) {
+	try {
+		integrations = (await callPlugin<{ integrations: Integration[] }>(Astro.locals, Astro.url, "integrations", { did })).integrations;
+	} catch (error) {
+		loadError = error instanceof Error ? error.message : "Could not load integrations";
+	}
+}
+
+const scopeCount = (scope: string) => scope.split(" ").filter((item) => item && item !== "atproto").length;
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+---
+
+<Base title="Integrations" description="Grant this site extra atproto sessions for the integrations you publish.">
+	<header class="band intro">
+		<div class="frame">
+			<p class="eyebrow">Integrations</p>
+			<h1 class="intro__title">Connect your Atmosphere apps</h1>
+			<p class="integrations-lede">
+				Integrations are <code>com.publicdomainrelay.temp.oauth.clientMetadata</code> records in your own PDS. Each one becomes its own OAuth client on this site, and you choose which permissions it gets.
+			</p>
+		</div>
+	</header>
+
+	<section class="band section">
+		<div class="frame">
+			{connected && <p class="notice notice--success" role="status">Connected <strong>{connected}</strong>.</p>}
+			{failure && <p class="notice notice--error" role="alert">{failure}</p>}
+			{loadError && <p class="notice notice--error" role="alert">{loadError}</p>}
+
+			{
+				!did && (
+					<div class="signin card">
+						<h2>{user ? "Link your Atmosphere account" : "Sign in with Atmosphere"}</h2>
+						<p>
+							{user
+								? "You are signed in without an Atmosphere account. Sign in with your handle to load integrations from your PDS."
+								: "Sign in with your handle. This site only asks for the atproto scope to know who you are."}
+						</p>
+						<AtmosphereSignIn returnTo="/integrations" class="signin__form" inputClass="field" buttonClass="btn" placeholder="alice.bsky.social" />
+					</div>
+				)
+			}
+
+			{
+				did && integrations.length === 0 && !loadError && (
+					<div class="card empty">
+						<h2>No integrations yet</h2>
+						<p>Publish a record to your PDS and it shows up here.</p>
+						<pre><code>goat record create -n -r statusphere records/statusphere.json</code></pre>
+					</div>
+				)
+			}
+
+			{
+				did && integrations.length > 0 && (
+					<ul class="integrations" role="list">
+						{integrations.map((item) => (
+							<li class="card integration" data-did={item.did} data-rkey={item.rkey}>
+								<div class="integration__head">
+									<div>
+										<h2 class="integration__name">{item.name}</h2>
+										{item.description && <p class="integration__description">{item.description}</p>}
+									</div>
+									<span class:list={["pill", item.session ? "pill--on" : "pill--off"]}>
+										{item.session ? `Connected${item.session.handle ? ` as @${item.session.handle}` : ""}` : "Not connected"}
+									</span>
+								</div>
+
+								<form class="integration__form" data-connect>
+									{item.groups.length > 0 ? (
+										<fieldset class="groups">
+											<legend>Permissions</legend>
+											{item.groups.map((group) => (
+												<label class="group">
+													<input type="checkbox" name="groups" value={group.key} checked={group.granted} />
+													<span class="group__label">{group.label}</span>
+													<span class="group__count">{plural(group.scopes.length, "scope")}</span>
+												</label>
+											))}
+										</fieldset>
+									) : (
+										<p class="integration__meta">Requests all {plural(scopeCount(item.declaredScope), "declared scope")}.</p>
+									)}
+									<div class="integration__actions">
+										<button class="btn" type="submit">{item.session ? "Update permissions" : "Connect"}</button>
+										{item.session && (
+											<>
+												<button class="btn btn--ghost" type="button" data-action="verify">Verify</button>
+												<button class="btn btn--ghost" type="button" data-action="disconnect">Disconnect</button>
+											</>
+										)}
+									</div>
+								</form>
+
+								{item.modules.length > 0 && (
+									<div class="modules">
+										<p class="modules__title">WebAssembly modules</p>
+										{item.modules.map((module) => (
+											<div class="module">
+												<p class="module__name">
+													{module.name}
+													{module.description && <span class="module__description">{module.description}</span>}
+												</p>
+												{module.actions.map((action) => (
+													<form class="module__action" data-run data-did={module.did} data-rkey={module.rkey} data-entry={action.entry}>
+														{action.fields.map((field) => (
+															<input class="field" name={field.key} placeholder={field.label} aria-label={field.label} required />
+														))}
+														<button class="btn" type="submit" disabled={!item.session}>
+															{action.label}
+														</button>
+														{action.description && <span class="module__description">{action.description}</span>}
+													</form>
+												))}
+												<details class="integration__details">
+													<summary>Run from your PDS with service auth</summary>
+													<pre><code>{`curl -X POST "$PDS/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+  -H "Authorization: Bearer $ACCESS_JWT" \\
+  -H "atproto-proxy: ${siteDid}#emdash_integrations" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify({ module: module.uri, entry: module.actions[0]?.entry ?? "", input: {} })}'`}</code></pre>
+												</details>
+											</div>
+										))}
+										{!item.session && <p class="integration__meta">Connect this integration to run its modules.</p>}
+									</div>
+								)}
+
+								<details class="integration__details">
+									<summary>Record and scopes</summary>
+									<p><code>{item.uri}</code></p>
+									<ul class="scopes" role="list">
+										{item.declaredScope.split(" ").map((scope) => (
+											<li><code>{scope}</code></li>
+										))}
+									</ul>
+								</details>
+								<p class="integration__result" data-result hidden></p>
+							</li>
+						))}
+					</ul>
+				)
+			}
+		</div>
+	</section>
+</Base>
+
+<script>
+	const api = (route: string, body: unknown) =>
+		fetch(`/_emdash/api/plugins/atproto-integrations/${route}`, {
+			method: "POST",
+			headers: { "content-type": "application/json", "x-emdash-request": "1" },
+			body: JSON.stringify(body),
+		}).then(async (response) => {
+			const payload = await response.json();
+			if (!response.ok || !payload.success) throw new Error(payload.error?.message ?? "Request failed");
+			return payload.data;
+		});
+
+	for (const card of document.querySelectorAll<HTMLElement>(".integration")) {
+		const ref = { did: card.dataset.did, rkey: card.dataset.rkey };
+		const result = card.querySelector<HTMLElement>("[data-result]");
+		const show = (text: string) => {
+			if (!result) return;
+			result.textContent = text;
+			result.hidden = false;
+		};
+		const form = card.querySelector<HTMLFormElement>("[data-connect]");
+		form?.addEventListener("submit", async (event) => {
+			event.preventDefault();
+			const groups = new FormData(form).getAll("groups");
+			try {
+				window.location.href = (await api("connect", { ...ref, groups })).url;
+			} catch (error) {
+				show(error instanceof Error ? error.message : "Connect failed");
+			}
+		});
+		for (const runForm of card.querySelectorAll<HTMLFormElement>("[data-run]")) {
+			runForm.addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const input = Object.fromEntries(new FormData(runForm).entries());
+				try {
+					const result = await api("run", {
+						did: runForm.dataset.did,
+						rkey: runForm.dataset.rkey,
+						entry: runForm.dataset.entry,
+						input,
+					});
+					const steps = result.rounds.map((round: { entry: string; calls: Array<{ nsid: string; ok: boolean }> }) =>
+						`${round.entry}(${round.calls.map((call) => `${call.nsid.split(".").pop()}${call.ok ? "" : " failed"}`).join(", ")})`,
+					);
+					show(`${result.module} ran ${steps.join(" · ")}. Result: ${JSON.stringify(result.result)}`);
+				} catch (error) {
+					show(error instanceof Error ? error.message : "Run failed");
+				}
+			});
+		}
+		card.querySelector("[data-action=verify]")?.addEventListener("click", async () => {
+			try {
+				const session = await api("verify", ref);
+				show(`Session works for @${session.handle}.`);
+			} catch (error) {
+				show(error instanceof Error ? error.message : "Verify failed");
+			}
+		});
+		card.querySelector("[data-action=disconnect]")?.addEventListener("click", async () => {
+			await api("disconnect", ref).catch(() => undefined);
+			window.location.assign("/integrations");
+		});
+	}
+</script>
+
+<style>
+	.integrations-lede {
+		max-width: 46rem;
+		margin-top: 1rem;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-lg);
+	}
+	.integrations-lede code,
+	.integration code {
+		font-family: var(--font-mono);
+		font-size: 0.85em;
+		overflow-wrap: anywhere;
+	}
+	.card {
+		background: var(--color-surface);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-card);
+		padding: 1.75rem;
+	}
+	.card h2 {
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-heading);
+		margin: 0 0 0.5rem;
+	}
+	.card p {
+		color: var(--color-text-secondary);
+	}
+	.notice {
+		border-radius: var(--radius-lg);
+		padding: 0.875rem 1.125rem;
+		margin-bottom: 1.5rem;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+	}
+	.notice--success {
+		border-color: light-dark(#bbf7d0, #14532d);
+		background: light-dark(#f0fdf4, #052e16);
+	}
+	.notice--error {
+		border-color: light-dark(#fecaca, #7f1d1d);
+		background: light-dark(#fef2f2, #450a0a);
+	}
+	.signin {
+		max-width: 32rem;
+	}
+	.signin :global(.signin__form) {
+		margin-top: 1.25rem;
+	}
+	.signin :global(.field),
+	.module__action .field {
+		flex: 1;
+		min-width: 0;
+		font: inherit;
+		padding: 0.5rem 0.875rem;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--color-border-strong);
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+	.empty pre {
+		margin-top: 1rem;
+		padding: 0.875rem 1rem;
+		border-radius: var(--radius-lg);
+		background: var(--color-fill);
+		overflow-x: auto;
+	}
+	.integrations,
+	.scopes {
+		list-style: none;
+	}
+	.integrations {
+		display: grid;
+		gap: 1.5rem;
+		padding: 0;
+		margin: 0;
+	}
+	.integration__head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+	.integration__name {
+		font-size: var(--font-size-2xl);
+	}
+	.integration__description,
+	.integration__meta {
+		margin: 0;
+	}
+	.pill {
+		flex-shrink: 0;
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		padding: 0.25rem 0.75rem;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--color-border);
+		white-space: nowrap;
+	}
+	.pill--on {
+		color: light-dark(#166534, #86efac);
+		background: light-dark(#f0fdf4, #052e16);
+		border-color: light-dark(#bbf7d0, #14532d);
+	}
+	.pill--off {
+		color: var(--color-muted);
+		background: var(--color-fill);
+	}
+	.integration__form {
+		margin-top: 1.5rem;
+	}
+	.groups {
+		border: 0;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		gap: 0.5rem;
+	}
+	.groups legend {
+		font-size: var(--font-size-label);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-muted);
+		margin-bottom: 0.75rem;
+	}
+	.group {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		padding: 0.625rem 0.875rem;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-border);
+		background: var(--color-bg);
+		cursor: pointer;
+	}
+	.group:has(input:checked) {
+		border-color: var(--color-brand);
+		box-shadow: 0 0 0 3px var(--color-brand-ring);
+	}
+	.group__label {
+		flex: 1;
+		font-size: var(--font-size-sm);
+	}
+	.group__count {
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
+	}
+	.integration__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 1.25rem;
+	}
+	.modules {
+		margin-top: 1.5rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--color-border-subtle);
+		display: grid;
+		gap: 0.75rem;
+	}
+	.modules__title {
+		font-size: var(--font-size-label);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-muted);
+		margin: 0;
+	}
+	.module__name {
+		margin: 0 0 0.5rem;
+		font-weight: 500;
+		color: var(--color-text);
+	}
+	.module__description {
+		display: block;
+		font-weight: 400;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+	}
+	.module__action {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.module__action .field {
+		max-width: 16rem;
+	}
+	.integration__details {
+		margin-top: 1.5rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--color-border-subtle);
+		font-size: var(--font-size-sm);
+	}
+	.integration__details summary {
+		cursor: pointer;
+		color: var(--color-text-secondary);
+	}
+	.scopes {
+		max-height: 16rem;
+		overflow: auto;
+		padding: 0;
+		margin: 0.75rem 0 0;
+		display: grid;
+		gap: 0.25rem;
+	}
+	.integration__result {
+		margin-top: 1rem;
+		font-size: var(--font-size-sm);
+	}
+	@media (max-width: 640px) {
+		.integration__head {
+			flex-direction: column;
+		}
+	}
+</style>

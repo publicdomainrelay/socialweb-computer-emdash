@@ -1,0 +1,25 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="socialweb.computer" description="Sign in with Atmosphere, then grant this site the extra atproto sessions your integrations need.">
+	<section class="band">
+		<div class="frame">
+			<p class="eyebrow">EmDash + atproto</p>
+			<h1 class="intro__title">Your integrations, from your PDS</h1>
+			<p class="lede">
+				Sign in with your Atmosphere handle. Each <code>oauth.clientMetadata</code> record in your repo becomes an OAuth client on this site. Each <code>wasm.module</code> record runs sandboxed with the session you grant it.
+			</p>
+			<p><a class="btn" href="/integrations">Open integrations</a></p>
+		</div>
+	</section>
+</Base>
+
+<style>
+	.lede {
+		max-width: 44rem;
+		margin-block: 1rem 1.5rem;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-lg);
+	}
+</style>

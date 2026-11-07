@@ -1,0 +1,25 @@
+packages:
+  - site
+  - plugins/*
+  - celld
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+  better-sqlite3: true
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - emdash
+  - "@emdash-cms/*"
+  - "@publicdomainrelay/*"
+blockExoticSubdeps: true
+
+overrides:
+  emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz
+  "@emdash-cms/plugin-types": file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+  "@emdash-cms/sandbox-workerd": file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz
+  "@emdash-cms/cloudflare": file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz
+  "@emdash-cms/plugin-cli": file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz
+  "@emdash-cms/plugin-test": file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz

@@ -1,0 +1,34 @@
+{
+	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"name": "Statusphere",
+	"description": "Set your xyz.statusphere.status emoji status.",
+	"clientMetadata": {
+		"client_id": "https://statusphere.example.com/oauth-client-metadata.json",
+		"client_name": "Statusphere",
+		"client_uri": "https://statusphere.example.com",
+		"redirect_uris": [
+			"https://statusphere.example.com/oauth/callback"
+		],
+		"grant_types": [
+			"authorization_code",
+			"refresh_token"
+		],
+		"response_types": [
+			"code"
+		],
+		"scope": "atproto repo:xyz.statusphere.status",
+		"application_type": "web",
+		"token_endpoint_auth_method": "none",
+		"dpop_bound_access_tokens": true
+	},
+	"scopeGroups": [
+		{
+			"key": "status",
+			"label": "Set your Statusphere status",
+			"scopes": [
+				"repo:xyz.statusphere.status"
+			]
+		}
+	],
+	"createdAt": "2026-11-06T00:00:00.000Z"
+}

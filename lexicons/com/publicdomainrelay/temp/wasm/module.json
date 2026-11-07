@@ -1,0 +1,124 @@
+{
+	"lexicon": 1,
+	"id": "com.publicdomainrelay.temp.wasm.module",
+	"defs": {
+		"main": {
+			"type": "record",
+			"key": "any",
+			"description": "A sandboxed WebAssembly module that turns user input into XRPC calls made with the session of an OAuth client metadata record. A module may run over several rounds: each output can name a next entry and state, and the host passes the call results back in.",
+			"record": {
+				"type": "object",
+				"required": [
+					"name",
+					"module",
+					"abi",
+					"session",
+					"actions",
+					"createdAt"
+				],
+				"properties": {
+					"name": {
+						"type": "string",
+						"maxLength": 640,
+						"maxGraphemes": 64
+					},
+					"description": {
+						"type": "string",
+						"maxLength": 3000,
+						"maxGraphemes": 300
+					},
+					"module": {
+						"type": "blob",
+						"accept": [
+							"application/wasm"
+						],
+						"maxSize": 4194304
+					},
+					"abi": {
+						"type": "string",
+						"maxLength": 64,
+						"knownValues": [
+							"emdash-wasm-json-v1"
+						]
+					},
+					"session": {
+						"type": "ref",
+						"ref": "com.atproto.repo.strongRef",
+						"description": "The com.publicdomainrelay.temp.oauth.clientMetadata record whose session the module's calls use."
+					},
+					"actions": {
+						"type": "array",
+						"maxLength": 64,
+						"items": {
+							"type": "ref",
+							"ref": "#action"
+						}
+					},
+					"calls": {
+						"type": "array",
+						"maxLength": 64,
+						"description": "NSIDs the module may ask the host to call. The host refuses any other call. When absent, the session's granted scopes are the only limit.",
+						"items": {
+							"type": "string",
+							"format": "nsid"
+						}
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "datetime"
+					}
+				}
+			}
+		},
+		"action": {
+			"type": "object",
+			"required": [
+				"entry",
+				"label"
+			],
+			"properties": {
+				"entry": {
+					"type": "string",
+					"maxLength": 128
+				},
+				"label": {
+					"type": "string",
+					"maxLength": 640,
+					"maxGraphemes": 64
+				},
+				"description": {
+					"type": "string",
+					"maxLength": 3000,
+					"maxGraphemes": 300
+				},
+				"fields": {
+					"type": "array",
+					"maxLength": 16,
+					"description": "String inputs the user supplies; each key becomes a property of the module input.",
+					"items": {
+						"type": "ref",
+						"ref": "#field"
+					}
+				}
+			}
+		},
+		"field": {
+			"type": "object",
+			"required": [
+				"key",
+				"label"
+			],
+			"properties": {
+				"key": {
+					"type": "string",
+					"maxLength": 64
+				},
+				"label": {
+					"type": "string",
+					"maxLength": 640,
+					"maxGraphemes": 64
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,26 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "socialweb.computer",
+		"description": "Atmosphere sign-in and record-defined integrations",
+		"author": "publicdomainrelay"
+	},
+	"settings": {
+		"title": "socialweb.computer",
+		"tagline": "Atmosphere integrations for EmDash"
+	},
+	"menus": [
+		{
+			"name": "primary",
+			"label": "Primary Navigation",
+			"items": [
+				{
+					"type": "custom",
+					"label": "Integrations",
+					"url": "/integrations"
+				}
+			]
+		}
+	]
+}

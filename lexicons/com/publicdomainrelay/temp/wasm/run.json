@@ -1,0 +1,119 @@
+{
+	"lexicon": 1,
+	"id": "com.publicdomainrelay.temp.wasm.run",
+	"defs": {
+		"main": {
+			"type": "procedure",
+			"description": "Run an action of a com.publicdomainrelay.temp.wasm.module record for the calling account, using the session that account connected on this site. Requires atproto service auth from the caller's PDS, with lxm set to this method.",
+			"input": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"required": [
+						"module",
+						"entry"
+					],
+					"properties": {
+						"module": {
+							"type": "string",
+							"format": "at-uri",
+							"description": "The wasm.module record."
+						},
+						"entry": {
+							"type": "string",
+							"maxLength": 64,
+							"description": "One of the record's action entries."
+						},
+						"input": {
+							"type": "unknown",
+							"description": "Action fields, keyed by field key."
+						}
+					}
+				}
+			},
+			"output": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"required": [
+						"did",
+						"module",
+						"entry",
+						"rounds"
+					],
+					"properties": {
+						"did": {
+							"type": "string",
+							"format": "did"
+						},
+						"module": {
+							"type": "string"
+						},
+						"entry": {
+							"type": "string"
+						},
+						"rounds": {
+							"type": "array",
+							"items": {
+								"type": "ref",
+								"ref": "#round"
+							}
+						},
+						"result": {
+							"type": "unknown"
+						}
+					}
+				}
+			},
+			"errors": [
+				{
+					"name": "AuthenticationRequired"
+				},
+				{
+					"name": "InvalidRequest"
+				}
+			]
+		},
+		"round": {
+			"type": "object",
+			"required": [
+				"entry",
+				"calls"
+			],
+			"properties": {
+				"entry": {
+					"type": "string"
+				},
+				"calls": {
+					"type": "array",
+					"items": {
+						"type": "ref",
+						"ref": "#callResult"
+					}
+				}
+			}
+		},
+		"callResult": {
+			"type": "object",
+			"required": [
+				"nsid",
+				"ok"
+			],
+			"properties": {
+				"nsid": {
+					"type": "string",
+					"format": "nsid"
+				},
+				"ok": {
+					"type": "boolean"
+				},
+				"output": {
+					"type": "unknown"
+				},
+				"error": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}

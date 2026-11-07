@@ -77,7 +77,8 @@ const pageCtx = createPublicPageContext({
 	siteName: siteTitle,
 });
 
-const isLoggedIn = !!Astro.locals.user;
+const user = Astro.locals.user;
+const canEdit = (user?.role ?? 0) >= 20;
 
 const TRAILING_SLASH = /\/$/;
 const currentPath = Astro.url.pathname.replace(TRAILING_SLASH, "") || "/";
@@ -222,15 +223,41 @@ const year = new Date().getFullYear();
 						>
 					</a>
 					{
-						isLoggedIn && (
+						canEdit && (
 							<a href="/_emdash/admin" class="btn btn--ghost btn--sm nav-admin">
 								Admin
+							</a>
+						)
+					}
+					{
+						user ? (
+							<>
+								<a href="/integrations" class="nav-user" title={user.email}>
+									{user.name ?? "Account"}
+								</a>
+								<button type="button" class="btn btn--ghost btn--sm nav-admin" data-sign-out>
+									Sign out
+								</button>
+							</>
+						) : (
+							<a href="/integrations" class="btn btn--ghost btn--sm nav-admin">
+								Sign in
 							</a>
 						)
 					}
 				</div>
 			</div>
 		</header>
+		<script is:inline>
+			document.querySelector("[data-sign-out]")?.addEventListener("click", function () {
+				fetch("/_emdash/api/auth/logout", {
+					method: "POST",
+					headers: { "X-EmDash-Request": "1" },
+				}).finally(function () {
+					window.location.assign("/integrations");
+				});
+			});
+		</script>
 		<script is:inline>
 			(function () {
 				var header = document.querySelector(".site-header");
@@ -883,6 +910,18 @@ const year = new Date().getFullYear();
 					min-height: 2rem;
 					padding: var(--spacing-1) var(--spacing-3);
 					font-size: var(--font-size-xs);
+				}
+				.nav-user {
+					max-width: 12rem;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+					font-size: var(--font-size-sm);
+					color: var(--color-text-secondary);
+					text-decoration: none;
+				}
+				.nav-user:hover {
+					color: var(--color-text);
 				}
 
 				.icon-btn {

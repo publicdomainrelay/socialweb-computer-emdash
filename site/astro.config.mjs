@@ -4,8 +4,7 @@ import { atproto } from "@emdash-cms/auth-atproto";
 import { defineConfig, fontProviders } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
-import socialwebComputerRequester from "socialweb-computer-requester-emdash";
-import statusphere from "statusphere-emdash";
+import atprotoIntegrations from "atproto-integrations-emdash";
 
 export default defineConfig({
 	output: "server",
@@ -28,9 +27,9 @@ export default defineConfig({
 				directory: "./uploads",
 				baseUrl: "/_emdash/api/media/file",
 			}),
-			authProviders: [atproto()],
+			authProviders: [atproto({ allowedHandles: ["*"] })],
 			sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox",
-			sandboxed: [statusphere, socialwebComputerRequester],
+			sandboxed: [atprotoIntegrations],
 		}),
 	],
 	fonts: [

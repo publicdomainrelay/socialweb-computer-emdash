@@ -1,10 +1,10 @@
 # 0001. One OAuth client per sandboxed plugin
 
-Status: accepted
+Status: superseded by 0010
 
 ## Context
 
-The site signs editors in with `@emdash-cms/auth-atproto`, which asks only for the `atproto` scope. Integrations such as Statusphere or the socialweb.computer requester need write access to lexicons the site does not own. In the Bluesky thread `at://did:plc:5svqtrhheairglgiiyvutzik/app.bsky.feed.post/3mzntqv77r22h`, the replies pointed out that each integration runs in its own trust context. Each one should therefore publish its own client metadata document (CIMD) with its own scopes. A permission set can only cover NSIDs under its own authority, so cross-namespace integrations cannot share one set.
+The site signs editors in with `@emdash-cms/auth-atproto`. Upstream it asks for `atproto transition:generic`; ADR 0012 patches it down to `atproto`. Integrations such as Statusphere or the socialweb.computer requester need write access to lexicons the site does not own. In the Bluesky thread `at://did:plc:5svqtrhheairglgiiyvutzik/app.bsky.feed.post/3mzntqv77r22h`, the replies pointed out that each integration runs in its own trust context. Each one should therefore publish its own client metadata document (CIMD) with its own scopes. A permission set can only cover NSIDs under its own authority, so cross-namespace integrations cannot share one set.
 
 EmDash sandboxed plugins already run in isolated workerd services. Each one has its own plugin-scoped settings, KV and storage.
 

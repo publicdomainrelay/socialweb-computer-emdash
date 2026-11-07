@@ -1,6 +1,5 @@
 packages:
   - site
-  - packages/*
   - plugins/*
 
 allowBuilds:
@@ -14,3 +13,6 @@ minimumReleaseAgeExclude:
   - emdash
   - "@emdash-cms/*"
 blockExoticSubdeps: true
+
+patchedDependencies:
+  "@emdash-cms/auth-atproto@0.2.50": patches/@emdash-cms__auth-atproto@0.2.50.patch

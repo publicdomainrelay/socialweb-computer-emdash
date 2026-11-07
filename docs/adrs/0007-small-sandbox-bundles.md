@@ -8,11 +8,11 @@ The registry caps each file in a plugin tarball at 128 KB, decompressed. With zo
 
 ## Decision
 
-- Admin interactions are validated by the small helpers in `atproto-oauth-sandbox/src/interaction.ts` (`parseInteraction`, `text`, `optionalText`, `textList`) instead of zod.
+- Route input is validated by small hand-written checks (`parseRef`, `parseRecord`) instead of zod.
 - The CIMD route is `oauth/client-metadata`. A `client_id` only has to be an HTTPS URL that serves the JSON, so no `.json` suffix is needed.
-- `atproto-oauth-sandbox/testing` holds the shared sandbox-test helpers. Tests import it and the runtime bundle does not.
+- Sandbox-test helpers live in `plugins/atproto-integrations-emdash/tests/network.ts`. Tests import them and the runtime bundle does not.
 
 ## Consequences
 
-- The Statusphere bundle is about 17 KB, which leaves room for richer integrations.
+- The `atproto-integrations` bundle is about 14 KB.
 - Validation is hand-written, so every plugin input goes through these helpers.

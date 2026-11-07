@@ -8,10 +8,10 @@ Status: accepted
 
 ## Decision
 
-`integrationRoutes()` builds the `oauth/client-metadata`, `oauth/callback` and `admin` routes. When `ctx.site.url` is empty, these routes fall back to the request origin. Plugins pass only their page handlers, and the Connect page handler always runs first.
+The `connect` route uses `ctx.site.url` and falls back to the request origin when it is empty. The origin chosen at connect time is stored with the integration, so the served client metadata and the callback always use the same `client_id` and `redirect_uri`.
 
 ## Consequences
 
-- `pnpm dev` followed by Connect works on a brand-new database, with no restart.
+- `pnpm dev` followed by a connect works on a brand-new database, with no restart.
 - Moving between loopback and a fedproxy origin needs a fresh `site/data.db` or **Change domain** in EmDash settings.
 - Hooks have no request, so before setup they still see an empty origin. They act only on an existing session, which requires a completed Connect.

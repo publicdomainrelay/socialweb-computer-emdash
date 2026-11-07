@@ -1,6 +1,6 @@
 # 0005. Encrypted session storage in plugin settings
 
-Status: accepted
+Status: superseded by 0011
 
 ## Context
 

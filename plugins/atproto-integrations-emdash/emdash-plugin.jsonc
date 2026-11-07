@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+	"slug": "atproto-integrations",
+	"publisher": "did:plc:5svqtrhheairglgiiyvutzik",
+	"license": "MIT",
+	"author": { "name": "John Andersen" },
+	"security": { "email": "johnandersenpdx@gmail.com" },
+	"name": "atproto integrations",
+	"description": "Let signed-in users grant this site extra atproto OAuth sessions defined by clientMetadata records in their own PDS.",
+	"keywords": ["atproto", "oauth", "integrations"],
+	"capabilities": ["network:request:unrestricted"],
+	"allowedHosts": [],
+	"storage": {
+		"clients": { "indexes": [] },
+		"pending": { "indexes": ["createdAt"] },
+		"sessions": { "indexes": ["userId"] }
+	},
+	"admin": {
+		"settingsSchema": {
+			"sessionKey": { "type": "secret", "label": "Session encryption key", "description": "Generated automatically" }
+		}
+	}
+}

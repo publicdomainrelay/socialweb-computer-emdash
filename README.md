@@ -1,6 +1,6 @@
 # socialweb-computer-emdash
 
-An EmDash site with two sandboxed plugins. Each plugin is its own atproto OAuth client and requests scopes progressively.
+Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.publicdomainrelay.temp.oauth.clientMetadata` record in their own PDS.
 
 ## Run
 
@@ -11,7 +11,32 @@ pnpm dev
 ```
 
 ```bash
-xdg-open "http://127.0.0.1:4321/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin/plugins/statusphere/connect"
+xdg-open http://127.0.0.1:4321/integrations
+```
+
+## Publish integration records
+
+```bash
+go install github.com/bluesky-social/goat@latest
+export ATPROTO_HANDLE=alice.bsky.social ATPROTO_PASSWORD='app-password'
+./scripts/publish-records.sh
+```
+
+```bash
+goat lex validate -c lexicons records/statusphere.json
+goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere"
+```
+
+## Public origin through fedproxy
+
+```bash
+./scripts/fedproxy.sh &
+rm -f site/data.db*
+EMDASH_SITE_URL="https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com" pnpm dev
+```
+
+```bash
+curl -s "https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com/.well-known/atproto-client-metadata.json" | jq .scope
 ```
 
 ## Test
@@ -20,76 +45,49 @@ xdg-open "http://127.0.0.1:4321/_emdash/api/setup/dev-bypass?redirect=/_emdash/a
 pnpm test
 ```
 
-## Client metadata
-
 ```bash
-curl -s http://127.0.0.1:4321/_emdash/api/plugins/statusphere/oauth/client-metadata | jq .
-curl -s http://127.0.0.1:4321/_emdash/api/plugins/socialweb-computer-requester/oauth/client-metadata | jq -r .scope | tr ' ' '\n'
+SITE_URL="https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com" pnpm exec node scripts/e2e.ts
 ```
 
-## Live against a real PDS
+## Client metadata served per record
 
 ```bash
-export ATPROTO_HANDLE=alice.bsky.social ATPROTO_PASSWORD='app-password'
-pnpm dev
-pnpm exec node scripts/e2e.ts
-```
-
-## Public client metadata through fedproxy
-
-```bash
-rm -f site/data.db*
-./scripts/fedproxy.sh &
-EMDASH_SITE_URL="https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com" pnpm dev
-pnpm exec node scripts/e2e.ts
+DID=$(curl -s "https://$ATPROTO_HANDLE/.well-known/atproto-did")
+curl -s "http://127.0.0.1:4321/integrations/$DID/statusphere/oauth-client-metadata.json" | jq .
 ```
 
 ## Add an integration
 
-```jsonc
+```json
 {
-	"capabilities": ["network:request:unrestricted", "content:read"],
-	"admin": {
-		"pages": [{ "path": "/connect", "label": "Account", "icon": "link" }],
-		"settingsSchema": {
-			"session": { "type": "secret", "label": "OAuth session" },
-			"pending": { "type": "secret", "label": "Pending OAuth request" }
-		}
-	}
+	"$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+	"name": "Example",
+	"clientMetadata": {
+		"client_id": "https://example.com/oauth-client-metadata.json",
+		"client_uri": "https://example.com",
+		"redirect_uris": ["https://example.com/oauth/callback"],
+		"scope": "atproto repo:com.example.post repo:com.example.like"
+	},
+	"scopeGroups": [
+		{ "key": "posts", "label": "Write posts", "scopes": ["repo:com.example.post"] },
+		{ "key": "likes", "label": "Like posts", "scopes": ["repo:com.example.like"] }
+	],
+	"createdAt": "2026-11-06T00:00:00.000Z"
 }
 ```
 
-```ts
-import { connectedAgent, type Integration, integrationRoutes } from "atproto-oauth-sandbox";
-import type { SandboxedPlugin } from "emdash/plugin";
-
-const integration: Integration = {
-	name: "Example",
-	groups: [
-		{ id: "posts", label: "Write posts", scopes: ["repo:com.example.post?action=create"] },
-		{ id: "likes", label: "Like posts", scopes: ["repo:com.example.like"] },
-	],
-};
-
-export default {
-	routes: integrationRoutes(integration),
-	hooks: {
-		"content:afterPublish": async (_event, ctx) => {
-			const agent = await connectedAgent(ctx, integration);
-			agent?.requireGroup("posts");
-			await agent?.createRecord("com.example.post", { text: "published" });
-		},
-	},
-} satisfies SandboxedPlugin;
+```bash
+goat record create -n -r example example.json
 ```
 
 ## Layout
 
 ```text
-site/                                         EmDash on Node, SQLite, workerd sandbox, Atmosphere login
-packages/atproto-oauth/                       PAR, PKCE, DPoP and scope groups over ctx.http
-plugins/statusphere-emdash/                   repo:xyz.statusphere.status, then rpc:app.bsky.actor.getProfile
-plugins/socialweb-computer-requester-emdash/  the qr.fedfork.com scope set, split into 10 groups
-scripts/                                      fedproxy tunnel and live e2e
-docs/adrs/                                    decisions
+site/                                  EmDash blog theme, Atmosphere login, /integrations
+plugins/atproto-integrations-emdash/   sandboxed OAuth client per record, encrypted per-user sessions
+lexicons/                              com.publicdomainrelay.temp.oauth.clientMetadata
+records/                               socialweb-computer and statusphere examples
+patches/                               auth-atproto: atproto scope, open signup, returnTo, public origin
+scripts/                               publish records, fedproxy tunnel, live e2e
+docs/adrs/                             decisions
 ```

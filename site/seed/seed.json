@@ -147,6 +147,11 @@
 					"type": "custom",
 					"label": "Posts",
 					"url": "/posts"
+				},
+				{
+					"type": "custom",
+					"label": "Integrations",
+					"url": "/integrations"
 				}
 			]
 		}

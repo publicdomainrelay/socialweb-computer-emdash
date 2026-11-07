@@ -1,0 +1,92 @@
+diff --git a/src/oauth-client.ts b/src/oauth-client.ts
+--- a/src/oauth-client.ts
++++ b/src/oauth-client.ts
+@@ -142,7 +142,7 @@
+ 		return new OAuthClient({
+ 			metadata: {
+ 				redirect_uris: [`${baseUrl}/_emdash/api/auth/atproto/callback`],
+-				scope: "atproto transition:generic",
++				scope: "atproto",
+ 			},
+ 			stores,
+ 			actorResolver,
+@@ -156,7 +156,7 @@
+ 		metadata: {
+ 			client_id: `${baseUrl}/.well-known/atproto-client-metadata.json`,
+ 			redirect_uris: [`${baseUrl}/_emdash/api/auth/atproto/callback`],
+-			scope: "atproto transition:generic",
++			scope: "atproto",
+ 		},
+ 		stores,
+ 		actorResolver,
+diff --git a/src/routes/callback.ts b/src/routes/callback.ts
+--- a/src/routes/callback.ts
++++ b/src/routes/callback.ts
+@@ -98,6 +98,7 @@
+ 					handleAllowed = config.allowedHandles!.some((pattern) => {
+ 						const p = pattern.toLowerCase();
+ 						return (
++							p === "*" ||
+ 							normalizedHandle === p ||
+ 							(p.startsWith("*.") && normalizedHandle.endsWith(p.slice(1)))
+ 						);
+@@ -193,8 +194,9 @@
+ 			session.set("user", { id: user.id });
+ 		}
+ 
+-		// Redirect to admin dashboard
+-		return redirect("/_emdash/admin");
++		const returnTo = await session?.get("atprotoReturnTo");
++		session?.delete("atprotoReturnTo");
++		return redirect(typeof returnTo === "string" ? returnTo : "/_emdash/admin");
+ 	} catch (callbackError) {
+ 		console.error("[atproto-auth] Callback error:", callbackError);
+ 
+diff --git a/src/routes/client-metadata.ts b/src/routes/client-metadata.ts
+--- a/src/routes/client-metadata.ts
++++ b/src/routes/client-metadata.ts
+@@ -6,11 +6,12 @@
+  */
+ 
+ import type { APIRoute } from "astro";
++import { getPublicOrigin } from "emdash/api/route-utils";
+ 
+ export const prerender = false;
+ 
+-export const GET: APIRoute = async ({ request }) => {
+-	const baseUrl = new URL(request.url).origin;
++export const GET: APIRoute = async ({ request, locals }) => {
++	const baseUrl = getPublicOrigin(new URL(request.url), locals.emdash?.config);
+ 
+ 	// Build metadata statically — no keyset or OAuthClient needed.
+ 	// This must be fast because PDS authorization servers fetch it
+@@ -18,7 +19,7 @@
+ 	const metadata = {
+ 		client_id: `${baseUrl}/.well-known/atproto-client-metadata.json`,
+ 		redirect_uris: [`${baseUrl}/_emdash/api/auth/atproto/callback`],
+-		scope: "atproto transition:generic",
++		scope: "atproto",
+ 		application_type: "web",
+ 		subject_type: "public",
+ 		response_types: ["code"],
+diff --git a/src/routes/login.ts b/src/routes/login.ts
+--- a/src/routes/login.ts
++++ b/src/routes/login.ts
+@@ -20,7 +20,7 @@
+ } from "emdash/api/route-utils";
+ import { atprotoLoginBody } from "emdash/api/schemas";
+ 
+-export const POST: APIRoute = async ({ request, locals }) => {
++export const POST: APIRoute = async ({ request, locals, session }) => {
+ 	const { emdash } = locals;
+ 
+ 	if (!emdash?.db) {
+@@ -32,6 +32,8 @@
+ 		if (isParseError(body)) return body;
+ 
+ 		const url = new URL(request.url);
++		const returnTo = url.searchParams.get("returnTo");
++		if (returnTo?.startsWith("/") && !returnTo.startsWith("//")) session?.set("atprotoReturnTo", returnTo);
+ 		const baseUrl = getPublicOrigin(url, emdash?.config);
+ 
+ 		const { getAtprotoOAuthClient } = await import("@emdash-cms/auth-atproto/oauth-client");

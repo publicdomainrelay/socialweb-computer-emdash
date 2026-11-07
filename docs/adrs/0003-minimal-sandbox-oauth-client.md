@@ -8,7 +8,7 @@ The sandbox blocks global `fetch()`. Network access goes only through `ctx.http.
 
 ## Decision
 
-`packages/atproto-oauth` (`atproto-oauth-sandbox`) implements the atproto OAuth profile with WebCrypto and `ctx.http` only:
+`plugins/atproto-integrations-emdash/src/oauth/` implements the atproto OAuth profile with WebCrypto and `ctx.http` only:
 
 - handle resolution through `https://<handle>/.well-known/atproto-did`, then DNS-over-HTTPS TXT `_atproto.<handle>`
 - DID resolution through `plc.directory` or `did:web`
@@ -17,10 +17,8 @@ The sandbox blocks global `fetch()`. Network access goes only through `ctx.http.
 - `sub` and `iss` checks against the account resolved before redirect
 - refresh on expiry or on `invalid_token`, and best-effort revocation on disconnect
 
-Plugins depend on it as a `devDependency` that exports TypeScript source. The plugin CLI's tsdown build then inlines it into each `backend.js`.
 
 ## Consequences
 
-- Each plugin bundle carries its own copy, so each sandbox stays self-contained.
 - Authorization start costs about 6 subrequests and the callback about 2, both within the Cloudflare budget.
-- The library is small enough to audit, but it is not the reference implementation. Tests in `packages/atproto-oauth/tests` use a fake authorization server that verifies DPoP signatures, `ath`, `htu` and nonces.
+- The library is small enough to audit, but it is not the reference implementation. Sandbox tests queue authorization server responses through the plugin test host, including the DPoP nonce retry. The live run in ADR 0008 checks the client against bsky.social.

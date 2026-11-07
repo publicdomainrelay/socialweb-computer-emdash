@@ -96,7 +96,7 @@ const plugin: SandboxedPlugin = {
 			const agent = await sessionAgent(ctx, userId, parseRef(input));
 			if (!agent) throw new Error("Not connected");
 			const session = await agent.call<{ did: string; handle: string }>("com.atproto.server.getSession");
-			return { did: session.did, handle: session.handle, scope: agent.scope };
+			return { did: session.did, handle: session.handle, scope: await agent.scope() };
 		}),
 		"client-metadata": pluginRoute({
 			public: true,

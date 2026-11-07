@@ -31,6 +31,10 @@
 	},
 	"devDependencies": {
 		"@atcute/crypto": "2.4.4",
+		"@atcute/identity": "2.0.2",
+		"@atcute/identity-resolver": "2.0.3",
+		"@atcute/lexicons": "2.1.1",
+		"@atcute/oauth-node-client": "2.0.1",
 		"@emdash-cms/plugin-cli": "0.13.5",
 		"@emdash-cms/plugin-test": "^0.2.6",
 		"@noble/curves": "2.4.0",

@@ -41,6 +41,18 @@ importers:
       '@atcute/crypto':
         specifier: 2.4.4
         version: 2.4.4
+      '@atcute/identity':
+        specifier: 2.0.2
+        version: 2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3)
+      '@atcute/identity-resolver':
+        specifier: 2.0.3
+        version: 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
+      '@atcute/lexicons':
+        specifier: 2.1.1
+        version: 2.1.1
+      '@atcute/oauth-node-client':
+        specifier: 2.0.1
+        version: 2.0.1(@atcute/identity-resolver@2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@emdash-cms/plugin-cli':
         specifier: file:../../vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz
         version: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
@@ -728,7 +740,7 @@ packages:
       react-dom: ^18.0.0 || ^19.0.0
 
   '@emdash-cms/cloudflare@file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz':
-    resolution: {integrity: sha512-IxTMJsUyihni8+PNJhmd+isYr84TYGzYPD7Ms2lDajaIvnxCFuKkJnDWF+B9o/nZEkXC4FwJxkbNzGdCwpC3lw==, tarball: file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz}
+    resolution: {integrity: sha512-0UaeX5YnKARmcub5ZGsUAvQxr5bT4VwvgH+3G86bQ9PhUjcRsj9Lm7VnrxV/thHB79NzTEG2B17S/xd7lFTdBA==, tarball: file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz}
     version: 1.4.0
     peerDependencies:
       '@astrojs/cloudflare': '>=12.0.0'
@@ -757,7 +769,7 @@ packages:
     resolution: {integrity: sha512-WanDT+G6wtYRb9TZDTm/XvCqQyjkWa85slZVgWH39BaZ0j2WjuipD6IFaFdMPDiVlk6yxs6lL6zDw1xUu96Qgg==}
 
   '@emdash-cms/plugin-cli@file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz':
-    resolution: {integrity: sha512-qTjbrQ5nHQmanN0TNu3bzKNehI+5M1C0AaYtKN7V1vJz7czR82FS/CHOYV7r5xawUCo6twGlVdLf7LnbWiQflQ==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz}
+    resolution: {integrity: sha512-U6cheImurcHtrKAZFe7nYuCmGqO5CHcWfyVavffHNe+Nlt1MxvTA2BoFQUkjKQiYM0hnP0w9jOLuV/5cy3CsSQ==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz}
     version: 0.13.5
     hasBin: true
 
@@ -786,7 +798,7 @@ packages:
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   '@emdash-cms/sandbox-workerd@file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz':
-    resolution: {integrity: sha512-mw5MgvUBjrYChyZ185Prshy9G6mlwHMwkyJN6dBiD+qIPg8tdkbVEgBl/LGrO9deRYrE+KV8kQi3XOqw8h/Gfw==, tarball: file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz}
+    resolution: {integrity: sha512-mvVqsCTyza86E9+lTlnPAkqoYblPIo3M8+cj01M4Pccwb8Qywctj0+qFBW5DXG5K3v0dZ43uReyiWoJhvtE+gg==, tarball: file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz}
     version: 0.9.6
     peerDependencies:
       kysely: '>=0.29.0'
@@ -2870,7 +2882,7 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
   emdash@file:vendor/emdash-fork/emdash-1.4.0.tgz:
-    resolution: {integrity: sha512-H2XuVFQJA7fu7N11HQWeZDwEiniwe3uOkAuPmcBfnH9UBWA1hdc32ADf7fjqtk75shrXyliS9P6g/M7vwOtIpg==, tarball: file:vendor/emdash-fork/emdash-1.4.0.tgz}
+    resolution: {integrity: sha512-71RzCFqWFchBWNJrQfOEGK8erJsnPqfdMCw1xda0axIjuJGvtUpCbc2337mPeiMak8z+9p6YBPg5aVM064IZoA==, tarball: file:vendor/emdash-fork/emdash-1.4.0.tgz}
     version: 1.4.0
     engines: {node: '>=22.16'}
     hasBin: true
@@ -5047,7 +5059,7 @@ snapshots:
     dependencies:
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@atcute/identity': 2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3)
-      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
+      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@atcute/lexicons': 2.1.1
       '@atcute/oauth-crypto': 1.0.1(typescript@5.9.3)
       '@atcute/oauth-keyset': 0.1.3(typescript@5.9.3)
@@ -5062,7 +5074,7 @@ snapshots:
     dependencies:
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@6.0.3)
       '@atcute/identity': 2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3)
-      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
+      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@atcute/lexicons': 2.1.1
       '@atcute/oauth-crypto': 1.0.1(typescript@6.0.3)
       '@atcute/oauth-keyset': 0.1.3(typescript@6.0.3)
@@ -5882,7 +5894,7 @@ snapshots:
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@6.0.3)
       '@atcute/crypto': 2.4.4
       '@atcute/identity': 2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3)
-      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
+      '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
       '@atcute/lexicons': 2.1.1
       '@atcute/multibase': 1.2.5
       '@atcute/repo': 1.1.1(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/lexicons@2.1.1)

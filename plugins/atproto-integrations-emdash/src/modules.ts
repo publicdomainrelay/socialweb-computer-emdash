@@ -1,8 +1,8 @@
 import { base32nopad, hex } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
 import type { SessionAgent } from "./flow";
-import { requireHttp } from "./oauth/http";
-import { resolveIdentity } from "./oauth/identity";
+import { requireHttp, xrpcUrl } from "./http";
+import { resolveActor } from "./identity";
 import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
 export const MODULE_COLLECTION = "com.publicdomainrelay.temp.wasm.module";
@@ -95,9 +95,8 @@ export function blobSha256(cid: string) {
 }
 
 export async function listModules(ctx: PluginContext, pds: string, did: string) {
-	const query = new URLSearchParams({ repo: did, collection: MODULE_COLLECTION, limit: "100" });
 	const response = await requireHttp(ctx)
-		.fetch(`${pds}/xrpc/com.atproto.repo.listRecords?${query}`)
+		.fetch(xrpcUrl(pds, "com.atproto.repo.listRecords", { repo: did, collection: MODULE_COLLECTION, limit: "100" }))
 		.catch(() => undefined);
 	if (!response?.ok) return [];
 	const { records } = (await response.json()) as { records: Array<{ uri: string; value: unknown }> };
@@ -162,17 +161,17 @@ export async function runModule(
 	if (!ctx.wasm) throw new Error("The wasm:execute capability is required");
 	const wasm = ctx.wasm;
 	const http = requireHttp(ctx);
-	const identity = await resolveIdentity(http, ref.did);
-	const query = new URLSearchParams({ repo: ref.did, collection: MODULE_COLLECTION, rkey: ref.rkey });
-	const recordResponse = await http.fetch(`${identity.pds}/xrpc/com.atproto.repo.getRecord?${query}`);
+	const identity = await resolveActor(ctx, ref.did);
+	const recordResponse = await http.fetch(
+		xrpcUrl(identity.pds, "com.atproto.repo.getRecord", { repo: ref.did, collection: MODULE_COLLECTION, rkey: ref.rkey }),
+	);
 	if (!recordResponse.ok) throw new Error("Module record not found");
 	const module = parseModuleRecord(((await recordResponse.json()) as { value: unknown }).value);
 	if (!module.actions.some((action) => action.entry === entry)) throw new Error(`Module has no action ${entry}`);
 	const agent = await agentFor(module.session);
 	if (!agent) throw new Error("Connect the integration this module uses first");
 	const sha256 = blobSha256(module.blobCid);
-	const blobQuery = new URLSearchParams({ did: ref.did, cid: module.blobCid });
-	const blobResponse = await http.fetch(`${identity.pds}/xrpc/com.atproto.sync.getBlob?${blobQuery}`);
+	const blobResponse = await http.fetch(xrpcUrl(identity.pds, "com.atproto.sync.getBlob", { did: ref.did, cid: module.blobCid }));
 	if (!blobResponse.ok) throw new Error("Module blob not found");
 	const bytes = new Uint8Array(await blobResponse.arrayBuffer());
 	const base = { ...input, did: module.session.did };

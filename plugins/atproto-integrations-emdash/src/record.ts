@@ -1,4 +1,4 @@
-import { BASE_SCOPE, type ScopeGroup, scopeList } from "./oauth/scopes";
+import { BASE_SCOPE, type ScopeGroup, scopeList } from "./scopes";
 
 export const COLLECTION = "com.publicdomainrelay.temp.oauth.clientMetadata";
 const PLUGIN_ID = "atproto-integrations";

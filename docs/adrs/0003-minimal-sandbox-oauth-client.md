@@ -1,6 +1,6 @@
 # 0003. Minimal OAuth client inside the sandbox
 
-Status: accepted
+Status: superseded by 0021
 
 ## Context
 

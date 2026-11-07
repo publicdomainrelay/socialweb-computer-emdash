@@ -166,6 +166,11 @@ const first = await plugin<Ran>("run", { did, rkey: "statusphere", entry: "set_s
 log("run set_status with site session", { ...summary(first), latest: (await statuses())[0] });
 log("run set_status again", summary(await plugin<Ran>("run", { did, rkey: "statusphere", entry: "set_status", input: { status: "🦋" } })));
 
+const parallel = await Promise.all(
+	["🌊", "🔥", "🌙"].map((status) => plugin<Ran>("run", { did, rkey: "statusphere", entry: "set_status", input: { status } })),
+);
+log("run set_status three times in parallel", { results: parallel.map((ran) => ran.result.status), stored: (await statuses()).length });
+
 const passwordSession = await (await fetch(`${pds}/xrpc/com.atproto.server.createSession`, {
 	method: "POST",
 	headers: { "content-type": "application/json" },

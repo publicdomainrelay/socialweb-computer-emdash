@@ -1,8 +1,7 @@
 import { type FoundPublicKey, getPublicKeyFromDidController, verifySig } from "@atcute/crypto";
 import { base64urlnopad } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
-import { requireHttp } from "./oauth/http";
-import { isDid, resolveDidDocument } from "./oauth/identity";
+import { atprotoSigningMaterial, isAtprotoDid } from "./identity";
 
 export const RUN_NSID = "com.publicdomainrelay.temp.wasm.run";
 const SERVICE_ID = "emdash_integrations";
@@ -34,13 +33,12 @@ export function siteDidDocument(origin: string) {
 }
 
 async function signingKey(ctx: PluginContext, did: string): Promise<FoundPublicKey> {
-	const document = await resolveDidDocument(requireHttp(ctx), did).catch(() => {
+	const material = await atprotoSigningMaterial(ctx, did).catch(() => {
 		throw new ServiceAuthError(`Could not resolve ${did}`);
 	});
-	const method = document.verificationMethod?.find((item) => item.id === "#atproto" || item.id === `${did}#atproto`);
-	if (!method?.publicKeyMultibase) throw new ServiceAuthError(`${did} has no atproto signing key`);
+	if (!material) throw new ServiceAuthError(`${did} has no atproto signing key`);
 	try {
-		return getPublicKeyFromDidController({ type: method.type, publicKeyMultibase: method.publicKeyMultibase });
+		return getPublicKeyFromDidController(material);
 	} catch {
 		throw new ServiceAuthError(`${did} has an unsupported atproto signing key`);
 	}
@@ -62,7 +60,7 @@ export async function verifyServiceAuth(ctx: PluginContext, token: string, audie
 	const payload = decodeJson(encodedPayload);
 	if (header.alg !== "ES256K" && header.alg !== "ES256") throw new ServiceAuthError(`Unsupported service auth algorithm ${String(header.alg)}`);
 	const { iss, aud, exp, jti } = payload;
-	if (typeof iss !== "string" || !isDid(iss)) throw new ServiceAuthError("Service auth issuer must be a user DID");
+	if (typeof iss !== "string" || !isAtprotoDid(iss)) throw new ServiceAuthError("Service auth issuer must be a user DID");
 	if (aud !== audience && aud !== `${audience}#${SERVICE_ID}`) throw new ServiceAuthError("Service auth token is for another service");
 	if (payload.lxm !== lxm) throw new ServiceAuthError(`Service auth token is not scoped to ${lxm}`);
 	const now = Math.floor(Date.now() / 1000);

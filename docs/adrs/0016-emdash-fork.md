@@ -11,6 +11,9 @@ EmDash's Cloudflare and Node runners load only JavaScript modules into plugin is
 - Fork to https://github.com/publicdomainrelay/emdash, branch `wasm-blob-sandbox`, checked out as the `emdash` submodule. The design is `emdash/proposals/sandboxed-wasm-modules.md`.
 - The fork adds a `wasm:execute` capability and `ctx.wasm.run({ module, entry, input, sha256 })`. The host runs modules outside the plugin isolate: in a `node:worker_threads` worker on Node.js, and in a Dynamic Worker with a `{ wasm }` module on Cloudflare. Modules get no imports, no network and no storage, under fixed size, memory and wall-time limits.
 - `scripts/emdash-fork.sh` builds the fork and packs `emdash`, `plugin-types`, `plugin-cli`, `plugin-test`, `sandbox-workerd` and `cloudflare` into `vendor/emdash-fork`. pnpm `overrides` in `pnpm-workspace.yaml` install those tarballs in place of the npm releases.
+- The fork also fixes two sandbox problems we hit:
+  - plugin bundles now resolve the `workerd`, `worker` and `browser` export conditions;
+  - the Miniflare dev runner now uses the same compatibility date as the workerd runner.
 - We do not open pull requests or comment upstream.
 
 ## Consequences

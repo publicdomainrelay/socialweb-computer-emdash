@@ -1,7 +1,7 @@
 import { createPluginRuntimeTestHost, type PluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { clientMetadata, parseRecord } from "../src/record";
-import { ALICE, call, connect, ISSUER, json, queueListing, RECORDS, SITE_URL, useEncryptionKey } from "./network";
+import { ALICE, call, connect, didDocument, ISSUER, json, queueListing, RECORDS, SITE_URL, useEncryptionKey } from "./network";
 
 let host: PluginRuntimeTestHost;
 
@@ -98,9 +98,11 @@ describe("atproto integrations", () => {
 	});
 
 	it("only lets a record authorize the account that published it", async () => {
-		const { callback } = await connect(host, await subscriber("a@example.com"), "statusphere", [], "did:plc:mallory");
+		const mallory = "did:plc:yk4dd2qkboz2yv6tpubpc6co";
+		await host.http.respond(`https://plc.directory/${encodeURIComponent(mallory)}`, json({ ...didDocument(), id: mallory, alsoKnownAs: [] }));
+		const { callback } = await connect(host, await subscriber("a@example.com"), "statusphere", [], mallory);
 		const location = new URL(callback.headers.get("location") ?? "", SITE_URL);
-		expect(location.searchParams.get("error")).toBe("An integration record can only authorize the account that published it");
+		expect(location.searchParams.get("error")).toContain("sub mismatch");
 		expect(await host.inspect.storage.list("sessions")).toHaveLength(0);
 	});
 });

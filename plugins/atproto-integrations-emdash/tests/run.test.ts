@@ -7,7 +7,7 @@ import statusphereWasm from "../../../wasm/statusphere/statusphere.wasm?inline";
 import module from "../../../records/wasm/statusphere.json";
 import { MODULE_COLLECTION } from "../src/modules";
 import { RUN_NSID, siteDid } from "../src/service-auth";
-import { ALICE, call, connect, json, queueIdentity, SITE_URL, useEncryptionKey } from "./network";
+import { ALICE, call, connect, didDocument, ISSUER, json, queueAuthorizationServer, queueIdentity, SITE_URL, useEncryptionKey } from "./network";
 
 const wasmBytes = Uint8Array.from(atob(statusphereWasm.split(",")[1] ?? ""), (char) => char.charCodeAt(0));
 const blobCid = module.module.ref.$link;
@@ -55,14 +55,10 @@ beforeEach(async () => {
 afterEach(() => host.dispose());
 
 async function queueSigningIdentity(publicKeyMultibase = multikey) {
+	host.http.clear();
 	await host.http.respond(
-		`https://plc.directory/${ALICE.did}`,
-		json({
-			id: ALICE.did,
-			alsoKnownAs: [`at://${ALICE.handle}`],
-			verificationMethod: [{ id: `${ALICE.did}#atproto`, type: "Multikey", controller: ALICE.did, publicKeyMultibase }],
-			service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: ALICE.pds }],
-		}),
+		`https://plc.directory/${encodeURIComponent(ALICE.did)}`,
+		json(didDocument([{ id: `${ALICE.did}#atproto`, type: "Multikey", controller: ALICE.did, publicKeyMultibase }])),
 	);
 }
 
@@ -114,6 +110,30 @@ describe("run", () => {
 		});
 	});
 
+	it("refreshes a shared session once when runs overlap", async () => {
+		const user = await host.fixtures.user({ email: "a@example.com", role: "subscriber" });
+		await connect(host, user, "statusphere", [], ALICE.did, 1);
+		for (const _ of [1, 2]) {
+			await queueModule(wasmBytes);
+			await queueStatusCalls("🦋");
+			await queueAuthorizationServer(host);
+			await queueIdentity(host);
+		}
+		await host.http.respond(
+			`${ISSUER}/oauth/token`,
+			json({ access_token: "access-token-2", refresh_token: "refresh-token-2", token_type: "DPoP", expires_in: 3600, scope: "atproto repo:xyz.statusphere.status", sub: ALICE.did }),
+		);
+		const input = { did: ALICE.did, rkey: "statusphere", entry: "set_status", input: { status: "🦋" } };
+		const runs = await Promise.all([call(host, user, "run", input), call(host, user, "run", input)]);
+		expect(runs.map((ran) => ran.error?.message)).toEqual([undefined, undefined]);
+		const refreshes = host.http
+			.requests()
+			.filter((item) => item.url === `${ISSUER}/oauth/token` && new TextDecoder().decode(item.body).includes("grant_type=refresh_token"));
+		expect(refreshes).toHaveLength(1);
+		const reads = host.http.requests().filter((item) => item.url.includes("com.atproto.repo.listRecords"));
+		expect(reads.map((item) => item.headers.authorization)).toEqual(["DPoP access-token-2", "DPoP access-token-2"]);
+	});
+
 	it("skips the write when the latest status already matches", async () => {
 		const user = await host.fixtures.user({ email: "a@example.com", role: "subscriber" });
 		await connect(host, user, "statusphere", []);
@@ -153,7 +173,7 @@ describe("service/run", () => {
 		await queueModule(wasmBytes);
 		await queueStatusCalls("🙂");
 		const ran = await serviceRun(serviceToken());
-		expect(ran.error).toBeUndefined();
+		expect(ran.message).toBeUndefined();
 		expect(ran.did).toBe(ALICE.did);
 		expect(ran.result.uri).toBe(`at://${ALICE.did}/${STATUS}/3new`);
 	});

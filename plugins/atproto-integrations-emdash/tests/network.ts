@@ -3,7 +3,7 @@ import socialweb from "../../../records/socialweb-computer.json";
 import statusphere from "../../../records/statusphere.json";
 
 export const SITE_URL = "https://site.example";
-export const ALICE = { did: "did:plc:alice", handle: "alice.example", pds: "https://pds.example" };
+export const ALICE = { did: "did:plc:ewvi7nxzyoun6zhxrhs64oiz", handle: "alice.example", pds: "https://pds.example" };
 export const ISSUER = "https://auth.example";
 export const RECORDS = { "socialweb-computer": socialweb, statusphere } as const;
 export const COLLECTION = "com.publicdomainrelay.temp.oauth.clientMetadata";
@@ -27,11 +27,19 @@ export async function call(host: PluginRuntimeTestHost, user: User, route: strin
 const lastBody = (host: PluginRuntimeTestHost, url: string) =>
 	new TextDecoder().decode(host.http.requests().findLast((request) => request.url === url)?.body);
 
-export async function queueIdentity(host: PluginRuntimeTestHost) {
-	await host.http.respond(
-		`https://plc.directory/${ALICE.did}`,
-		json({ alsoKnownAs: [`at://${ALICE.handle}`], service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: ALICE.pds }] }),
-	);
+export const didDocument = (verificationMethod: unknown[] = []) => ({
+	"@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/multikey/v1"],
+	id: ALICE.did,
+	alsoKnownAs: [`at://${ALICE.handle}`],
+	verificationMethod,
+	service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: ALICE.pds }],
+});
+
+export async function queueIdentity(host: PluginRuntimeTestHost, document: unknown = didDocument(), times = 1) {
+	for (let index = 0; index < times; index++) {
+		await host.http.respond(`https://plc.directory/${encodeURIComponent(ALICE.did)}`, json(document));
+		await host.http.respond(`https://${ALICE.handle}/.well-known/atproto-did`, new Response(ALICE.did));
+	}
 }
 
 export async function queueListing(host: PluginRuntimeTestHost, modules: Array<{ uri: string; cid: string; value: unknown }> = []) {
@@ -48,32 +56,52 @@ export async function queueListing(host: PluginRuntimeTestHost, modules: Array<{
 	);
 }
 
-export async function connect(host: PluginRuntimeTestHost, user: User, rkey: keyof typeof RECORDS, groups: string[], sub = ALICE.did) {
-	await queueIdentity(host);
+export async function queueAuthorizationServer(host: PluginRuntimeTestHost) {
 	await host.http.respond(
-		`${ALICE.pds}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(ALICE.did)}&collection=${COLLECTION}&rkey=${rkey}`,
-		json({ uri: `at://${ALICE.did}/${COLLECTION}/${rkey}`, cid: "bafy", value: RECORDS[rkey] }),
+		`${ALICE.pds}/.well-known/oauth-protected-resource`,
+		json({ resource: ALICE.pds, authorization_servers: [ISSUER], scopes_supported: [], bearer_methods_supported: ["header"] }),
 	);
-	await host.http.respond(`${ALICE.pds}/.well-known/oauth-protected-resource`, json({ authorization_servers: [ISSUER] }));
 	await host.http.respond(
 		`${ISSUER}/.well-known/oauth-authorization-server`,
 		json({
 			issuer: ISSUER,
+			scopes_supported: ["atproto"],
+			response_types_supported: ["code"],
+			response_modes_supported: ["query", "fragment", "form_post"],
+			grant_types_supported: ["authorization_code", "refresh_token"],
+			code_challenge_methods_supported: ["S256"],
+			authorization_response_iss_parameter_supported: true,
 			authorization_endpoint: `${ISSUER}/oauth/authorize`,
 			token_endpoint: `${ISSUER}/oauth/token`,
-			pushed_authorization_request_endpoint: `${ISSUER}/oauth/par`,
+			token_endpoint_auth_methods_supported: ["none", "private_key_jwt"],
 			revocation_endpoint: `${ISSUER}/oauth/revoke`,
+			pushed_authorization_request_endpoint: `${ISSUER}/oauth/par`,
+			require_pushed_authorization_requests: true,
+			dpop_signing_alg_values_supported: ["ES256"],
+			client_id_metadata_document_supported: true,
 		}),
 	);
+}
+
+export async function connect(host: PluginRuntimeTestHost, user: User, rkey: keyof typeof RECORDS, groups: string[], sub = ALICE.did, expiresIn = 3600) {
+	await queueIdentity(host, didDocument(), 2);
+	await host.http.respond(
+		`${ALICE.pds}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(ALICE.did)}&collection=${COLLECTION}&rkey=${rkey}`,
+		json({ uri: `at://${ALICE.did}/${COLLECTION}/${rkey}`, cid: "bafy", value: RECORDS[rkey] }),
+	);
+	await queueAuthorizationServer(host);
 	await host.http.respond(`${ISSUER}/oauth/par`, json({ error: "use_dpop_nonce" }, 400));
-	await host.http.respond(`${ISSUER}/oauth/par`, json({ request_uri: "urn:ietf:params:oauth:request_uri:test" }, 201));
+	await host.http.respond(`${ISSUER}/oauth/par`, json({ request_uri: "urn:ietf:params:oauth:request_uri:test", expires_in: 299 }, 201));
 	const started = await call(host, user, "connect", { did: ALICE.did, rkey, groups });
 	const par = new URLSearchParams(lastBody(host, `${ISSUER}/oauth/par`));
 	await host.http.respond(
 		`${ISSUER}/oauth/token`,
-		json({ access_token: "access-token", refresh_token: "refresh-token", token_type: "DPoP", expires_in: 3600, scope: par.get("scope"), sub }),
+		json({ access_token: "access-token", refresh_token: "refresh-token", token_type: "DPoP", expires_in: expiresIn, scope: par.get("scope"), sub }),
 	);
-	await queueIdentity(host);
+	await queueIdentity(host, didDocument(), 2);
+	await queueAuthorizationServer(host);
+	await queueAuthorizationServer(host);
+	await host.http.respond(`${ISSUER}/oauth/revoke`, new Response(null, { status: 200 }));
 	const query = new URLSearchParams({ code: "code", state: par.get("state") ?? "", iss: ISSUER });
 	const callback = await host.actions.routes.request("oauth/callback", {
 		method: "GET",

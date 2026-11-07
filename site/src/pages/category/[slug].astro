@@ -2,10 +2,12 @@
 import {
 	getTaxonomyTermsWithCacheHint,
 	getEmDashCollection,
+	getTermsForEntries,
 	decodeSlug,
 } from "emdash";
-import { Image } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
+import PostCard from "../../components/PostCard.astro";
+import Pagination from "../../components/Pagination.astro";
 
 const slug = decodeSlug(Astro.params.slug);
 const termsResult = await getTaxonomyTermsWithCacheHint("category", {
@@ -28,44 +30,106 @@ const {
 	limit: 20,
 	cursor,
 });
+
 if (Astro.cache?.enabled) {
 	Astro.cache.set(termsResult.cacheHint);
 	Astro.cache.set(cacheHint);
 }
+
+const tagsByEntry = await getTermsForEntries(
+	"posts",
+	posts.map((p) => p.data.id),
+	"tag",
+);
+const filteredPosts = posts.map((post) => ({
+	post,
+	tags: tagsByEntry.get(post.data.id) ?? [],
+}));
 ---
 
-<Base title={`${term.label} posts`} description={`Posts in ${term.label}`}>
-	<h1>{term.label}</h1>
-
-	{
-		posts.length === 0 ? (
-			<p>No posts in this category yet.</p>
-		) : (
-			<ul>
-				{posts.map((post) => (
-					<li>
-						<a href={`/posts/${post.id}`}>
-							{post.data.featured_image && (
-								<div {...post.edit.featured_image}><Image image={post.data.featured_image} /></div>
-							)}
-							<h2 {...post.edit.title}>{post.data.title}</h2>
-						</a>
-						{post.data.excerpt && <p {...post.edit.excerpt}>{post.data.excerpt}</p>}
-					</li>
-				))}
-			</ul>
-		)
-	}
-	<nav aria-label="Pagination">
-		{cursor && <a href={`/category/${term.slug}`}>First page</a>}
-		{
-			nextCursor && (
-				<a
-					href={`/category/${term.slug}?cursor=${encodeURIComponent(nextCursor)}`}
+<Base title={`${term.label} posts`} description={`All posts in ${term.label}`}>
+	<header class="band intro">
+		<div class="frame archive-intro">
+			<div class="archive-intro__text">
+				<p class="eyebrow">Category</p>
+				<h1 class="intro__title">{term.label}</h1>
+				<p class="intro__lead">
+					{term.description || `Posts filed under ${term.label}, newest first.`}
+				</p>
+			</div>
+			<a href="/posts" class="arrow-link">
+				All posts
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.75"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
 				>
-					Next page
-				</a>
-			)
-		}
-	</nav>
+					<path d="M5 12h14"></path>
+					<path d="m12 5 7 7-7 7"></path>
+				</svg>
+			</a>
+		</div>
+	</header>
+
+	<section class="band section">
+		<div class="frame">
+			{
+				filteredPosts.length > 0 ? (
+					<>
+						<div class="post-grid">
+							{filteredPosts.map(({ post, tags }) => (
+								<PostCard
+									post={post}
+									tags={tags.map((t) => ({ slug: t.slug, label: t.label }))}
+								/>
+							))}
+						</div>
+						<Pagination
+							basePath={`/category/${term.slug}`}
+							cursor={cursor}
+							nextCursor={nextCursor}
+						/>
+					</>
+				) : (
+					<div class="empty-state">
+						<h2 class="empty-state__title">
+							{cursor ? "No more posts" : "Nothing here yet"}
+						</h2>
+						<p class="empty-state__text">
+							{cursor
+								? "This page is past the last post."
+								: `No posts have been filed under ${term.label} so far.`}
+						</p>
+						<div class="empty-state__actions">
+							<a
+								href={cursor ? `/category/${term.slug}` : "/posts"}
+								class="btn btn--ghost"
+							>
+								{cursor ? "Back to the first page" : "Browse all posts"}
+							</a>
+						</div>
+					</div>
+				)
+			}
+		</div>
+	</section>
 </Base>
+
+<style>
+	.archive-intro {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		align-items: last baseline;
+		justify-content: space-between;
+		gap: var(--spacing-5) var(--spacing-10);
+	}
+
+	.archive-intro__text {
+		min-width: 0;
+	}
+</style>

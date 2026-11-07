@@ -1,7 +1,8 @@
 ---
 import { getEmDashCollection, getTermsForEntries } from "emdash";
-import { Image } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
+import PostCard from "../../components/PostCard.astro";
+import Pagination from "../../components/Pagination.astro";
 
 const cursor = Astro.url.searchParams.get("cursor") || undefined;
 const {
@@ -13,6 +14,7 @@ const {
 	limit: 20,
 	cursor,
 });
+
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
 const tagsByEntry = await getTermsForEntries(
@@ -20,49 +22,74 @@ const tagsByEntry = await getTermsForEntries(
 	posts.map((p) => p.data.id),
 	"tag",
 );
+
 const postsWithTags = posts.map((post) => ({
 	post,
 	tags: tagsByEntry.get(post.data.id) ?? [],
 }));
 ---
 
-<Base title="All Posts">
-	<h1>Posts</h1>
+<Base title="All Posts" description="Browse all blog posts">
+	<header class="band intro">
+		<div class="frame">
+			<p class="eyebrow">Archive</p>
+			<h1 class="intro__title">All Posts</h1>
+			<p class="intro__lead">Every post, newest first.</p>
+		</div>
+	</header>
 
-	{
-		postsWithTags.length === 0 ? (
-			<p>No posts yet.</p>
-		) : (
-			<ul>
-				{postsWithTags.map(({ post, tags }) => (
-					<li>
-						<a href={`/posts/${post.id}`}>
-							{post.data.featured_image && (
-								<div {...post.edit.featured_image}><Image image={post.data.featured_image} /></div>
-							)}
-							<h2 {...post.edit.title}>{post.data.title}</h2>
-						</a>
-						{post.data.excerpt && <p {...post.edit.excerpt}>{post.data.excerpt}</p>}
-						{tags.length > 0 && (
-							<div>
-								{tags.map((t) => (
-									<a href={`/tag/${t.slug}`}>{t.label}</a>
-								))}
+	<section class="band section archive-band">
+		<div class="frame">
+			{
+				posts.length === 0 ? (
+					<div class="empty-state">
+						<h2 class="empty-state__title">
+							{cursor ? "No more posts" : "No posts yet"}
+						</h2>
+						<p class="empty-state__text">
+							{cursor
+								? "You have reached the end of the archive."
+								: "Published posts will show up here."}
+						</p>
+						{cursor && (
+							<div class="empty-state__actions">
+								<a href="/posts" class="btn btn--ghost">
+									First page
+								</a>
 							</div>
 						)}
-					</li>
-				))}
-			</ul>
-		)
-	}
-	<nav aria-label="Pagination">
-		{cursor && <a href="/posts">First page</a>}
-		{
-			nextCursor && (
-				<a href={`/posts?cursor=${encodeURIComponent(nextCursor)}`}>
-					Next page
-				</a>
-			)
-		}
-	</nav>
+					</div>
+				) : (
+					<>
+						<ol class="archive__list">
+							{postsWithTags.map(({ post, tags }) => (
+								<li>
+									<PostCard post={post} tags={tags} variant="row" />
+								</li>
+							))}
+						</ol>
+						<Pagination
+							basePath="/posts"
+							cursor={cursor}
+							nextCursor={nextCursor}
+						/>
+					</>
+				)
+			}
+		</div>
+	</section>
 </Base>
+
+<style>
+	.archive-band {
+		padding-block-start: 0;
+	}
+
+	.archive__list {
+		list-style: none;
+	}
+
+	.archive__list > li + li {
+		border-block-start: 1px solid var(--color-border);
+	}
+</style>

@@ -168,6 +168,16 @@ function buildInfo(value: unknown) {
 	};
 }
 
+function originInfo(value: unknown) {
+	if (value === undefined) return undefined;
+	const origin = isObject(value) ? value : {};
+	const repository = text(origin.repository, "Origin repository", 2048);
+	if (!repository.startsWith("https://")) throw new Error("Origin repository must be an https URL");
+	const commit = optional(origin.commit, "Origin commit", 64);
+	if (commit && !/^[0-9a-f]{7,64}$/.test(commit)) throw new Error("Origin commit must be a hex commit id");
+	return { repository, ...(commit ? { commit } : {}) };
+}
+
 function actions(value: unknown) {
 	if (!Array.isArray(value) || value.length === 0 || value.length > 64) throw new Error("Add 1 to 64 actions");
 	return value.map((action) => {
@@ -208,6 +218,7 @@ export async function publishModule(ctx: PluginContext, userId: string, did: str
 	const language = text(source.language, "Language", 64);
 	if (!LANGUAGES.has(language)) throw new Error(`Language must be one of ${[...LANGUAGES].join(", ")}`);
 	const build = buildInfo(source.build);
+	const origin = originInfo(source.origin);
 	const sources = sourceFiles(source.files);
 	const moduleActions = actions(input.actions);
 	const allowedCalls = calls(input.calls);
@@ -229,6 +240,7 @@ export async function publishModule(ctx: PluginContext, userId: string, did: str
 				files,
 				build,
 				output: { sha256: await sha256(bytes), size: bytes.length },
+				...(origin ? { origin } : {}),
 				createdAt,
 			},
 		},

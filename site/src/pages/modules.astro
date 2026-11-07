@@ -356,6 +356,9 @@ const ascCommand = `npx --yes --package=assemblyscript@0.28.20 asc module.ts --o
 			You do not need Rust to write a module. The <a href="/studio/module">module editor</a> compiles AssemblyScript in your browser with <code>asc</code> 0.28.20. The compiler and Binaryen load only on that page. It runs your entries locally, then publishes the module, its source files and its manifest in one step.
 		</p>
 		<p>
+			Why not Rust in the browser? There is no official rustc build that runs in a browser. The closest is <a href="https://github.com/oligamiq/rubrc">rubrc</a>, a community port of rustc to WebAssembly that is still a work in progress and needs cross-origin isolation. Rust modules are compiled to <code>wasm32-unknown-unknown</code> on a machine, published with their source, and anyone can rebuild them in a container to check the bytes.
+		</p>
+		<p>
 			Every editor module gets an <code>abi.ts</code> with the helpers. <code>Json</code> parses and builds JSON. <code>input</code> reads a step, <code>output</code> writes one, and <code>call</code> and <code>query</code> plan XRPC calls. <code>next</code> asks for another round, <code>done</code> finishes with a result, and <code>fail</code> stops with an error. Each module must also <code>export {"{"} alloc {"}"} from "./abi"</code>.
 		</p>
 		<Code title="module.ts" code={asModule} />

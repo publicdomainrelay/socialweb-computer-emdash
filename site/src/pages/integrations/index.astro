@@ -61,8 +61,11 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 				did && integrations.length === 0 && !loadError && (
 					<div class="card empty">
 						<h2>No integrations yet</h2>
-						<p>Publish a record to your PDS and it shows up here.</p>
-						<pre><code>goat record create -n -r statusphere records/statusphere.json</code></pre>
+						<p>Add the Statusphere and Vibescrobble examples to your account in one click: their integration records, WebAssembly modules and source. Then connect them here and run them.</p>
+						<p class="empty__actions">
+							<a class="btn" href="/studio/examples">Add the examples</a>
+							<a class="btn btn--ghost" href="/studio/integration">Build your own</a>
+						</p>
 					</div>
 				)
 			}
@@ -289,6 +292,12 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		border: 1px solid var(--color-border-strong);
 		background: var(--color-bg);
 		color: var(--color-text);
+	}
+	.empty__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 1rem;
 	}
 	.empty pre {
 		margin-top: 1rem;

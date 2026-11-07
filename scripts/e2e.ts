@@ -289,6 +289,33 @@ log("run studio module", summary(noted));
 const sourcePage = await (await siteFetch(`/source?uri=${encodeURIComponent(published.module.uri)}`)).text();
 log("source page", { verified: (sourcePage.match(/>verified</g) ?? []).length, mismatched: (sourcePage.match(/>mismatch</g) ?? []).length, rebuild: sourcePage.includes("data-rebuild-button") });
 
+type Bundle = {
+	integrations: Array<{ rkey: string; record: Record<string, unknown> }>;
+	modules: Array<{ rkey: string; session: string; source: { files: unknown[]; build: { version: string } } } & Record<string, unknown>>;
+};
+const bundle = (await (await siteFetch("/studio/examples.json")).json()) as Bundle;
+const EXAMPLE_KEY = "e2e-example-statusphere";
+const exampleIntegration = bundle.integrations.find((item) => item.rkey === "statusphere");
+const exampleModule = bundle.modules.find((item) => item.rkey === "statusphere");
+if (!exampleIntegration || !exampleModule) throw new Error("The examples bundle has no statusphere");
+await plugin("studio/publish-integration", { did, rkey: EXAMPLE_KEY, record: exampleIntegration.record });
+const installed = await plugin<{ module: StrongRef; source: StrongRef; files: number }>("studio/publish-module", {
+	did,
+	...exampleModule,
+	rkey: EXAMPLE_KEY,
+	session: EXAMPLE_KEY,
+});
+log("install example from bundle", { integrations: bundle.integrations.map((item) => item.rkey), module: installed.module.uri, files: installed.files, build: exampleModule.source.build.version });
+await connect(EXAMPLE_KEY, ["status"]);
+log("run installed example", summary(await plugin<Ran>("run", { did, rkey: EXAMPLE_KEY, entry: "set_status", input: { status: "🧩" } })));
+log("clear installed example", summary(await plugin<Ran>("run", { did, rkey: EXAMPLE_KEY, entry: "clear_status", input: {} })));
+await plugin("disconnect", { did, rkey: EXAMPLE_KEY });
+log("example cleanup", {
+	module: await pdsDelete("com.fedfork.exec.wasm.module", EXAMPLE_KEY),
+	manifest: await pdsDelete("com.fedfork.exec.source.manifest", installed.source.uri.split("/").pop() ?? ""),
+	integration: await pdsDelete("com.fedfork.exec.oauth.clientMetadata", EXAMPLE_KEY),
+});
+
 await plugin("disconnect", { did, rkey: STUDIO_KEY });
 log("studio cleanup", {
 	note: await pdsDelete(NOTE_COLLECTION, noteRkey),

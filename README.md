@@ -106,6 +106,10 @@ goat record get "at://$ATPROTO_HANDLE/com.fedfork.exec.wasm.module/vibescrobble"
   - Run its entries locally.
   - Publish the module, its source files and its manifest.
   - The manifest's command, `npx --yes --package=assemblyscript@0.28.20 asc module.ts …`, produces the same bytes as the browser.
+- **`/studio/examples`.** One click adds Statusphere and Vibescrobble to the signed-in account: integration records, modules and Rust source. It connects the studio first when needed, and skips records the account already has.
+  - The bundle is `/studio/examples.json`, prerendered from `records/`, `wasm/*/module.json`, the built `.wasm` files and the sources listed in `records/wasm/<module>.manifest.json`.
+  - The build fails if a source file or module no longer matches its manifest, so republish with `publish-wasm.sh` after changing a module.
+  - Login alone cannot publish them: it asks only for `atproto`, and writing to an account needs that account's consent to the studio session.
 - **Plugin routes:** `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`.
 
 ## Run a module with atproto service auth

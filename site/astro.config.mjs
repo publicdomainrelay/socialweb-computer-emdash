@@ -4,11 +4,23 @@ import react from "@astrojs/react";
 import { d1, r2, sandbox } from "@emdash-cms/cloudflare";
 import { atprotoSubscriber } from "@publicdomainrelay/auth-atproto-subscriber";
 import atprotoIntegrations from "atproto-integrations-emdash";
+import { readFile } from "node:fs/promises";
 import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
 
 const onCloudflare = process.env.EMDASH_TARGET === "cloudflare";
+
+const BASE64_QUERY = "?base64";
+const base64Files = {
+	name: "base64-files",
+	enforce: "pre",
+	async load(id) {
+		if (!id.endsWith(BASE64_QUERY)) return undefined;
+		const bytes = await readFile(id.slice(0, -BASE64_QUERY.length));
+		return `export default ${JSON.stringify(bytes.toString("base64"))};`;
+	},
+};
 
 const platform = onCloudflare
 	? {
@@ -46,5 +58,6 @@ export default defineConfig({
 			sandboxed: [atprotoIntegrations],
 		}),
 	],
+	vite: { plugins: [base64Files] },
 	devToolbar: { enabled: false },
 });

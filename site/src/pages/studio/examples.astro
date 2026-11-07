@@ -1,0 +1,220 @@
+---
+import StudioSession from "../../components/StudioSession.astro";
+import Base from "../../layouts/Base.astro";
+import { rkeyOf } from "../../utils/atproto";
+import { missingScopes, studioContext } from "../../utils/studio";
+
+export const prerender = false;
+
+const { did, status, integrations, modules, error } = await studioContext(Astro.locals, Astro.url);
+const ready = Boolean(status?.connected && missingScopes(status).length === 0);
+const existing = { integrations: integrations.map((record) => rkeyOf(record.uri)), modules: modules.map((record) => rkeyOf(record.uri)) };
+const examples = [
+	{
+		rkey: "statusphere",
+		tone: "pds",
+		name: "Statusphere",
+		summary: "Set or clear your xyz.statusphere.status emoji. The module reads your latest status first, so setting the same emoji twice writes nothing.",
+		scopes: ["repo:xyz.statusphere.status"],
+	},
+	{
+		rkey: "vibescrobble",
+		tone: "wasm",
+		name: "Vibescrobble",
+		summary: "Post a com.vibescrobble.scrobble record of work you shipped. The text must start with an emoji.",
+		scopes: ["repo:com.vibescrobble.scrobble?action=create"],
+	},
+];
+const has = (list: string[], rkey: string) => list.includes(rkey);
+const allInstalled = examples.every((example) => has(existing.integrations, example.rkey) && has(existing.modules, example.rkey));
+---
+
+<Base title="Examples" description="Add the Statusphere and Vibescrobble integrations and their WebAssembly modules to your own account in one click.">
+	<header class="band guide-intro">
+		<div class="frame">
+			<p class="eyebrow">Studio</p>
+			<h1 class="intro__title">Try it with the examples</h1>
+			<p class="lede">
+				One click publishes two ready-made integrations to your PDS: their OAuth client records, their compiled WebAssembly modules, and the Rust source each module was built from. Then connect them on the integrations page and run them. No coding needed.
+			</p>
+		</div>
+	</header>
+
+	<div class="frame examples" data-existing={JSON.stringify(existing)} data-ready={String(ready)}>
+		{error && <p class="notice notice--error" role="alert">{error}</p>}
+		{!did && <StudioSession did={did} status={status} returnTo="/studio/examples" />}
+
+		<div class="grid">
+			{
+				examples.map((example) => (
+					<div class={`tile tone-${example.tone}`}>
+						<h3>{example.name}</h3>
+						<p>{example.summary}</p>
+						<p class="examples__scopes">
+							Asks for {example.scopes.map((scope) => <code>{scope}</code>)}
+						</p>
+						<p class="examples__state">
+							{has(existing.integrations, example.rkey) && has(existing.modules, example.rkey) ? (
+								<span class="pill pill--on">already in your account</span>
+							) : (
+								<span class="pill pill--off">integration, module and source</span>
+							)}
+						</p>
+					</div>
+				))
+			}
+		</div>
+
+		{
+			did && (
+				<div class="card examples__install">
+					<h2>{allInstalled ? "You have the examples" : "Add them to your account"}</h2>
+					<p>
+						{ready
+							? "The studio is connected. Records you already have are left as they are."
+							: "This first connects the studio, a separate permission to write these record types to your PDS. You come back here and the examples are added right away."}
+					</p>
+					<div class="toolbar">
+						{!allInstalled && (
+							<button class="btn" type="button" data-install>
+								Add the examples to my account
+							</button>
+						)}
+						<a class="btn btn--ghost" href="/integrations">
+							Open integrations
+						</a>
+					</div>
+					<ol class="examples__steps" data-steps hidden />
+					<p class="examples__next" data-next hidden>
+						Done. Open <a href="/integrations">integrations</a>, connect Statusphere or Vibescrobble, and run their modules.
+					</p>
+				</div>
+			)
+		}
+	</div>
+</Base>
+
+<script>
+	import { plugin, studioDid } from "../../studio/api";
+	import { AFTER_CONNECT_KEY, type InstallStep, installExamples } from "../../studio/install-examples";
+
+	const root = document.querySelector<HTMLElement>(".examples");
+	const button = document.querySelector<HTMLButtonElement>("[data-install]");
+	const list = document.querySelector<HTMLOListElement>("[data-steps]");
+	const next = document.querySelector<HTMLElement>("[data-next]");
+	const existing = JSON.parse(root?.dataset.existing ?? '{"integrations":[],"modules":[]}') as { integrations: string[]; modules: string[] };
+	const ready = root?.dataset.ready === "true";
+
+	const render = (steps: InstallStep[]) => {
+		if (!list) return;
+		list.hidden = false;
+		list.replaceChildren(
+			...steps.map((step) => {
+				const item = document.createElement("li");
+				item.className = `examples__step is-${step.state}`;
+				const label = document.createElement("strong");
+				label.textContent = step.label;
+				const detail = document.createElement("span");
+				detail.textContent = step.state === "running" ? "publishing…" : (step.detail ?? step.state);
+				item.append(label, detail);
+				return item;
+			}),
+		);
+	};
+
+	async function install() {
+		if (!button) return;
+		button.disabled = true;
+		button.textContent = "Adding…";
+		const steps = await installExamples(existing, render);
+		const failed = steps.some((step) => step.state === "failed");
+		button.disabled = false;
+		button.textContent = failed ? "Try again" : "Added";
+		if (!failed && next) next.hidden = false;
+	}
+
+	button?.addEventListener("click", async () => {
+		if (ready) return install();
+		try {
+			sessionStorage.setItem(AFTER_CONNECT_KEY, "/studio/examples?install=1");
+		} catch {}
+		window.location.href = (await plugin<{ url: string }>("studio/connect", { did: studioDid() })).url;
+	});
+
+	if (ready && button && new URLSearchParams(window.location.search).get("install") === "1") {
+		history.replaceState(null, "", "/studio/examples");
+		void install();
+	}
+</script>
+
+<style>
+	.examples {
+		display: grid;
+		gap: 2rem;
+		padding-bottom: 2rem;
+	}
+
+	.examples__scopes {
+		margin-top: 0.75rem;
+	}
+
+	.examples__scopes code {
+		padding: 0.1em 0.35em;
+		border-radius: 0.3em;
+		background: var(--color-fill);
+		font-size: var(--font-size-xs);
+		overflow-wrap: anywhere;
+	}
+
+	.examples__state {
+		margin-top: 0.75rem;
+	}
+
+	.examples__install p {
+		margin-block: 0.5rem 1rem;
+		color: var(--color-text-secondary);
+	}
+
+	.examples__steps {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 1.25rem;
+		list-style: none;
+	}
+
+	.examples__step {
+		display: grid;
+		gap: 0.125rem;
+		padding: 0.625rem 0.875rem;
+		border: 1px solid var(--color-border);
+		border-left-width: 4px;
+		border-radius: var(--radius-lg);
+		font-size: var(--font-size-sm);
+	}
+
+	.examples__step span {
+		color: var(--color-muted);
+		font-size: var(--font-size-xs);
+		overflow-wrap: anywhere;
+	}
+
+	.examples__step.is-running {
+		border-left-color: var(--tone-sandbox);
+	}
+
+	.examples__step.is-done {
+		border-left-color: var(--tone-wasm);
+	}
+
+	.examples__step.is-skipped {
+		border-left-color: var(--tone-store);
+	}
+
+	.examples__step.is-failed {
+		border-left-color: var(--tone-deny);
+	}
+
+	.examples__next {
+		margin-top: 1rem;
+	}
+</style>

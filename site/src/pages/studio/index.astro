@@ -28,6 +28,10 @@ const sessionOf = (uri: string) => rkeyOf(uri);
 		<StudioSession did={did} status={status} returnTo="/studio" />
 
 		<div class="grid">
+			<a class="tile tone-you" href="/studio/examples">
+				<h3>Examples, one click</h3>
+				<p>Add Statusphere and Vibescrobble to your account: their integrations, modules and Rust source. Then run them, no coding needed.</p>
+			</a>
 			<a class="tile tone-pds" href="/studio/integration">
 				<h3>Integration builder</h3>
 				<p>Name an OAuth client, group its scopes so people can grant them one at a time, preview the record and publish it.</p>
@@ -94,6 +98,18 @@ const sessionOf = (uri: string) => rkeyOf(uri);
 		}
 	</div>
 </Base>
+
+<script>
+	import { AFTER_CONNECT_KEY } from "../../studio/install-examples";
+
+	if (new URLSearchParams(window.location.search).get("connected") === "studio") {
+		try {
+			const after = sessionStorage.getItem(AFTER_CONNECT_KEY);
+			sessionStorage.removeItem(AFTER_CONNECT_KEY);
+			if (after?.startsWith("/studio/")) window.location.replace(after);
+		} catch {}
+	}
+</script>
 
 <style>
 	.studio {

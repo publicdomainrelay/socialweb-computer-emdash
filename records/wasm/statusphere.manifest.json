@@ -1,0 +1,93 @@
+{
+	"name": "Statusphere",
+	"$type": "com.fedfork.exec.source.manifest",
+	"build": {
+		"tool": "cargo",
+		"command": "./build.sh",
+		"version": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+		"artifact": "statusphere/statusphere.wasm"
+	},
+	"files": [
+		{
+			"file": {
+				"cid": "bafyreibwsaatcqka4svpfdovahoj4l6qg72sdl6jrfshqskue2bpxw7sp4",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/37cf2779016d48b9c98d01cf7264288228d81558ae1bd7a239ef5bc1097b80a1"
+			},
+			"path": ".cargo/config.toml"
+		},
+		{
+			"file": {
+				"cid": "bafyreibfibsx5lfkbhsagaag7aw5v6myzetg7pg5g3lqbj7wgy4wb3yxim",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/fe241c0e61d261a1cc6b25666094ab3de687016a9ff2ea4abf4a3e2c57e27381"
+			},
+			"path": "Cargo.lock"
+		},
+		{
+			"file": {
+				"cid": "bafyreidsu6nhz7chgl6m2qqsylgt3y4uceclovxh72v4g32ree6ejzfzvu",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/c8faa3090f7c419bf8865256c2c371640b52a143d01292d76f9f49b271ec2ce3"
+			},
+			"path": "Cargo.toml"
+		},
+		{
+			"file": {
+				"cid": "bafyreiemci4v3ijhiusblexi7eqdddfumdckjndrxsttzrwh2elruxj7si",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/9136d5daccb107f3158c148c1498f340f981e5866fcfdfb1ce2329ec4753798f"
+			},
+			"path": "abi/Cargo.toml"
+		},
+		{
+			"file": {
+				"cid": "bafyreih2zjuhcz2o6bhwsd7diypbhpk64vxsarqnf5pec5a5iabziy4atm",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/f535467c5cf9a9e92d00350729e51c50f7d8e2f29cac6fe261989fb179965315"
+			},
+			"path": "abi/src/lib.rs"
+		},
+		{
+			"file": {
+				"cid": "bafyreifyu4257v2ppudsjwshftrqr2gvcor543g4fnlnpwubq75bbxbl3e",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/b1b76a51da0ab4678aefc50d4c1fa7f0b98a45bf83a5027d6137a26f1903afab"
+			},
+			"path": "build.sh"
+		},
+		{
+			"file": {
+				"cid": "bafyreiatmuwyiel2pykmqphnu6vfy4lzdw2gcaarvh2nmwatjjx4hrcjf4",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/f846ee3d6c38ff76162f27e60609e922a3ed6596d97fb547b3faf71a4b9a0869"
+			},
+			"path": "statusphere/Cargo.toml"
+		},
+		{
+			"file": {
+				"cid": "bafyreieaz24qxdsmexk5rndabmybyjeeoaqlp7iksz3ntistrxhrcjnn6m",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/2c315776e1e18dc19311576ba1e2ddfd998760989ee94ffeb46ef81a020b2d89"
+			},
+			"path": "statusphere/src/lib.rs"
+		},
+		{
+			"file": {
+				"cid": "bafyreiheiycaiooldeh5dfddrzcgqz745dyx2rvudsqz3w5m5ho3im7rde",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/56a3e8518c0b1be1f93fa431e7982764ebf79d9297a3cd1acb5c42fa800a52a1"
+			},
+			"path": "vibescrobble/Cargo.toml"
+		},
+		{
+			"file": {
+				"cid": "bafyreihv4izaweoiwjisav6vfqmqx3nvj65qnfmnuo6iesjizojg4fqlxe",
+				"uri": "at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.source.file/ef10c4870ba559849bd65c1a4f8b8e1b76dc2212130f0b9635c267cc6dd75f5a"
+			},
+			"path": "vibescrobble/src/lib.rs"
+		}
+	],
+	"origin": {
+		"commit": "df6c03d32b7e0d6e68114e4bdf2953f0a1baf03e",
+		"repository": "https://github.com/publicdomainrelay/socialweb-computer-emdash"
+	},
+	"output": {
+		"size": 108480,
+		"sha256": "b6c21e5436de19e3a9b2a3f70eb11f8d083f84152eecb4d1c4f902ebecf6e382"
+	},
+	"language": "rust",
+	"createdAt": "2026-11-07T08:41:51.000Z",
+	"description": "Set or clear your xyz.statusphere.status emoji status."
+}

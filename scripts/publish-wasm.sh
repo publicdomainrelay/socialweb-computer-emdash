@@ -68,6 +68,7 @@ jq -n --tab --argjson files "$entries" --arg version "$(rustc --version)" --arg 
 	createdAt: $createdAt
 }' >"$work/manifest.json"
 source_ref="$(write_record createRecord "$MANIFEST_COLLECTION" "$MODULE.$(date +%s%3N)" "$work/manifest.json")"
+cp "$work/manifest.json" "$ROOT/records/wasm/$MODULE.manifest.json"
 
 blob="$(curl -fsS -X POST -H "Authorization: Bearer $token" -H 'Content-Type: application/wasm' \
 	--data-binary @"$WASM" "$PDS/xrpc/com.atproto.repo.uploadBlob" | jq .blob)"

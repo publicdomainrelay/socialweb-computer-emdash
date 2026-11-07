@@ -219,7 +219,7 @@ const forkPackages = `./scripts/emdash-fork.sh
 		<h2>Check it works</h2>
 		<Code code={verify} />
 		<p>
-			The end-to-end script signs in as a test account that is an admin of the site. It deletes that account's <code>statusphere</code> and <code>vibescrobble</code> integration and module records, lists the studio in the site setting, connects the studio, and installs the examples back the way a new user would. Then it runs every module path, including service auth and the PDS proxy, publishes and runs a module compiled from source, cleans up and signs out. Use a dedicated test account: the script reads only the <code>E2E_</code> variables so it never picks up credentials meant for other tools.
+			The end-to-end script signs in as a test account. As a site admin it also lists the studio in the site setting; as a subscriber it uses the list already there. It deletes that account's <code>statusphere</code> and <code>vibescrobble</code> integration and module records, connects the studio, and installs the examples back the way a new user would. Then it runs every module path, including service auth and the PDS proxy, publishes and runs a module compiled from source, cleans up and signs out. Use a dedicated test account: the script reads only the <code>E2E_</code> variables so it never picks up credentials meant for other tools.
 		</p>
 		<Code code={e2e} />
 	</section>

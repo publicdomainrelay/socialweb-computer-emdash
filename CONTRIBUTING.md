@@ -56,7 +56,8 @@ pnpm --filter atproto-integrations-emdash typecheck
 
 `scripts/e2e.ts` drives a real site as a dedicated test account. Use an account you can lose data on, never your main one. The run:
 - **deletes the account's `statusphere` and `vibescrobble` integration and module records first**, then reinstalls them through the studio, the way a new user would;
-- sets the site's `siteIntegrations` setting, so the account must be a site admin;
+- sets the site's `siteIntegrations` setting when the account is a site admin, and otherwise uses the list already there, so it also runs as an ordinary subscriber (set `E2E_STUDIO_URI` to list a studio other than the account's own);
+- skips the socialweb-computer steps when the account has no such integration;
 - covers sign-in and connecting each integration;
 - module rounds and parallel runs;
 - service auth and a replayed token;

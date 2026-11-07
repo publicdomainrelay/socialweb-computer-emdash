@@ -80,7 +80,7 @@ const integrationRecord = `{
 		<p>
 			You sign in once with the <code>atproto</code> scope. Connecting an integration is a second OAuth flow, made by the plugin, for exactly the scope groups you ticked. The plugin always asks for your own account. Your own records can only be connected by you, so another account cannot use your record's client; integrations this site offers can be connected by anyone, each for their own account.
 		</p>
-		<Diagram code={connect} label="Sequence: sign in, list integration records, then a PAR with PKCE and DPoP, approve, token exchange, and sealed storage." />
+		<Diagram code={connect} label="Sequence: sign in, list integration records, then a PAR with PKCE and DPoP for your own account, approve, token exchange, and sealed storage." />
 		<p>Ticking more groups later asks for the extra scopes in a new flow. Disconnecting revokes the session and deletes it.</p>
 	</section>
 

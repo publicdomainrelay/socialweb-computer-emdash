@@ -161,7 +161,12 @@ const page = await (await siteFetch("/integrations")).text();
 log("integrations page", { did, cards: cards(page) });
 if (EXAMPLES.some((rkey) => page.includes(`data-rkey="${rkey}"`))) throw new Error("The examples were not deleted before the run");
 
-log("set site integrations", await plugin<object>("admin/site-integrations", { integrations: [`at://${did}/com.fedfork.exec.oauth.clientMetadata/studio`] }));
+const STUDIO_URI = env("E2E_STUDIO_URI", `at://${did}/com.fedfork.exec.oauth.clientMetadata/studio`);
+const siteList = await plugin<{ integrations: string[] }>("admin/site-integrations", { integrations: [STUDIO_URI] }).then(
+	(listed) => ({ admin: true, ...listed }),
+	(error: Error) => ({ admin: false, reason: error.message }),
+);
+log("set site integrations", siteList);
 const examplesPage = async () => {
 	const html = await (await siteFetch("/studio/examples")).text();
 	return { offersInstall: html.includes("data-install"), alreadyInstalled: html.includes("You have the examples") };
@@ -262,8 +267,11 @@ const removed = await fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
 	body: JSON.stringify({ repo: did, collection: "com.vibescrobble.scrobble", rkey: scrobbleRkey }),
 });
 log("delete test scrobble", { status: removed.status });
-await connect("socialweb-computer", ["associate"]);
-await connect("socialweb-computer", ["associate", "policy", "atirc"]);
+const hasRequester = page.includes('data-rkey="socialweb-computer"');
+if (hasRequester) {
+	await connect("socialweb-computer", ["associate"]);
+	await connect("socialweb-computer", ["associate", "policy", "atirc"]);
+}
 const listing = await plugin<Listing>("integrations", { did });
 log("granted", {
 	integrations: listing.integrations.map((item) => ({
@@ -272,7 +280,7 @@ log("granted", {
 		granted: item.groups.filter((group) => group.granted).map((group) => group.key),
 	})),
 });
-log("verify socialweb-computer", await plugin<object>("verify", { did, rkey: "socialweb-computer" }));
+if (hasRequester) log("verify socialweb-computer", await plugin<object>("verify", { did, rkey: "socialweb-computer" }));
 
 const STUDIO_KEY = "e2e-note";
 const NOTE_COLLECTION = "com.example.note";

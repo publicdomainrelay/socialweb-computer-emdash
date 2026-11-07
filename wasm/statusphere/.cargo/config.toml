@@ -1,0 +1,8 @@
+[build]
+target = "wasm32-unknown-unknown"
+
+[net]
+git-fetch-with-cli = true
+
+[target.wasm32-unknown-unknown]
+rustflags = ["--cfg", "getrandom_backend=\"unsupported\""]

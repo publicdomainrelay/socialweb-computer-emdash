@@ -2,7 +2,7 @@
 import Diagram from "../components/Diagram.astro";
 import Legend from "../components/Legend.astro";
 import { journey, overview } from "../diagrams";
-import { deployButton, deployUrl } from "../deploy";
+import { deployButton, deployUrl, repository } from "../deploy";
 import { guides } from "../guides";
 import Base from "../layouts/Base.astro";
 
@@ -52,6 +52,7 @@ const features = [
 				<a class="btn" href="/integrations">Try it now</a>
 				<a class="btn btn--ghost" href="/deploy">Deploy your own</a>
 				<a class="btn btn--ghost" href="/how-it-works">How it works</a>
+				<a class="btn btn--ghost" href={repository}>View source on GitHub</a>
 			</div>
 			<p class="hero__deploy">
 				<a href={deployUrl}><img src={deployButton} alt="Deploy to Cloudflare" width="166" height="32" /></a>
@@ -115,6 +116,12 @@ const features = [
 <style>
 	.hero {
 		padding-block: 4rem 2rem;
+	}
+
+	@media (max-width: 40rem) {
+		.hero {
+			padding-block: 2rem 1rem;
+		}
 	}
 
 	.hero__deploy {

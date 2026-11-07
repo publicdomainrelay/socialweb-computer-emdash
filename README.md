@@ -60,6 +60,39 @@ ATPROTO_PDS=https://bsky.social ./scripts/publish-wasm.sh
 goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/statusphere"
 ```
 
+## Run a module with atproto service auth
+
+```bash
+SITE="${SITE_URL:-https://emdash--${ATPROTO_HANDLE//./-}.fedproxy.com}"
+SITE_DID="did:web:${SITE#https://}"
+DOC=$(goat resolve "$ATPROTO_HANDLE")
+PDS=$(jq -r '.service[] | select(.id == "#atproto_pds") | .serviceEndpoint' <<<"$DOC")
+MODULE="at://$(jq -r .id <<<"$DOC")/com.publicdomainrelay.temp.wasm.module/statusphere"
+ACCESS_JWT=$(curl -fsS -X POST -H 'content-type: application/json' \
+  -d "{\"identifier\":\"$ATPROTO_HANDLE\",\"password\":\"$ATPROTO_PASSWORD\"}" \
+  $PDS/xrpc/com.atproto.server.createSession | jq -r .accessJwt)
+```
+
+Through your PDS:
+
+```bash
+curl -fsS -X POST $PDS/xrpc/com.publicdomainrelay.temp.wasm.run \
+  -H "Authorization: Bearer $ACCESS_JWT" \
+  -H "atproto-proxy: $SITE_DID#emdash_integrations" \
+  -H 'content-type: application/json' \
+  -d "{\"module\":\"$MODULE\",\"entry\":\"set_status\",\"input\":{\"status\":\"🦋\"}}" | jq
+```
+
+With a token from `getServiceAuth`:
+
+```bash
+TOKEN=$(curl -fsS -H "Authorization: Bearer $ACCESS_JWT" \
+  "$PDS/xrpc/com.atproto.server.getServiceAuth?aud=$SITE_DID&lxm=com.publicdomainrelay.temp.wasm.run" | jq -r .token)
+curl -fsS -X POST "$SITE/xrpc/com.publicdomainrelay.temp.wasm.run" \
+  -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d "{\"module\":\"$MODULE\",\"entry\":\"clear_status\"}" | jq .result
+```
+
 ## WebAssembly on celld
 
 [celld/README.md](celld/README.md)

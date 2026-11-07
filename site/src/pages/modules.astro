@@ -353,7 +353,7 @@ const ascCommand = `npx --yes --package=assemblyscript@0.28.20 asc module.ts --o
 	<section id="browser">
 		<h2>In the browser</h2>
 		<p>
-			You do not need Rust to write a module. The <a href="/studio/module">module editor</a> compiles AssemblyScript in your browser with <code>asc</code> 0.28.20. The compiler and Binaryen load only on that page. It runs your entries locally, then publishes the module, its source files and its manifest in one step.
+			You do not need Rust to write a module. The <a href="/studio/module">module editor</a> compiles AssemblyScript in your browser with <code>asc</code> 0.28.20. The compiler and Binaryen load only on the editor and source pages, and only when you compile. It runs your entries locally, then publishes the module, its source files and its manifest in one step.
 		</p>
 		<p>
 			Why not Rust in the browser? There is no official rustc build that runs in a browser. The closest is <a href="https://github.com/oligamiq/rubrc">rubrc</a>, a community port of rustc to WebAssembly that is still a work in progress and needs cross-origin isolation. Rust modules are compiled to <code>wasm32-unknown-unknown</code> on a machine, published with their source, and anyone can rebuild them in a container to check the bytes.

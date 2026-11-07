@@ -7,12 +7,18 @@ interface Props {
 	caption?: string;
 }
 
+const FLIP_WIDTH = 520;
+const LEFT_TO_RIGHT = /^flowchart LR\b/;
+
 const { code, label, caption } = Astro.props;
-const { svg } = render(code);
-const width = Number(/^<svg[^>]*\swidth="([\d.]+)"/.exec(svg)?.[1] ?? 0);
+const widthOf = (svg: string) => Number(/^<svg[^>]*\swidth="([\d.]+)"/.exec(svg)?.[1] ?? 0);
+const canvas = (svg: string) => ({ svg, style: widthOf(svg) ? `--diagram-width: ${widthOf(svg)}px` : undefined });
+const wide = canvas(render(code).svg);
+const narrow = LEFT_TO_RIGHT.test(code) && widthOf(wide.svg) > FLIP_WIDTH ? canvas(render(code.replace(LEFT_TO_RIGHT, "flowchart TD")).svg) : undefined;
 ---
 
-<figure class="diagram">
-	<div class="diagram__canvas" role="img" aria-label={label} style={width ? `--diagram-width: ${width}px` : undefined} set:html={svg} />
+<figure class:list={["diagram", { "diagram--flips": narrow }]}>
+	<div class="diagram__canvas diagram__canvas--wide" role="img" aria-label={label} style={wide.style} set:html={wide.svg} />
+	{narrow && <div class="diagram__canvas diagram__canvas--narrow" role="img" aria-label={label} style={narrow.style} set:html={narrow.svg} />}
 	{caption && <figcaption>{caption}</figcaption>}
 </figure>

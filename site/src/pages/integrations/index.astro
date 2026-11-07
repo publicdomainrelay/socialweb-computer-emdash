@@ -27,13 +27,13 @@ const scopeCount = (scope: string) => scope.split(" ").filter((item) => item && 
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 ---
 
-<Base title="Integrations" description="Grant this site extra atproto sessions for the integrations you publish.">
+<Base title="Integrations" description="Grant this site extra atproto sessions, one per integration, for the integrations you publish and the ones this site offers.">
 	<header class="band intro">
 		<div class="frame">
 			<p class="eyebrow">Integrations</p>
 			<h1 class="intro__title">Connect your Atmosphere apps</h1>
 			<p class="integrations-lede">
-				Integrations are <code>com.fedfork.exec.oauth.clientMetadata</code> records in your own PDS. Each one becomes its own OAuth client on this site, and you choose which permissions it gets.
+				Integrations are <code>com.fedfork.exec.oauth.clientMetadata</code> records: yours, from your own PDS, and the ones this site offers, such as the studio. Each one becomes its own OAuth client on this site, and you choose which permissions it gets.
 			</p>
 		</div>
 	</header>

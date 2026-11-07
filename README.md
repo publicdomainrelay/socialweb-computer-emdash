@@ -20,7 +20,7 @@ Our lexicons are `com.fedfork.exec.*`: `oauth.clientMetadata`, `wasm.module`, `w
   - The quickest start is to list this site's studio record, `at://did:plc:lpfuqerea3deuoyrn7ojser4/com.fedfork.exec.oauth.clientMetadata/studio`. To own it, publish your own `records/studio.json` and list that instead.
   - On exec.fedfork.com the admin is the operator account, and `scripts/e2e.ts` sets the list to that account's studio record.
 
-Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
+Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules), [lexicons](https://exec.fedfork.com/lexicons) and [deploy your own](https://exec.fedfork.com/deploy). New accounts can [add the examples](https://exec.fedfork.com/studio/examples) in one click.
 
 To work on it, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -277,7 +277,7 @@ goat record create -n -r example example.json
 
 - **Sign-in.** Users sign in with the `atproto` scope only, through `@publicdomainrelay/auth-atproto-subscriber`.
 - **Integrations.** Each `com.fedfork.exec.oauth.clientMetadata` record in the user's PDS becomes its own OAuth client. `@atcute/oauth-node-client` does PAR, PKCE, DPoP and refresh.
-- **Sessions.** Sessions are AES-GCM sealed in plugin storage, one per user per integration. Only the record's own DID can authorize one.
+- **Sessions.** Sessions are AES-GCM sealed in plugin storage, one per user per integration, and remember the account they authorize. A user's own record can only be authorized by that record's DID; a site integration can be authorized by any signed-in account, for itself.
 - **Modules.** A `com.fedfork.exec.wasm.module` record points to a WebAssembly blob. The plugin checks the blob's sha256 against its CID, then runs it with `ctx.wasm.run`.
 - **No ambient authority.** The module has no imports, no network and no tokens.
 - **Rounds.** A module returns `{calls, next, state, result}`. The plugin makes the calls with the user's session and passes the results to `next`.
@@ -287,7 +287,7 @@ goat record create -n -r example example.json
 - **Scrobbles.** The `vibescrobble` module posts `com.vibescrobble.scrobble` records, matching atirc's emoji rule and record shape.
 - **Source.** A module can point at an immutable `source.manifest` whose `source.file` records are keyed by sha256, modeled on how knotless stores repositories. Anyone can rebuild it and compare hashes.
 - **Studio.** The studio is a site integration record like any other. Its session writes integration, module and source records, so the login never asks for more than `atproto`.
-- **Bundle.** The plugin bundle is about 100 KB, under the registry's 128 KB per-file cap.
+- **Bundle.** The plugin bundle is about 102 KB, under the registry's 128 KB per-file cap.
 
 ### Connect
 
@@ -305,7 +305,7 @@ sequenceDiagram
     P->>PDS: listRecords oauth.clientMetadata
     B->>S: connect record + scope groups
     S->>P: connect route
-    P->>AS: PAR with DPoP, only for the record's DID
+    P->>AS: PAR with DPoP, for the record's DID or, for a site integration, the user's own
     P-->>B: redirect to AS
     AS->>S: /oauth/callback
     S->>P: callback
@@ -386,7 +386,9 @@ Deployed and verified at https://exec.fedfork.com (ADR 0022).
   - sign-in and progressive scopes;
   - rounds and parallel runs;
   - service auth, replay refusal and the PDS proxy;
-  - scrobbles.
+  - scrobbles;
+  - the studio and the examples, installed from scratch after the run deletes them;
+  - a module compiled from AssemblyScript, published with its source and run.
 
 ## What is ours
 
@@ -406,21 +408,23 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 │       ├── components/                       ● Diagram (Pele), Legend, Code with copy, ThemeToggle, SourceLink, StudioSession
 │       ├── diagrams.ts                       ● every Mermaid diagram and its color classes
 │       ├── guides.ts deploy.ts               ● guide list, deploy button URL
-│       ├── studio/                           ● compile.ts (asc in the browser), api.ts, assemblyscript/ abi and templates
+│       ├── lexicons.ts                       ● lexicon reference built from lexicons/ at build time
+│       ├── studio/                           ● compile.ts (asc in the browser), editor, integration builder, examples bundle and installer, assemblyscript/ abi and templates
 │       ├── styles/site.css                   ●
 │       ├── utils/integrations.ts             ● calls plugin routes
 │       ├── utils/atproto.ts utils/studio.ts  ● public record reads, studio page context
 │       └── pages/
 │           ├── index.astro                   ● overview
 │           ├── how-it-works.astro use.astro modules.astro deploy.astro  ● guides
-│           ├── studio/                       ● studio, integration builder, module editor
+│           ├── lexicons/index.astro          ● lexicon reference
+│           ├── studio/                       ● studio, integration builder, module editor, examples and examples.json
 │           ├── source.astro                  ● source viewer and in-browser rebuild
 │           ├── integrations/index.astro      ● connect, run, rounds UI
 │           ├── integrations/[did]/[rkey]/oauth-client-metadata.json.ts  ● client metadata per record
 │           ├── .well-known/did.json.ts       ● did:web document with #emdash_integrations
 │           └── xrpc/com.fedfork.exec.wasm.run.ts  ● Bearer token to plugin service/run
 ├── plugins/atproto-integrations-emdash/      ● sandboxed plugin
-│   ├── emdash-plugin.jsonc                   ● capabilities; storage clients, pending, sessions, replays, locks
+│   ├── emdash-plugin.jsonc                   ● capabilities; storage clients, pending, sessions, replays, locks; siteIntegrations setting
 │   ├── src/
 │   │   ├── plugin.ts                         ● routes
 │   │   ├── flow.ts                           ● list, connect, callback, disconnect, sessionAgent
@@ -467,7 +471,7 @@ external
 ├── @scure/base, @noble/curves (tests only)      ○
 ├── astro, the rest of emdash                    ○
 ├── pele                                         ○ Mermaid to SVG on the server
-├── assemblyscript, binaryen                     ○ module compiler, loaded only on the module editor
+├── assemblyscript, binaryen                     ○ module compiler, loaded only on the module editor and source pages
 ├── codemirror                                   ○ module editor
 ├── @atcute/identity, identity-resolver (site)   ○ public record reads
 ├── @astrojs/cloudflare, wrangler, unicode-segmentation, atproto-record   ○

@@ -7,12 +7,12 @@ export const guides = [
 	{
 		href: "/use",
 		title: "Use it",
-		blurb: "Sign in, publish an integration record, connect it, and run a module from the page or your terminal.",
+		blurb: "Sign in, add the examples or your own records, connect them, and run modules from the page or your terminal.",
 	},
 	{
 		href: "/modules",
 		title: "Write a module",
-		blurb: "A Rust crate with a JSON ABI. It plans XRPC calls and the plugin makes them.",
+		blurb: "Rust or AssemblyScript with a JSON ABI. It plans XRPC calls, the plugin makes them, and its source is published beside it.",
 	},
 	{
 		href: "/lexicons",

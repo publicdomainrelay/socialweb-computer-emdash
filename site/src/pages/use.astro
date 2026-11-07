@@ -94,7 +94,7 @@ goat record create -n -r example example.json`;
 			</li>
 			<li>
 				<strong>See your integrations</strong>
-				The site lists the <code>com.fedfork.exec.oauth.clientMetadata</code> records in your repo. With none, the list is empty until you publish one.
+				The site lists the <code>com.fedfork.exec.oauth.clientMetadata</code> records in your repo, plus the integrations this site offers, such as the studio. If you have none of your own, it offers to add the examples.
 			</li>
 		</ol>
 	</section>
@@ -106,12 +106,12 @@ goat record create -n -r example example.json`;
 			<a href="/studio/examples">Add the examples</a> publishes the Statusphere and Vibescrobble integrations, their modules and their Rust source to your account in one click, from the copies in this repo. The steps below do the same from a terminal.
 		</div>
 		<p>
-			The repo ships three integration records and two modules. Publish them to your own account with <a href="https://github.com/bluesky-social/goat">goat</a>. Use an app password, not your main password.
+			The repo ships four integration records and two modules. Publish them to your own account with <a href="https://github.com/bluesky-social/goat">goat</a>. Use an app password, not your main password.
 		</p>
 		<Code code={tools} />
-		<p>Publish the integration records in <code>records/</code>: statusphere, vibescrobble and socialweb-computer.</p>
+		<p>Publish the integration records in <code>records/</code>: statusphere, vibescrobble, socialweb-computer and studio. The studio record only matters on an operator's account, where an admin lists it as a site integration.</p>
 		<Code code={publishRecords} />
-		<p>Build and publish the modules. Each script builds with Cargo, uploads the blob, and writes a <code>wasm.module</code> record that points to its integration by URI and CID.</p>
+		<p>Build and publish the modules. Each run builds with <code>wasm/build.sh</code>, publishes any new source files and a manifest, uploads the blob, and writes a <code>wasm.module</code> record that points to its integration and its manifest by URI and CID.</p>
 		<Code code={publishModules} />
 		<Code title="check" code={check} />
 		<div class="callout tone-sandbox">

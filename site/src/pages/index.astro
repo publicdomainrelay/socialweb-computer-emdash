@@ -15,7 +15,7 @@ const features = [
 	{
 		tone: "pds",
 		title: "Integrations are records",
-		body: "Each OAuth client metadata record in your PDS becomes its own OAuth client, with scope groups you tick one by one.",
+		body: "Each OAuth client metadata record in your PDS, or offered by this site, becomes its own OAuth client, with scope groups you tick one by one.",
 	},
 	{
 		tone: "sandbox",
@@ -31,6 +31,16 @@ const features = [
 		tone: "site",
 		title: "Service auth",
 		body: "Run modules from your terminal or another app. Your PDS signs a service-auth JWT, or proxies the call with atproto-proxy.",
+	},
+	{
+		tone: "you",
+		title: "Studio",
+		body: "Build integration records and write AssemblyScript modules in the browser, then publish them to your PDS. The studio is itself an integration record.",
+	},
+	{
+		tone: "store",
+		title: "Source you can rebuild",
+		body: "Modules point at their source files and build in your PDS. Anyone can rebuild one and compare the bytes with the published blob.",
 	},
 	{
 		tone: "cloud",

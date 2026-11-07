@@ -28,12 +28,13 @@ pnpm dev
 | Path | What |
 | --- | --- |
 | `site/` | Astro and EmDash site: guide pages, `/integrations`, `/studio`, `/source`, `did:web`, the `wasm.run` XRPC endpoint |
-| `site/src/studio/` | In-browser AssemblyScript compiler wrapper and the `abi.ts` helpers and templates for editor modules |
+| `site/src/studio/` | In-browser AssemblyScript compiler wrapper, the `abi.ts` helpers and templates, the module editor, the integration builder, and the examples bundle and installer |
+| `site/src/lexicons.ts` | The `/lexicons` reference, built from `lexicons/` at build time |
 | `site/src/diagrams.ts` | Every Mermaid diagram on the site, drawn by [Pele](https://pele.run) |
 | `plugins/atproto-integrations-emdash/` | The sandboxed plugin: OAuth, sealed sessions, site integrations, module rounds, service auth, the studio routes |
 | `wasm/` | Cargo workspace: `abi`, `statusphere`, `vibescrobble`, plus `harness.mjs` for tests |
 | `lexicons/` | `com.fedfork.exec.*` lexicons |
-| `records/` | Integration records, and module records in `records/wasm/` |
+| `records/` | Integration records, including the studio, and in `records/wasm/` the module records and their published manifests |
 | `scripts/` | Publishing, source verification, e2e, fedproxy, celld, fork packaging |
 | `emdash/` | The EmDash fork, as a submodule. See [docs/emdash-fork.md](docs/emdash-fork.md) |
 | `docs/adrs/` | Architecture decision records |
@@ -60,7 +61,8 @@ pnpm --filter atproto-integrations-emdash typecheck
 - module rounds and parallel runs;
 - service auth and a replayed token;
 - the PDS proxy;
-- a scrobble, which it then deletes.
+- a scrobble, which it then deletes;
+- a module compiled from AssemblyScript, published through the studio with its source, run, and removed.
 
 It reads only `E2E_ATPROTO_HANDLE`, `E2E_ATPROTO_PASSWORD` and optionally `E2E_ATPROTO_PDS`, never `ATPROTO_HANDLE`, so credentials in your shell for other tools are never used by mistake.
 
@@ -101,6 +103,7 @@ chromium-browser --headless=new --window-size=390,2400 --screenshot=mobile.png h
 2. Add a `module.json` and a `test.mjs`.
 3. Add the crate's name to the loop in `wasm/build.sh`.
 4. Publish with `./scripts/publish-wasm.sh <name>`.
+5. To offer it on `/studio/examples`, add its name to `EXAMPLES` in `site/src/studio/examples.ts`. It needs `records/<name>.json` and `records/wasm/<name>.manifest.json`.
 
 The [Write a module](https://exec.fedfork.com/modules) guide walks through a complete example.
 
@@ -114,7 +117,7 @@ The [Write a module](https://exec.fedfork.com/modules) guide walks through a com
    ./scripts/publish-wasm.sh vibescrobble
    ```
 
-4. Commit the regenerated `records/wasm/<name>.json`. The plugin tests read the blob CID from it.
+4. Commit the regenerated `records/wasm/<name>.json` and `records/wasm/<name>.manifest.json`. The plugin tests read the blob CID from the first, and the examples bundle checks every source file and the module against the second, so the site build fails if they drift.
 
 Always build with `./wasm/build.sh`, not plain `cargo build`. The script remaps `$CARGO_HOME` and the workspace path in `RUSTFLAGS`. Without that, the module embeds your home directory and no one else can reproduce it.
 
@@ -135,7 +138,7 @@ Never run a manifest's command directly on your machine. It comes from someone's
 
 ### The studio
 
-The studio pages call five plugin routes: `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`. They are declared in `plugins/atproto-integrations-emdash/src/plugin.ts` and implemented in `src/studio.ts`.
+The studio pages call five plugin routes: `studio/status`, `studio/connect`, `studio/disconnect`, `studio/publish-integration` and `studio/publish-module`. They are declared in `plugins/atproto-integrations-emdash/src/plugin.ts` and implemented in `src/studio.ts`. Admins manage the site integrations list with `admin/site-integrations`.
 - **The studio is a record.** It is the site integration with record key `studio`, defined in `records/studio.json` and listed in the plugin setting `siteIntegrations`. To change its scopes, edit its groups there and republish with `./scripts/publish-records.sh`. Do not hard-code scopes in the plugin.
 - **Trust rule.** Keep these two checks:
   - `beginConnect` lets an account authorize a record only when the record is in that account's repo or listed in `src/site.ts`'s site integrations.
@@ -176,7 +179,7 @@ Follow [docs/emdash-fork.md](docs/emdash-fork.md): change and test in `emdash/`,
 
 ## Releases
 
-- **Tags:** release candidates are annotated tags `v0.0.0-rcN`.
+- **Tags:** release candidates are annotated tags `v0.0.<minor>-rcN`; the current series is `v0.0.2-rcN`.
 - **Fork packages:** these are released separately, as `emdash-fork-<commit>`.
 - **Before you tag:**
   1. tests pass;

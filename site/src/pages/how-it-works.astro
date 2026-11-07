@@ -78,7 +78,7 @@ const integrationRecord = `{
 	<section id="connect">
 		<h2>Connecting</h2>
 		<p>
-			You sign in once with the <code>atproto</code> scope. Connecting an integration is a second OAuth flow, made by the plugin, for exactly the scope groups you ticked. The plugin asks only for your own DID, so another account cannot use your record's client to authorize itself.
+			You sign in once with the <code>atproto</code> scope. Connecting an integration is a second OAuth flow, made by the plugin, for exactly the scope groups you ticked. The plugin always asks for your own account. Your own records can only be connected by you, so another account cannot use your record's client; integrations this site offers can be connected by anyone, each for their own account.
 		</p>
 		<Diagram code={connect} label="Sequence: sign in, list integration records, then a PAR with PKCE and DPoP, approve, token exchange, and sealed storage." />
 		<p>Ticking more groups later asks for the extra scopes in a new flow. Disconnecting revokes the session and deletes it.</p>
@@ -161,7 +161,7 @@ const integrationRecord = `{
 					<tr><td>Calls per run</td><td>25</td></tr>
 					<tr><td>Callable NSIDs</td><td>The module record's <code>calls</code> list, when set</td></tr>
 					<tr><td>Plugin sandbox on Cloudflare</td><td><code>sandboxLimits: {"{"} cpuMs: 1000, subrequests: 200 {"}"}</code> in <code>site/astro.config.mjs</code></td></tr>
-					<tr><td>Plugin bundle</td><td>About 93 KB, under the 128 KB per-file cap</td></tr>
+					<tr><td>Plugin bundle</td><td>About 102 KB, under the 128 KB per-file cap</td></tr>
 				</tbody>
 			</table>
 		</div>

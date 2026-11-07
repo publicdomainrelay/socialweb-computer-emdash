@@ -434,6 +434,20 @@ pre {
 	min-width: min(var(--diagram-width, 0px), 40rem);
 }
 
+.diagram__canvas--narrow {
+	display: none;
+}
+
+@media (max-width: 40rem) {
+	.diagram--flips .diagram__canvas--wide {
+		display: none;
+	}
+
+	.diagram--flips .diagram__canvas--narrow {
+		display: flex;
+	}
+}
+
 .diagram figcaption {
 	padding: 0.75rem 1.25rem;
 	border-top: 1px solid var(--color-border-subtle);

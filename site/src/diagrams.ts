@@ -82,7 +82,7 @@ export const connect = `sequenceDiagram
   B->>S: Connect, with the scope groups you ticked
   S->>P: connect route
   rect rgb(245,158,11,0.12)
-    P->>AS: PAR with PKCE and DPoP, for the record's DID only
+    P->>AS: PAR with PKCE and DPoP, for your own account
     P-->>B: Redirect to the authorization server
     B->>AS: Approve the scopes
     AS->>S: /oauth/callback with code
@@ -235,10 +235,16 @@ export const cloudflare = flowchart(
   CRON["Cron every minute"]:::cloud --> WK
   WK -- LOADER --> PI["Plugin isolate<br/>sandboxLimits cpuMs 1000, subrequests 200"]:::sandbox
   PI -- LOADER --> WI["Module isolate<br/>globalOutbound null"]:::wasm
-  WK --> D1[("D1 DB<br/>content, plugin storage")]:::store
-  WK --> R2[("R2 MEDIA<br/>uploads")]:::store
-  WK --> KV[("KV SESSION<br/>login sessions")]:::store
-  PI -- "ctx.http" --> PDS["PDSes and<br/>authorization servers"]:::pds`,
+  PI -- "ctx.http" --> PDS["PDSes and<br/>authorization servers"]:::pds
+  WK --> bindings
+  subgraph bindings["Bindings"]
+    direction TB
+    D1[("D1 DB<br/>content, plugin storage")]:::store
+    R2[("R2 MEDIA<br/>uploads")]:::store
+    KV[("KV SESSION<br/>login sessions")]:::store
+    D1 ~~~ R2 ~~~ KV
+  end
+  style bindings fill:#64748b0f,stroke:#64748b`,
 );
 
 export const deploySteps = flowchart(

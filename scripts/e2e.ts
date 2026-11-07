@@ -146,6 +146,28 @@ async function connect(rkey: string, groups: string[]) {
 
 await connect("statusphere", []);
 log("verify statusphere", await plugin<object>("verify", { did, rkey: "statusphere" }));
+const ran = await plugin<{ module: string; results: Array<{ output: { uri: string } }> }>("run", {
+	did,
+	rkey: "statusphere",
+	entry: "set_status",
+	input: { status: "🦋" },
+});
+const statusUri = ran.results[0]?.output.uri ?? "";
+const [, , repo, collection, rkey] = statusUri.split("/");
+const pds = (await (await fetch(`https://plc.directory/${repo}`)).json()).service.find((service: { id: string }) => service.id === "#atproto_pds").serviceEndpoint;
+const stored = await (await fetch(`${pds}/xrpc/com.atproto.repo.getRecord?${new URLSearchParams({ repo, collection, rkey })}`)).json();
+log("run statusphere module", { uri: statusUri, record: stored.value });
+const passwordSession = await (await fetch(`${pds}/xrpc/com.atproto.server.createSession`, {
+	method: "POST",
+	headers: { "content-type": "application/json" },
+	body: JSON.stringify({ identifier: HANDLE, password: PASSWORD }),
+})).json();
+const removed = await fetch(`${pds}/xrpc/com.atproto.repo.deleteRecord`, {
+	method: "POST",
+	headers: { "content-type": "application/json", authorization: `Bearer ${passwordSession.accessJwt}` },
+	body: JSON.stringify({ repo, collection, rkey }),
+});
+log("cleanup status", { deleted: removed.ok });
 await connect("socialweb-computer", ["associate"]);
 await connect("socialweb-computer", ["associate", "policy", "atirc"]);
 const listing = await plugin<Listing>("integrations", { did });

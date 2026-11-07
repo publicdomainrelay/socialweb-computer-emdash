@@ -1,4 +1,4 @@
-import { base32nopad } from "@scure/base";
+import { base32nopad, hex } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
 import type { SessionAgent } from "./flow";
 import { requireHttp } from "./oauth/http";
@@ -91,7 +91,7 @@ export function blobSha256(cid: string) {
 	if (bytes.length !== 36 || bytes[0] !== 0x01 || bytes[1] !== 0x55 || bytes[2] !== 0x12 || bytes[3] !== 0x20) {
 		throw new Error("Blob CID must be a raw sha2-256 CIDv1");
 	}
-	return Array.from(bytes.slice(4), (byte) => byte.toString(16).padStart(2, "0")).join("");
+	return hex.encode(bytes.subarray(4));
 }
 
 export async function listModules(ctx: PluginContext, pds: string, did: string) {

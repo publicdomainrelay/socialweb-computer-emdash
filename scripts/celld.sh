@@ -6,7 +6,6 @@ HOME_DIR="${CELLD_HOME:-$ROOT/.celld}"
 BIN="$HOME_DIR/bin"
 CELLD_VERSION="${CELLD_VERSION:-v0.6.3}"
 RUSTFS_VERSION="${RUSTFS_VERSION:-1.0.4}"
-ESBUILD_VERSION="${ESBUILD_VERSION:-0.28.2}"
 S3_PORT="${RUSTFS_PORT:-9000}"
 WORKER_PORT="${CELLD_PORT:-8080}"
 INTERNAL_PORT="${CELLD_INTERNAL_PORT:-8081}"
@@ -16,7 +15,7 @@ CREDENTIALS="$HOME_DIR/credentials.env"
 MODULE_DID="${MODULE_DID:-did:plc:lpfuqerea3deuoyrn7ojser4}"
 
 export PATH="$BIN:$PATH"
-export CELLD_ESBUILD="$HOME_DIR/esbuild/node_modules/.bin/esbuild"
+export CELLD_ESBUILD="$ROOT/celld/node_modules/.bin/esbuild"
 export AWS_REGION=us-east-1
 
 install() {
@@ -47,13 +46,7 @@ install() {
 		command install -m 755 "$HOME_DIR/dl/rustfs/x/rustfs" "$BIN/rustfs"
 	fi
 
-	[ -x "$CELLD_ESBUILD" ] || npm install --silent --prefix "$HOME_DIR/esbuild" "esbuild@$ESBUILD_VERSION"
-
-	tarball="$(ls "$ROOT"/vendor/emdash-fork/emdash-[0-9]*.tgz 2>/dev/null | head -n 1 || true)"
-	[ -n "$tarball" ] || "$ROOT/scripts/emdash-fork.sh"
-	tarball="$(ls "$ROOT"/vendor/emdash-fork/emdash-[0-9]*.tgz | head -n 1)"
-	mkdir -p "$ROOT/celld/vendor/emdash"
-	tar -xzf "$tarball" -O package/dist/plugins/wasm.mjs >"$ROOT/celld/vendor/emdash/wasm.mjs"
+	[ -x "$CELLD_ESBUILD" ] || (cd "$ROOT" && pnpm install --frozen-lockfile)
 
 	celld --version
 	rustfs --version | head -n 1

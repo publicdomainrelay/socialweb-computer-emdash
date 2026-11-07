@@ -1,0 +1,10 @@
+{
+	"name": "celld-wasm-runner",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"@scure/base": "2.4.0",
+		"emdash": "^1.4.0",
+		"esbuild": "0.28.2"
+	}
+}

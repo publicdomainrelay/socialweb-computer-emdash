@@ -1,8 +1,8 @@
-import { generateWasmAbiRuntimeSource, prepareWasmRun, WASM_LIMITS } from "../vendor/emdash/wasm.mjs";
+import { base32nopad, hex } from "@scure/base";
+import { generateWasmAbiRuntimeSource, prepareWasmRun, WASM_LIMITS } from "emdash/internal/plugins/wasm";
 
 const COLLECTION = "com.publicdomainrelay.temp.wasm.module";
 const ABI = "emdash-wasm-json-v1";
-const BASE32 = "abcdefghijklmnopqrstuvwxyz234567";
 const RESERVED = new Set(["did", "rkey", "entry", "now"]);
 const CPU_LIMIT = /exceeded CPU (time )?limit/i;
 const NSID = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z0-9-]+){2,}$/;
@@ -67,23 +67,16 @@ function sha256FromCid(cid) {
 	if (typeof cid !== "string" || !cid.startsWith("b")) {
 		throw new HttpError(502, "blob CID must be base32 CIDv1");
 	}
-	const bytes = [];
-	let buffer = 0;
-	let bits = 0;
-	for (const char of cid.slice(1)) {
-		const value = BASE32.indexOf(char);
-		if (value < 0) throw new HttpError(502, "blob CID is not base32");
-		buffer = (buffer << 5) | value;
-		bits += 5;
-		if (bits >= 8) {
-			bits -= 8;
-			bytes.push((buffer >> bits) & 0xff);
-		}
+	let bytes;
+	try {
+		bytes = base32nopad.decode(cid.slice(1).toUpperCase());
+	} catch {
+		throw new HttpError(502, "blob CID is not base32");
 	}
 	if (bytes.length !== 36 || bytes[0] !== 0x01 || bytes[1] !== 0x55 || bytes[2] !== 0x12 || bytes[3] !== 0x20) {
 		throw new HttpError(502, "blob CID must be CIDv1 raw sha2-256");
 	}
-	return bytes.slice(4).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+	return hex.encode(bytes.subarray(4));
 }
 
 function withTimeout(promise, ms) {

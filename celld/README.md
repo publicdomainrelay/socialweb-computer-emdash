@@ -45,7 +45,7 @@ STATUS=🙂 MODULE_DID="$(curl -s "https://$ATPROTO_HANDLE/.well-known/atproto-d
 ```
 
 ```text
-install    celld v0.6.3, rustfs 1.0.4, esbuild 0.28.2 into .celld/; wasm.mjs from vendor/emdash-fork (runs emdash-fork.sh if missing)
+install    celld v0.6.3 and rustfs 1.0.4 into .celld/; esbuild and emdash come from pnpm install
 up         rustfs on 127.0.0.1:9000, bucket celld, celld deploy, celld node on 127.0.0.1:8080
 deploy     redeploy celld/ and POST /reload on 127.0.0.1:8081
 diagnose   celld diagnose: bucket conditional writes and node probe
@@ -61,7 +61,7 @@ CELLD_HOME=/tmp/celld CELLD_PORT=8787 CELLD_INTERNAL_PORT=8788 RUSTFS_PORT=9100 
 ```text
 celld/wrangler.jsonc        worker_loaders binding LOADER
 celld/src/index.js          GET /run
-celld/vendor/emdash/        dist/plugins/wasm.mjs from the packed emdash tarball (gitignored)
+celld/package.json          @scure/base, emdash (fork tarball) and esbuild
 .celld/                     binaries, credentials.env, rustfs data, celld state, logs (gitignored)
 ```
 

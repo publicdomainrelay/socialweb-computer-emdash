@@ -1,6 +1,7 @@
 packages:
   - site
   - plugins/*
+  - celld
 
 allowBuilds:
   esbuild: true

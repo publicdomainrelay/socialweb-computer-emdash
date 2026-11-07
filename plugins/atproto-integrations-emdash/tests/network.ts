@@ -7,6 +7,7 @@ export const ALICE = { did: "did:plc:alice", handle: "alice.example", pds: "http
 export const ISSUER = "https://auth.example";
 export const RECORDS = { "socialweb-computer": socialweb, statusphere } as const;
 export const COLLECTION = "com.publicdomainrelay.temp.oauth.clientMetadata";
+export const MODULE_COLLECTION = "com.publicdomainrelay.temp.wasm.module";
 
 type User = Awaited<ReturnType<PluginRuntimeTestHost["fixtures"]["user"]>>;
 
@@ -33,13 +34,17 @@ export async function queueIdentity(host: PluginRuntimeTestHost) {
 	);
 }
 
-export async function queueListing(host: PluginRuntimeTestHost) {
+export async function queueListing(host: PluginRuntimeTestHost, modules: Array<{ uri: string; cid: string; value: unknown }> = []) {
 	await queueIdentity(host);
 	await host.http.respond(
 		`${ALICE.pds}/xrpc/com.atproto.repo.listRecords?repo=${encodeURIComponent(ALICE.did)}&collection=${COLLECTION}&limit=100`,
 		json({
 			records: Object.entries(RECORDS).map(([rkey, value]) => ({ uri: `at://${ALICE.did}/${COLLECTION}/${rkey}`, cid: "bafy", value })),
 		}),
+	);
+	await host.http.respond(
+		`${ALICE.pds}/xrpc/com.atproto.repo.listRecords?repo=${encodeURIComponent(ALICE.did)}&collection=${MODULE_COLLECTION}&limit=100`,
+		json({ records: modules }),
 	);
 }
 

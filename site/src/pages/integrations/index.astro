@@ -106,6 +106,31 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 									</div>
 								</form>
 
+								{item.modules.length > 0 && (
+									<div class="modules">
+										<p class="modules__title">WebAssembly modules</p>
+										{item.modules.map((module) => (
+											<div class="module">
+												<p class="module__name">
+													{module.name}
+													{module.description && <span class="module__description">{module.description}</span>}
+												</p>
+												{module.actions.map((action) => (
+													<form class="module__action" data-run data-did={module.did} data-rkey={module.rkey} data-entry={action.entry}>
+														{action.fields.map((field) => (
+															<input class="field" name={field.key} placeholder={field.label} aria-label={field.label} required />
+														))}
+														<button class="btn" type="submit" disabled={!item.session}>
+															{action.label}
+														</button>
+													</form>
+												))}
+											</div>
+										))}
+										{!item.session && <p class="integration__meta">Connect this integration to run its modules.</p>}
+									</div>
+								)}
+
 								<details class="integration__details">
 									<summary>Record and scopes</summary>
 									<p><code>{item.uri}</code></p>
@@ -155,6 +180,24 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 				show(error instanceof Error ? error.message : "Connect failed");
 			}
 		});
+		for (const runForm of card.querySelectorAll<HTMLFormElement>("[data-run]")) {
+			runForm.addEventListener("submit", async (event) => {
+				event.preventDefault();
+				const input = Object.fromEntries(new FormData(runForm).entries());
+				try {
+					const result = await api("run", {
+						did: runForm.dataset.did,
+						rkey: runForm.dataset.rkey,
+						entry: runForm.dataset.entry,
+						input,
+					});
+					const uris = result.results.map((call: { output: { uri?: string } }) => call.output?.uri).filter(Boolean);
+					show(`${result.module} ran ${result.entry}${uris.length ? `: ${uris.join(", ")}` : ""}`);
+				} catch (error) {
+					show(error instanceof Error ? error.message : "Run failed");
+				}
+			});
+		}
 		card.querySelector("[data-action=verify]")?.addEventListener("click", async () => {
 			try {
 				const session = await api("verify", ref);
@@ -218,7 +261,8 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 	.signin :global(.signin__form) {
 		margin-top: 1.25rem;
 	}
-	.signin :global(.field) {
+	.signin :global(.field),
+	.module__action .field {
 		flex: 1;
 		min-width: 0;
 		font: inherit;
@@ -321,6 +365,39 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		margin-top: 1.25rem;
+	}
+	.modules {
+		margin-top: 1.5rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--color-border-subtle);
+		display: grid;
+		gap: 0.75rem;
+	}
+	.modules__title {
+		font-size: var(--font-size-label);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-muted);
+		margin: 0;
+	}
+	.module__name {
+		margin: 0 0 0.5rem;
+		font-weight: 500;
+		color: var(--color-text);
+	}
+	.module__description {
+		display: block;
+		font-weight: 400;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+	}
+	.module__action {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.module__action .field {
+		max-width: 16rem;
 	}
 	.integration__details {
 		margin-top: 1.5rem;

@@ -34,7 +34,7 @@ jq -n --tab --argjson blob "$blob" --arg did "$did" --arg cid "$session_cid" --a
 		uri: "at://\($did)/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere",
 		cid: $cid
 	},
-	actions: [{entry: "set_status", label: "Set status"}],
+	actions: [{entry: "set_status", label: "Set status", fields: [{key: "status", label: "Emoji"}]}],
 	createdAt: $createdAt
 }' >"$RECORD.tmp"
 mv "$RECORD.tmp" "$RECORD"

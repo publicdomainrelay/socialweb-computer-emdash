@@ -1,5 +1,6 @@
 import { type PluginContext, pluginResponse, pluginRoute, type SandboxedPlugin, type SandboxedRouteContext } from "emdash/plugin";
 import { beginConnect, completeConnect, disconnect, listIntegrations, servedMetadata, sessionAgent } from "./flow";
+import { runModule } from "./modules";
 import { parseRef } from "./record";
 
 const PERMISSION = "auth:manage_own_credentials" as const;
@@ -37,6 +38,11 @@ const plugin: SandboxedPlugin = {
 		disconnect: userRoute(async (input, userId, ctx) => {
 			await disconnect(ctx, userId, parseRef(input));
 			return { ok: true };
+		}),
+		run: userRoute(async (input, userId, ctx) => {
+			if (typeof input.entry !== "string") throw new Error("entry is required");
+			const values = typeof input.input === "object" && input.input !== null ? (input.input as Record<string, unknown>) : {};
+			return runModule(ctx, userId, parseRef(input), input.entry, values);
 		}),
 		verify: userRoute(async (input, userId, ctx) => {
 			const agent = await sessionAgent(ctx, userId, parseRef(input));

@@ -14,6 +14,7 @@ import {
 	parseRecord,
 	recordUri,
 } from "./record";
+import { listModules } from "./modules";
 import { type Sealed, seal, unseal } from "./seal";
 
 const PENDING_TTL_MS = 10 * 60 * 1000;
@@ -108,6 +109,7 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 	if (!response.ok) throw new Error(`Could not list integrations for ${did}`);
 	const { records } = (await response.json()) as { records: Array<{ uri: string; value: unknown }> };
 	const sessions = await ctx.storage.sessions.query({ where: { userId }, limit: 100 });
+	const modules = await listModules(ctx, identity.pds, identity.did);
 	const connected = new Map(sessions.items.map(({ data }) => [clientKey(data as SessionEntry), data as SessionEntry]));
 	return records.flatMap(({ uri, value }) => {
 		try {
@@ -124,6 +126,16 @@ export async function listIntegrations(ctx: PluginContext, userId: string, did: 
 					declaredScope: record.clientMetadata.scope,
 					groups: record.scopeGroups.map((group) => ({ ...group, granted: granted.includes(group.key) })),
 					session: session ? { handle: session.handle, scope: session.scope, updatedAt: session.updatedAt } : null,
+					modules: modules
+						.filter((module) => module.session.did === ref.did && module.session.rkey === ref.rkey)
+						.map(({ did: moduleDid, rkey, uri: moduleUri, name, description, actions }) => ({
+							did: moduleDid,
+							rkey,
+							uri: moduleUri,
+							name,
+							description,
+							actions,
+						})),
 				},
 			];
 		} catch (error) {

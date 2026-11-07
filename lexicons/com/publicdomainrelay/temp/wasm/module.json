@@ -8,12 +8,39 @@
 			"description": "A sandboxed WebAssembly module that turns user input into XRPC calls made with the session of an OAuth client metadata record.",
 			"record": {
 				"type": "object",
-				"required": ["name", "module", "abi", "session", "actions", "createdAt"],
+				"required": [
+					"name",
+					"module",
+					"abi",
+					"session",
+					"actions",
+					"createdAt"
+				],
 				"properties": {
-					"name": { "type": "string", "maxLength": 640, "maxGraphemes": 64 },
-					"description": { "type": "string", "maxLength": 3000, "maxGraphemes": 300 },
-					"module": { "type": "blob", "accept": ["application/wasm"], "maxSize": 4194304 },
-					"abi": { "type": "string", "maxLength": 64, "knownValues": ["emdash-wasm-json-v1"] },
+					"name": {
+						"type": "string",
+						"maxLength": 640,
+						"maxGraphemes": 64
+					},
+					"description": {
+						"type": "string",
+						"maxLength": 3000,
+						"maxGraphemes": 300
+					},
+					"module": {
+						"type": "blob",
+						"accept": [
+							"application/wasm"
+						],
+						"maxSize": 4194304
+					},
+					"abi": {
+						"type": "string",
+						"maxLength": 64,
+						"knownValues": [
+							"emdash-wasm-json-v1"
+						]
+					},
 					"session": {
 						"type": "ref",
 						"ref": "com.atproto.repo.strongRef",
@@ -22,19 +49,66 @@
 					"actions": {
 						"type": "array",
 						"maxLength": 64,
-						"items": { "type": "ref", "ref": "#action" }
+						"items": {
+							"type": "ref",
+							"ref": "#action"
+						}
 					},
-					"createdAt": { "type": "string", "format": "datetime" }
+					"createdAt": {
+						"type": "string",
+						"format": "datetime"
+					}
 				}
 			}
 		},
 		"action": {
 			"type": "object",
-			"required": ["entry", "label"],
+			"required": [
+				"entry",
+				"label"
+			],
 			"properties": {
-				"entry": { "type": "string", "maxLength": 128 },
-				"label": { "type": "string", "maxLength": 640, "maxGraphemes": 64 },
-				"description": { "type": "string", "maxLength": 3000, "maxGraphemes": 300 }
+				"entry": {
+					"type": "string",
+					"maxLength": 128
+				},
+				"label": {
+					"type": "string",
+					"maxLength": 640,
+					"maxGraphemes": 64
+				},
+				"description": {
+					"type": "string",
+					"maxLength": 3000,
+					"maxGraphemes": 300
+				},
+				"fields": {
+					"type": "array",
+					"maxLength": 16,
+					"description": "String inputs the user supplies; each key becomes a property of the module input.",
+					"items": {
+						"type": "ref",
+						"ref": "#field"
+					}
+				}
+			}
+		},
+		"field": {
+			"type": "object",
+			"required": [
+				"key",
+				"label"
+			],
+			"properties": {
+				"key": {
+					"type": "string",
+					"maxLength": 64
+				},
+				"label": {
+					"type": "string",
+					"maxLength": 640,
+					"maxGraphemes": 64
+				}
 			}
 		}
 	}

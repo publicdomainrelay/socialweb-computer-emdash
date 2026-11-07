@@ -8,7 +8,7 @@
 	"name": "atproto integrations",
 	"description": "Let signed-in users grant this site extra atproto OAuth sessions defined by clientMetadata records in their own PDS.",
 	"keywords": ["atproto", "oauth", "integrations"],
-	"capabilities": ["network:request:unrestricted"],
+	"capabilities": ["network:request:unrestricted", "wasm:execute"],
 	"allowedHosts": [],
 	"storage": {
 		"clients": { "indexes": [] },

@@ -7,6 +7,15 @@ export interface IntegrationGroup {
 	granted: boolean;
 }
 
+export interface IntegrationModule {
+	did: string;
+	rkey: string;
+	uri: string;
+	name: string;
+	description?: string;
+	actions: Array<{ entry: string; label: string; description?: string; fields: Array<{ key: string; label: string }> }>;
+}
+
 export interface Integration {
 	did: string;
 	rkey: string;
@@ -16,6 +25,7 @@ export interface Integration {
 	declaredScope: string;
 	groups: IntegrationGroup[];
 	session: { handle?: string; scope: string; updatedAt: string } | null;
+	modules: IntegrationModule[];
 }
 
 export async function atprotoDid(locals: App.Locals) {

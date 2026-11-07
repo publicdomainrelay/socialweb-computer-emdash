@@ -1,5 +1,6 @@
 import { createPluginRuntimeTestHost, type PluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 import { p256 } from "@noble/curves/nist.js";
+import { base58 } from "@scure/base";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import statusphereWasm from "../../../wasm/statusphere/statusphere.wasm?inline";
@@ -17,27 +18,13 @@ const aliceModule = {
 	session: { ...module.session, uri: `at://${ALICE.did}/com.publicdomainrelay.temp.oauth.clientMetadata/statusphere` },
 };
 
-const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-const base58 = (bytes: Uint8Array) => {
-	let value = BigInt(`0x${Buffer.from(bytes).toString("hex")}`);
-	let out = "";
-	while (value > 0n) {
-		out = BASE58[Number(value % 58n)] + out;
-		value /= 58n;
-	}
-	for (const byte of bytes) {
-		if (byte !== 0) break;
-		out = `1${out}`;
-	}
-	return out;
-};
 const b64url = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");
 
 const secretKey = secp256k1.utils.randomSecretKey();
-const multikey = `z${base58(Uint8Array.from([0xe7, 0x01, ...secp256k1.getPublicKey(secretKey, true)]))}`;
+const multikey = `z${base58.encode(Uint8Array.from([0xe7, 0x01, ...secp256k1.getPublicKey(secretKey, true)]))}`;
 
 const p256SecretKey = p256.utils.randomSecretKey();
-const p256Multikey = `z${base58(Uint8Array.from([0x80, 0x24, ...p256.getPublicKey(p256SecretKey, true)]))}`;
+const p256Multikey = `z${base58.encode(Uint8Array.from([0x80, 0x24, ...p256.getPublicKey(p256SecretKey, true)]))}`;
 
 function serviceToken(claims: Record<string, unknown> = {}, key = secretKey, curve: typeof secp256k1 | typeof p256 = secp256k1) {
 	const alg = curve === p256 ? "ES256" : "ES256K";

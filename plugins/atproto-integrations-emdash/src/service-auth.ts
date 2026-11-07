@@ -1,8 +1,8 @@
 import { p256 } from "@noble/curves/nist.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
+import { base58, base64urlnopad } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
 import { requireHttp } from "./oauth/http";
-import { fromBase64url } from "./oauth/jwt";
 import { isDid, resolveDidDocument } from "./oauth/identity";
 
 export const RUN_NSID = "com.publicdomainrelay.temp.wasm.run";
@@ -20,33 +20,9 @@ const CURVES = {
 	ES256: { prefix: [0x80, 0x24], curve: p256 },
 } as const;
 
-const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
-function base58Decode(value: string) {
-	const bytes = [0];
-	for (const char of value) {
-		let carry = BASE58.indexOf(char);
-		if (carry < 0) throw new ServiceAuthError("Invalid multibase key");
-		for (let index = 0; index < bytes.length; index++) {
-			carry += bytes[index] * 58;
-			bytes[index] = carry & 0xff;
-			carry >>= 8;
-		}
-		while (carry > 0) {
-			bytes.push(carry & 0xff);
-			carry >>= 8;
-		}
-	}
-	for (const char of value) {
-		if (char !== "1") break;
-		bytes.push(0);
-	}
-	return Uint8Array.from(bytes.reverse());
-}
-
 function decodeJson(segment: string): Record<string, unknown> {
 	try {
-		const value: unknown = JSON.parse(new TextDecoder().decode(fromBase64url(segment)));
+		const value: unknown = JSON.parse(new TextDecoder().decode(base64urlnopad.decode(segment)));
 		if (typeof value === "object" && value !== null && !Array.isArray(value)) return value as Record<string, unknown>;
 	} catch {}
 	throw new ServiceAuthError("Malformed service auth token");
@@ -69,7 +45,7 @@ async function signingKey(ctx: PluginContext, did: string) {
 	});
 	const method = document.verificationMethod?.find((item) => item.id === "#atproto" || item.id === `${did}#atproto`);
 	if (!method?.publicKeyMultibase?.startsWith("z")) throw new ServiceAuthError(`${did} has no atproto signing key`);
-	return base58Decode(method.publicKeyMultibase.slice(1));
+	return base58.decode(method.publicKeyMultibase.slice(1));
 }
 
 async function rememberJti(ctx: PluginContext, iss: string, jti: string, exp: number) {
@@ -100,7 +76,7 @@ export async function verifyServiceAuth(ctx: PluginContext, token: string, audie
 	const signed = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`);
 	const valid = (() => {
 		try {
-			return algorithm.curve.verify(fromBase64url(encodedSignature), signed, key.slice(2));
+			return algorithm.curve.verify(base64urlnopad.decode(encodedSignature), signed, key.slice(2));
 		} catch {
 			return false;
 		}

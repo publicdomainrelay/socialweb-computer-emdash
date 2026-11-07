@@ -1,14 +1,11 @@
+import { base64urlnopad } from "@scure/base";
+
 const encoder = new TextEncoder();
 const curve = { name: "ECDSA", namedCurve: "P-256" } as const;
 
-export const base64url = (bytes: Uint8Array) =>
-	btoa(String.fromCharCode(...bytes))
-		.replace(/\+/g, "-")
-		.replace(/\//g, "_")
-		.replace(/=+$/, "");
+export const base64url = (bytes: Uint8Array) => base64urlnopad.encode(bytes);
 
-export const fromBase64url = (value: string) =>
-	Uint8Array.from(atob(value.replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0));
+export const fromBase64url = (value: string) => new Uint8Array(base64urlnopad.decode(value));
 
 const encodeJson = (value: unknown) => base64url(encoder.encode(JSON.stringify(value)));
 

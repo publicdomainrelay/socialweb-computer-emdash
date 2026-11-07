@@ -1,3 +1,4 @@
+import { base32nopad } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
 import type { SessionAgent } from "./flow";
 import { requireHttp } from "./oauth/http";
@@ -84,28 +85,9 @@ export function parseModuleRecord(value: unknown): WasmModuleRecord {
 	};
 }
 
-const BASE32 = "abcdefghijklmnopqrstuvwxyz234567";
-
-function base32Decode(value: string) {
-	let bits = 0;
-	let buffer = 0;
-	const out: number[] = [];
-	for (const char of value) {
-		const index = BASE32.indexOf(char);
-		if (index < 0) throw new Error("Invalid base32 CID");
-		buffer = (buffer << 5) | index;
-		bits += 5;
-		if (bits >= 8) {
-			bits -= 8;
-			out.push((buffer >> bits) & 0xff);
-		}
-	}
-	return Uint8Array.from(out);
-}
-
 export function blobSha256(cid: string) {
 	if (!cid.startsWith("b")) throw new Error("Blob CID must be base32 CIDv1");
-	const bytes = base32Decode(cid.slice(1));
+	const bytes = base32nopad.decode(cid.slice(1).toUpperCase());
 	if (bytes.length !== 36 || bytes[0] !== 0x01 || bytes[1] !== 0x55 || bytes[2] !== 0x12 || bytes[3] !== 0x20) {
 		throw new Error("Blob CID must be a raw sha2-256 CIDv1");
 	}

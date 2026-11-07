@@ -86,7 +86,7 @@ diff --git a/src/routes/login.ts b/src/routes/login.ts
  
  		const url = new URL(request.url);
 +		const returnTo = url.searchParams.get("returnTo");
-+		if (returnTo?.startsWith("/") && !returnTo.startsWith("//")) session?.set("atprotoReturnTo", returnTo);
++		if (returnTo && /^\/(?![\/\\])[^\\\u0000-\u001f\u007f]*$/.test(returnTo)) session?.set("atprotoReturnTo", returnTo);
  		const baseUrl = getPublicOrigin(url, emdash?.config);
  
  		const { getAtprotoOAuthClient } = await import("@emdash-cms/auth-atproto/oauth-client");

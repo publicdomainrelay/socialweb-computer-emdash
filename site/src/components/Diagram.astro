@@ -1,0 +1,18 @@
+---
+import { render } from "pele";
+
+interface Props {
+	code: string;
+	label: string;
+	caption?: string;
+	wide?: boolean;
+}
+
+const { code, label, caption, wide = false } = Astro.props;
+const { svg } = render(code);
+---
+
+<figure class:list={["diagram", { "diagram--wide": wide }]}>
+	<div class="diagram__canvas" role="img" aria-label={label} set:html={svg} />
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>

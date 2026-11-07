@@ -6,3 +6,4 @@ dist
 vendor
 .claude/
 .celld/
+.dev.vars

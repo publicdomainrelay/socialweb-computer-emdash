@@ -5,12 +5,12 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz
-  '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
-  '@emdash-cms/sandbox-workerd': file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz
-  '@emdash-cms/cloudflare': file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz
-  '@emdash-cms/plugin-cli': file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz
-  '@emdash-cms/plugin-test': file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz
+  emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz
+  '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
+  '@emdash-cms/sandbox-workerd': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz
+  '@emdash-cms/cloudflare': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz
+  '@emdash-cms/plugin-cli': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz
+  '@emdash-cms/plugin-test': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz
 
 importers:
 
@@ -26,8 +26,8 @@ importers:
         specifier: 2.4.0
         version: 2.4.0
       emdash:
-        specifier: file:../vendor/emdash-fork/emdash-1.4.0.tgz
-        version: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3)
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3)
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -35,8 +35,8 @@ importers:
   plugins/atproto-integrations-emdash:
     dependencies:
       emdash:
-        specifier: file:../../vendor/emdash-fork/emdash-1.4.0.tgz
-        version: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
     devDependencies:
       '@atcute/crypto':
         specifier: 2.4.4
@@ -54,11 +54,11 @@ importers:
         specifier: 2.0.1
         version: 2.0.1(@atcute/identity-resolver@2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3)
       '@emdash-cms/plugin-cli':
-        specifier: file:../../vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz
-        version: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
       '@emdash-cms/plugin-test':
-        specifier: file:../../vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz
-        version: file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz(b708241a53cd4b8397863ec36bf22a37)
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz(b708241a53cd4b8397863ec36bf22a37)
       '@noble/curves':
         specifier: 2.4.0
         version: 2.4.0
@@ -87,11 +87,11 @@ importers:
         specifier: ^7.0.0
         version: 7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1)
       '@emdash-cms/cloudflare':
-        specifier: file:../vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz
-        version: file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz(@astrojs/cloudflare@14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(@cloudflare/workers-types@5.20261104.1)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(kysely@0.29.8)(pg@8.23.1)(react@19.2.4)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz(@astrojs/cloudflare@14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(@cloudflare/workers-types@5.20261104.1)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(kysely@0.29.8)(pg@8.23.1)(react@19.2.4)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))
       '@emdash-cms/sandbox-workerd':
-        specifier: file:../vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz
-        version: file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(kysely@0.29.8)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(workerd@1.20261104.1)
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(kysely@0.29.8)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(workerd@1.20261104.1)
       '@publicdomainrelay/auth-atproto-subscriber':
         specifier: 0.1.0
         version: 0.1.0(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(react@19.2.4)(typescript@5.9.3)
@@ -102,8 +102,11 @@ importers:
         specifier: workspace:*
         version: link:../plugins/atproto-integrations-emdash
       emdash:
-        specifier: file:../vendor/emdash-fork/emdash-1.4.0.tgz
-        version: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        specifier: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz
+        version: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      pele:
+        specifier: ^1.13.0
+        version: 1.13.0
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -751,8 +754,8 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  '@emdash-cms/cloudflare@file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz':
-    resolution: {integrity: sha512-0UaeX5YnKARmcub5ZGsUAvQxr5bT4VwvgH+3G86bQ9PhUjcRsj9Lm7VnrxV/thHB79NzTEG2B17S/xd7lFTdBA==, tarball: file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz}
+  '@emdash-cms/cloudflare@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz':
+    resolution: {integrity: sha512-0UaeX5YnKARmcub5ZGsUAvQxr5bT4VwvgH+3G86bQ9PhUjcRsj9Lm7VnrxV/thHB79NzTEG2B17S/xd7lFTdBA==, tarball: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz}
     version: 1.4.0
     peerDependencies:
       '@astrojs/cloudflare': '>=12.0.0'
@@ -780,20 +783,20 @@ packages:
   '@emdash-cms/gutenberg-to-portable-text@1.4.0':
     resolution: {integrity: sha512-WanDT+G6wtYRb9TZDTm/XvCqQyjkWa85slZVgWH39BaZ0j2WjuipD6IFaFdMPDiVlk6yxs6lL6zDw1xUu96Qgg==}
 
-  '@emdash-cms/plugin-cli@file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz':
-    resolution: {integrity: sha512-U6cheImurcHtrKAZFe7nYuCmGqO5CHcWfyVavffHNe+Nlt1MxvTA2BoFQUkjKQiYM0hnP0w9jOLuV/5cy3CsSQ==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz}
+  '@emdash-cms/plugin-cli@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz':
+    resolution: {integrity: sha512-9oenthfGFXl0ag+RkabMczB2kL7e+pKRwTgDjatxZN1OY6KTjAg6OeUrll0duP7Fz2Of/l/3B9gAVmp3wRPtVQ==, tarball: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz}
     version: 0.13.5
     hasBin: true
 
-  '@emdash-cms/plugin-test@file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz':
-    resolution: {integrity: sha512-d29kG1RIzTB6El2PUwuUodvPIsB1nl/aFWfqWh0fjMiXWH0Gbhu4ewjiT+qPR2FsBM+f8ofivJbO6kWBW3X4dA==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz}
+  '@emdash-cms/plugin-test@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz':
+    resolution: {integrity: sha512-M99cWpqHqCOxqp6PbAQ69zI25oqZ+p5BINLOKhJVdDQt9ywoqRDuXz47g8BHNHr9VEm9K/VqNjAsmFAXqO7Cig==, tarball: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz}
     version: 0.2.11
     peerDependencies:
       vite: ^8.0.0
       vitest: ^4.1.0
 
-  '@emdash-cms/plugin-types@file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz':
-    resolution: {integrity: sha512-ZCxUgg6JKKqdhOI9U+PGpyYc/rvfSA3ef4loDoFuD7RFxGVHk0b80esdFIr6xSOgpVPq0Plg3QfzzwQEJlau1A==, tarball: file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz}
+  '@emdash-cms/plugin-types@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz':
+    resolution: {integrity: sha512-ZCxUgg6JKKqdhOI9U+PGpyYc/rvfSA3ef4loDoFuD7RFxGVHk0b80esdFIr6xSOgpVPq0Plg3QfzzwQEJlau1A==, tarball: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz}
     version: 0.6.0
 
   '@emdash-cms/registry-client@0.7.1':
@@ -809,8 +812,8 @@ packages:
     resolution: {integrity: sha512-KP3SDfkRjw9ZG1AnEvsCR4USEAlyajnE1wZXJKALKj92Kg/snCOVZb+tpF56nqwuqNM7qyB+QCOD8f91rHTPJg==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
-  '@emdash-cms/sandbox-workerd@file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz':
-    resolution: {integrity: sha512-mvVqsCTyza86E9+lTlnPAkqoYblPIo3M8+cj01M4Pccwb8Qywctj0+qFBW5DXG5K3v0dZ43uReyiWoJhvtE+gg==, tarball: file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz}
+  '@emdash-cms/sandbox-workerd@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz':
+    resolution: {integrity: sha512-mvVqsCTyza86E9+lTlnPAkqoYblPIo3M8+cj01M4Pccwb8Qywctj0+qFBW5DXG5K3v0dZ43uReyiWoJhvtE+gg==, tarball: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz}
     version: 0.9.6
     peerDependencies:
       kysely: '>=0.29.0'
@@ -2893,8 +2896,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  emdash@file:vendor/emdash-fork/emdash-1.4.0.tgz:
-    resolution: {integrity: sha512-qQd8SGJrqQFFZyK+PAAmOL0FzE4DkCthyMt4FzGuS9eSZtgoCUl8lTx5zoEAQMXKFqc+pmExIdLOkvY1eWV1mg==, tarball: file:vendor/emdash-fork/emdash-1.4.0.tgz}
+  emdash@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz:
+    resolution: {integrity: sha512-HtFl2II7usOr/IDoPqLAZroX2q/0YRnNMVlDDbA03Fvw9k2VwByL6EiNCDyhs2KFshc8deHRRqOdXC7SwWh3Bg==, tarball: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz}
     version: 1.4.0
     engines: {node: '>=22.16'}
     hasBin: true
@@ -3721,6 +3724,10 @@ packages:
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
+
+  pele@1.13.0:
+    resolution: {integrity: sha512-Ie8UKY9x00MsuR3jO6AzUwzK2Z6MIV3Tf4EDdITiuk8Uaz8K7g0R082WqsqNaSU8DdgkrRvZThzhit83mi/uiw==}
+    engines: {node: '>=20'}
 
   pg-cloudflare@1.4.1:
     resolution: {integrity: sha512-6PQbsFWZcp9EmJEwy5cGQ2La+AMWpP46lgbb8X+U/XsHIUweYDNCpeuKck5RxL2MdVFi7krbbEi5nX4Zh7JhrQ==}
@@ -5540,7 +5547,7 @@ snapshots:
       '@dnd-kit/sortable': 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@dnd-kit/utilities': 3.2.2(react@19.2.4)
       '@emdash-cms/blocks': 1.4.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7)
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
       '@emdash-cms/registry-client': 0.7.1(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(typescript@5.9.3)
       '@emdash-cms/registry-lexicons': 0.7.0
       '@floating-ui/react': 0.27.20(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -5627,7 +5634,7 @@ snapshots:
       '@dnd-kit/sortable': 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@dnd-kit/utilities': 3.2.2(react@19.2.4)
       '@emdash-cms/blocks': 1.4.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7)
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
       '@emdash-cms/registry-client': 0.7.1(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(typescript@6.0.3)
       '@emdash-cms/registry-lexicons': 0.7.0
       '@floating-ui/react': 0.27.20(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -5705,7 +5712,7 @@ snapshots:
       '@emdash-cms/auth': 1.4.0(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(kysely@0.29.8)
       '@lingui/react': 5.9.5(react@19.2.4)
       astro: 7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)
-      emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       kysely: 0.29.8
       react: 19.2.4
     transitivePeerDependencies:
@@ -5721,7 +5728,7 @@ snapshots:
       '@emdash-cms/auth': 1.4.0(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(kysely@0.29.8)
       '@lingui/react': 5.9.5(react@19.2.4)
       astro: 7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)
-      emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3)
+      emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3)
       kysely: 0.29.8
       react: 19.2.4
     transitivePeerDependencies:
@@ -5758,13 +5765,13 @@ snapshots:
       - date-fns
       - zod
 
-  '@emdash-cms/cloudflare@file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz(@astrojs/cloudflare@14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(@cloudflare/workers-types@5.20261104.1)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(kysely@0.29.8)(pg@8.23.1)(react@19.2.4)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))':
+  '@emdash-cms/cloudflare@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz(@astrojs/cloudflare@14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(@cloudflare/workers-types@5.20261104.1)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(kysely@0.29.8)(pg@8.23.1)(react@19.2.4)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))':
     dependencies:
       '@astrojs/cloudflare': 14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1)
       '@cloudflare/ai-search-snippet': 0.0.42
       '@cloudflare/workers-types': 5.20261104.1
       astro: 7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)
-      emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       jose: 6.2.15
       kysely: 0.29.8
       kysely-d1: 0.4.0(kysely@0.29.8)
@@ -5781,7 +5788,7 @@ snapshots:
       '@wordpress/block-serialization-default-parser': 5.57.0
       parse5: 7.3.0
 
-  '@emdash-cms/plugin-cli@file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)':
+  '@emdash-cms/plugin-cli@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)':
     dependencies:
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@6.0.3)
       '@atcute/identity-resolver': 2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
@@ -5789,7 +5796,7 @@ snapshots:
       '@atcute/multibase': 1.2.5
       '@atcute/oauth-node-client': 2.0.1(@atcute/identity-resolver@2.0.3(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@atcute/lexicons@2.1.1)(typescript@6.0.3)
       '@clack/prompts': 1.8.1
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
       '@emdash-cms/registry-client': 0.7.1(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(typescript@6.0.3)
       '@emdash-cms/registry-lexicons': 0.7.0
       '@emdash-cms/registry-verification': 0.3.4
@@ -5820,14 +5827,14 @@ snapshots:
       - unplugin-unused
       - vue-tsc
 
-  '@emdash-cms/plugin-test@file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz(b708241a53cd4b8397863ec36bf22a37)':
+  '@emdash-cms/plugin-test@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz(b708241a53cd4b8397863ec36bf22a37)':
     dependencies:
       '@cloudflare/vitest-plugin': 1.6.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6)(vitest@4.1.12(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)))
       '@emdash-cms/blocks': 1.4.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7)
-      '@emdash-cms/cloudflare': file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz(@astrojs/cloudflare@14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(@cloudflare/workers-types@5.20261104.1)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(kysely@0.29.8)(pg@8.23.1)(react@19.2.4)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))
-      '@emdash-cms/plugin-cli': file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
-      emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      '@emdash-cms/cloudflare': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz(@astrojs/cloudflare@14.4.6(@types/node@26.6.6)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(esbuild@0.28.2)(workerd@1.20261104.1)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))(yaml@2.9.1))(@cloudflare/kumo@2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7))(@cloudflare/workers-types@5.20261104.1)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(emdash@1.4.0)(kysely@0.29.8)(pg@8.23.1)(react@19.2.4)(wrangler@4.158.0(@cloudflare/workers-types@5.20261104.1)(@types/node@26.6.6))
+      '@emdash-cms/plugin-cli': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
+      emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       kysely: 0.29.8
       vite: 8.3.6(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)
       vitest: 4.1.12(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))
@@ -5880,7 +5887,7 @@ snapshots:
       - wrangler
       - zod
 
-  '@emdash-cms/plugin-types@file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz':
+  '@emdash-cms/plugin-types@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz':
     dependencies:
       zod: 4.6.7
 
@@ -5932,13 +5939,13 @@ snapshots:
 
   '@emdash-cms/registry-verification@0.3.4':
     dependencies:
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
       '@emdash-cms/registry-lexicons': 0.7.0
       modern-tar: 0.7.7
 
-  '@emdash-cms/sandbox-workerd@file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(kysely@0.29.8)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(workerd@1.20261104.1)':
+  '@emdash-cms/sandbox-workerd@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(kysely@0.29.8)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(workerd@1.20261104.1)':
     dependencies:
-      emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       kysely: 0.29.8
       ulidx: 2.4.1
       workerd: 1.20261104.1
@@ -6674,7 +6681,7 @@ snapshots:
       '@cloudflare/kumo': 2.15.0(@date-fns/tz@1.5.0)(@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(date-fns@4.4.0)(echarts@6.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7)
       '@emdash-cms/auth': 1.4.0(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(kysely@0.29.8)
       astro: 7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)
-      emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       kysely: 0.29.8
       react: 19.2.4
     transitivePeerDependencies:
@@ -7807,7 +7814,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  emdash@file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
+  emdash@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@5.9.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
     dependencies:
       '@astrojs/react': 7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1)
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@5.9.3)
@@ -7818,7 +7825,7 @@ snapshots:
       '@emdash-cms/auth': 1.4.0(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(kysely@0.29.8)
       '@emdash-cms/blocks': 1.4.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7)
       '@emdash-cms/gutenberg-to-portable-text': 1.4.0
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
       '@emdash-cms/registry-client': 0.7.1(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(typescript@5.9.3)
       '@emdash-cms/registry-lexicons': 0.7.0
       '@emdash-cms/registry-verification': 0.3.4
@@ -7901,7 +7908,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  emdash@file:vendor/emdash-fork/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3):
+  emdash@https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz(@astrojs/react@7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@emdash-cms/auth-atproto@0.2.50)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.33.0(@tiptap/core@3.33.0(@tiptap/pm@3.33.0))(@tiptap/pm@3.33.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3):
     dependencies:
       '@astrojs/react': 7.1.4(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yaml@2.9.1)
       '@atcute/client': 5.1.2(@atcute/lexicons@2.1.1)(typescript@6.0.3)
@@ -7912,7 +7919,7 @@ snapshots:
       '@emdash-cms/auth': 1.4.0(astro@7.4.7(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1))(kysely@0.29.8)
       '@emdash-cms/blocks': 1.4.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod@4.6.7)
       '@emdash-cms/gutenberg-to-portable-text': 1.4.0
-      '@emdash-cms/plugin-types': file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
+      '@emdash-cms/plugin-types': https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
       '@emdash-cms/registry-client': 0.7.1(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(typescript@6.0.3)
       '@emdash-cms/registry-lexicons': 0.7.0
       '@emdash-cms/registry-verification': 0.3.4
@@ -8650,6 +8657,8 @@ snapshots:
   path-to-regexp@8.4.2: {}
 
   pathe@2.0.3: {}
+
+  pele@1.13.0: {}
 
   pg-cloudflare@1.4.1:
     optional: true

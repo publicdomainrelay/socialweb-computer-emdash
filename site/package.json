@@ -26,6 +26,7 @@
     "astro": "^7.3.2",
     "atproto-integrations-emdash": "workspace:*",
     "emdash": "^1.3.0",
+    "pele": "^1.13.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "workerd": "^1.20261104.1"

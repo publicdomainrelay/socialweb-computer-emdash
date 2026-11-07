@@ -14,12 +14,12 @@ minimumReleaseAgeExclude:
   - emdash
   - "@emdash-cms/*"
   - "@publicdomainrelay/*"
-blockExoticSubdeps: true
+blockExoticSubdeps: false
 
 overrides:
-  emdash: file:vendor/emdash-fork/emdash-1.4.0.tgz
-  "@emdash-cms/plugin-types": file:vendor/emdash-fork/emdash-cms-plugin-types-0.6.0.tgz
-  "@emdash-cms/sandbox-workerd": file:vendor/emdash-fork/emdash-cms-sandbox-workerd-0.9.6.tgz
-  "@emdash-cms/cloudflare": file:vendor/emdash-fork/emdash-cms-cloudflare-1.4.0.tgz
-  "@emdash-cms/plugin-cli": file:vendor/emdash-fork/emdash-cms-plugin-cli-0.13.5.tgz
-  "@emdash-cms/plugin-test": file:vendor/emdash-fork/emdash-cms-plugin-test-0.2.11.tgz
+  emdash: https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-1.4.0.tgz
+  "@emdash-cms/plugin-types": https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-types-0.6.0.tgz
+  "@emdash-cms/sandbox-workerd": https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-sandbox-workerd-0.9.6.tgz
+  "@emdash-cms/cloudflare": https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-cloudflare-1.4.0.tgz
+  "@emdash-cms/plugin-cli": https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-cli-0.13.5.tgz
+  "@emdash-cms/plugin-test": https://github.com/publicdomainrelay/socialweb-computer-emdash/releases/download/emdash-fork-15473214e/emdash-cms-plugin-test-0.2.11.tgz

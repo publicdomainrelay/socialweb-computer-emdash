@@ -1,0 +1,14 @@
+---
+import { legend } from "../diagrams";
+---
+
+<ul class="legend" role="list" aria-label="Diagram colors">
+	{
+		legend.map(({ tone, label }) => (
+			<li class={`legend__item tone-${tone}`}>
+				<span class="legend__swatch" aria-hidden="true" />
+				{label}
+			</li>
+		))
+	}
+</ul>

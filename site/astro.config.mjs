@@ -12,7 +12,7 @@ const onCloudflare = process.env.EMDASH_TARGET === "cloudflare";
 
 const platform = onCloudflare
 	? {
-			adapter: cloudflare(),
+			adapter: cloudflare({ configPath: "../wrangler.jsonc" }),
 			database: d1({ binding: "DB", session: "auto" }),
 			storage: r2({ binding: "MEDIA" }),
 			sandboxRunner: sandbox(),

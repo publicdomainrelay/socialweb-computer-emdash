@@ -1,0 +1,219 @@
+---
+import Code from "../components/Code.astro";
+import Diagram from "../components/Diagram.astro";
+import { abi, statusphere } from "../diagrams";
+import Guide from "../layouts/Guide.astro";
+
+const toc = [
+	{ id: "contract", label: "The contract" },
+	{ id: "abi", label: "Memory ABI" },
+	{ id: "rust", label: "A module in Rust" },
+	{ id: "spec", label: "module.json" },
+	{ id: "test", label: "Test it" },
+	{ id: "publish", label: "Publish it" },
+	{ id: "rounds", label: "Rounds in practice" },
+	{ id: "rules", label: "Rules" },
+];
+
+const stepInput = `{
+  "did": "did:plc:…",
+  "now": "2026-11-06T12:34:56.789Z",
+  "text": "hello",
+  "state": null,
+  "results": [{ "ok": true, "output": { "uri": "at://…", "cid": "bafy…" } }]
+}`;
+
+const stepOutput = `{
+  "calls": [{ "nsid": "com.atproto.repo.createRecord", "input": { "repo": "did:plc:…", "collection": "com.example.note", "record": {} } }],
+  "next": "note_done",
+  "state": { "anything": "you want back next round" },
+  "result": null
+}`;
+
+const cargo = `[package]
+name = "note"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true`;
+
+const rust = `use abi::{CallResult, Did, entries, first_output};
+use serde::Deserialize;
+use serde_json::{Value, json};
+
+#[derive(Deserialize)]
+struct Step {
+    did: Did,
+    now: String,
+    #[serde(default)]
+    text: Option<String>,
+    #[serde(default)]
+    results: Vec<CallResult>,
+}
+
+fn note_step(step: Step) -> Result<Value, String> {
+    let text = step.text.filter(|text| !text.is_empty()).ok_or("text is required")?;
+    Ok(json!({
+        "calls": [{
+            "nsid": "com.atproto.repo.createRecord",
+            "input": {
+                "repo": step.did,
+                "collection": "com.example.note",
+                "record": { "$type": "com.example.note", "text": text, "createdAt": step.now },
+            },
+        }],
+        "next": "note_done",
+    }))
+}
+
+fn note_done_step(step: Step) -> Result<Value, String> {
+    let created = first_output(&step.results)?;
+    Ok(json!({ "calls": [], "result": { "uri": created["uri"], "cid": created["cid"] } }))
+}
+
+entries!(
+    note => note_step,
+    note_done => note_done_step,
+);`;
+
+const spec = `{
+  "name": "Note",
+  "description": "Write a com.example.note record.",
+  "session": "example",
+  "actions": [
+    {
+      "entry": "note",
+      "label": "Write note",
+      "fields": [{ "key": "text", "label": "Text" }]
+    }
+  ],
+  "calls": ["com.atproto.repo.createRecord"]
+}`;
+
+const test = `import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import { load } from "../harness.mjs";
+
+const { module, drive } = await load(new URL("./note.wasm", import.meta.url));
+
+test("has no imports", () => assert.equal(WebAssembly.Module.imports(module).length, 0));
+
+test("writes one note", () => {
+  const ran = drive("note", { text: "hello" }, () => ({ ok: true, output: { uri: "at://x", cid: "bafy" } }));
+  assert.equal(ran.rounds[0].calls[0].nsid, "com.atproto.repo.createRecord");
+  assert.deepEqual(ran.result, { uri: "at://x", cid: "bafy" });
+});`;
+
+const build = `rustup target add wasm32-unknown-unknown
+./wasm/build.sh
+node --test wasm/*/test.mjs`;
+
+const publish = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
+./scripts/publish-wasm.sh note
+goat record get "at://$ATPROTO_HANDLE/com.publicdomainrelay.temp.wasm.module/note"`;
+---
+
+<Guide
+	title="Write a module"
+	eyebrow="Guide"
+	description="A module is a WebAssembly blob with a JSON ABI. It cannot reach the network. It plans XRPC calls, and the plugin makes them with your session and hands back the results."
+	toc={toc}
+>
+	<section id="contract">
+		<h2>The contract</h2>
+		<p>Each exported entry takes one JSON object and returns one JSON object.</p>
+		<h3>Input</h3>
+		<ul>
+			<li><code>did</code>: the account the run is for.</li>
+			<li><code>now</code>: the current time, as ISO 8601. Modules have no clock.</li>
+			<li>Your action's fields, keyed by field key.</li>
+			<li><code>state</code> and <code>results</code>: what the previous round returned, and the outcome of each call it planned.</li>
+		</ul>
+		<Code title="input" code={stepInput} />
+		<h3>Output</h3>
+		<ul>
+			<li><code>calls</code>: XRPC calls to make. A call with <code>input</code> is a POST; one with only <code>params</code> is a GET.</li>
+			<li><code>next</code>: the entry to call with the results. Leave it out to finish.</li>
+			<li><code>state</code>: any JSON, handed back next round.</li>
+			<li><code>result</code>: the answer, when there is no <code>next</code>.</li>
+			<li>Or <code>{"{"} "error": "…" {"}"}</code> to stop the run.</li>
+		</ul>
+		<Code title="output" code={stepOutput} />
+	</section>
+
+	<section id="abi">
+		<h2>Memory ABI</h2>
+		<p>
+			The record says <code>"abi": "emdash-wasm-json-v1"</code>. The module exports <code>memory</code>, <code>alloc(len) -&gt; ptr</code> and one function per entry, <code>entry(ptr, len) -&gt; i64</code>. The high 32 bits of the result are the output pointer and the low 32 bits its length. The module imports nothing.
+		</p>
+		<Diagram code={abi} label="Sequence: the plugin allocates, writes input JSON, calls the entry, and reads the output JSON from the packed pointer and length." />
+		<p>The <code>abi</code> crate in <code>wasm/abi</code> does all of this. You write plain functions from a <code>Deserialize</code> struct to a JSON value.</p>
+	</section>
+
+	<section id="rust">
+		<h2>A module in Rust</h2>
+		<p>Add a crate under <code>wasm/</code> and list it in <code>wasm/Cargo.toml</code> members.</p>
+		<Code title="wasm/note/Cargo.toml" code={cargo} />
+		<Code title="wasm/note/src/lib.rs" code={rust} />
+		<p>
+			<code>entries!</code> exports <code>alloc</code> and one function per entry. <code>Did</code> rejects anything that does not start with <code>did:</code>. <code>first_output</code> turns a failed call into an error.
+		</p>
+	</section>
+
+	<section id="spec">
+		<h2>module.json</h2>
+		<p>
+			<code>publish-wasm.sh</code> builds the record from this file. <code>session</code> is the rkey of the integration record the module runs with. <code>actions</code> become the buttons and fields on <code>/integrations</code>. <code>calls</code> is the allow-list of NSIDs.
+		</p>
+		<Code title="wasm/note/module.json" code={spec} />
+	</section>
+
+	<section id="test">
+		<h2>Test it</h2>
+		<p>
+			<code>wasm/harness.mjs</code> loads a module with no imports and drives its rounds. You answer each planned call yourself, so tests need no network. Add your module's name to the loop in <code>wasm/build.sh</code>.
+		</p>
+		<Code title="wasm/note/test.mjs" code={test} />
+		<Code code={build} />
+	</section>
+
+	<section id="publish">
+		<h2>Publish it</h2>
+		<p>
+			The script builds, uploads the blob to your PDS, looks up the CID of the integration record named by <code>session</code>, and writes <code>at://you/com.publicdomainrelay.temp.wasm.module/note</code>. The module shows up on that integration's card.
+		</p>
+		<Code code={publish} />
+		<div class="callout tone-pds">
+			<strong>The integration needs the scope too.</strong>
+			A module allowed to call <code>createRecord</code> still fails unless your session has <code>repo:com.example.note</code>. Put it in the integration record's scope groups.
+		</div>
+	</section>
+
+	<section id="rounds">
+		<h2>Rounds in practice</h2>
+		<p>Statusphere reads before it writes, so setting the same emoji twice makes no new record.</p>
+		<Diagram wide code={statusphere} label="Sequence: set_status lists your latest status, set_status_write compares and creates a record only for a new emoji, set_status_done returns its URI." />
+		<p>
+			Source: <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/statusphere">wasm/statusphere</a> and <a href="https://github.com/publicdomainrelay/socialweb-computer-emdash/tree/main/wasm/vibescrobble">wasm/vibescrobble</a>.
+		</p>
+	</section>
+
+	<section id="rules">
+		<h2>Rules</h2>
+		<ul>
+			<li>8 rounds, 10 calls per round and 25 calls per run.</li>
+			<li>Only NSIDs in the record's <code>calls</code> list, when it has one.</li>
+			<li>The blob's sha256 must match its CID.</li>
+			<li>No imports. A module that imports anything does not instantiate.</li>
+			<li>Keep the blob small. Both shipped modules are under 130 KB with <code>opt-level = "z"</code> and LTO.</li>
+		</ul>
+	</section>
+</Guide>

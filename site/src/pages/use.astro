@@ -1,0 +1,183 @@
+---
+import Code from "../components/Code.astro";
+import Diagram from "../components/Diagram.astro";
+import { serviceAuth } from "../diagrams";
+import Guide from "../layouts/Guide.astro";
+
+const origin = process.env.EMDASH_SITE_URL || Astro.url.origin;
+const siteDid = `did:web:${new URL(origin).host.replace(":", "%3A")}`;
+
+const toc = [
+	{ id: "sign-in", label: "Sign in" },
+	{ id: "publish", label: "Publish records" },
+	{ id: "connect", label: "Connect" },
+	{ id: "run", label: "Run a module" },
+	{ id: "cli", label: "From your terminal" },
+	{ id: "own", label: "Your own integration" },
+	{ id: "troubleshooting", label: "Troubleshooting" },
+];
+
+const tools = `go install github.com/bluesky-social/goat@latest
+git clone https://github.com/publicdomainrelay/socialweb-computer-emdash
+cd socialweb-computer-emdash
+export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'`;
+
+const publishRecords = `./scripts/publish-records.sh`;
+
+const publishModules = `rustup target add wasm32-unknown-unknown
+./scripts/publish-wasm.sh statusphere
+./scripts/publish-wasm.sh vibescrobble`;
+
+const check = `goat record ls --collection com.publicdomainrelay.temp.oauth.clientMetadata "$ATPROTO_HANDLE"
+goat record ls --collection com.publicdomainrelay.temp.wasm.module "$ATPROTO_HANDLE"`;
+
+const cliSetup = `SITE=${origin}
+SITE_DID=${siteDid}
+DOC=$(goat resolve "$ATPROTO_HANDLE")
+DID=$(jq -r .id <<<"$DOC")
+PDS=$(jq -r '.service[] | select(.id == "#atproto_pds") | .serviceEndpoint' <<<"$DOC")
+ACCESS_JWT=$(curl -fsS -X POST "$PDS/xrpc/com.atproto.server.createSession" \\
+  -H 'content-type: application/json' \\
+  -d "{\\"identifier\\":\\"$ATPROTO_HANDLE\\",\\"password\\":\\"$ATPROTO_PASSWORD\\"}" | jq -r .accessJwt)`;
+
+const viaProxy = `curl -fsS -X POST "$PDS/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+  -H "Authorization: Bearer $ACCESS_JWT" \\
+  -H "atproto-proxy: $SITE_DID#emdash_integrations" \\
+  -H 'content-type: application/json' \\
+  -d "{\\"module\\":\\"at://$DID/com.publicdomainrelay.temp.wasm.module/statusphere\\",\\"entry\\":\\"set_status\\",\\"input\\":{\\"status\\":\\"🦋\\"}}" | jq .result`;
+
+const viaToken = `TOKEN=$(curl -fsS -H "Authorization: Bearer $ACCESS_JWT" \\
+  "$PDS/xrpc/com.atproto.server.getServiceAuth?aud=$SITE_DID&lxm=com.publicdomainrelay.temp.wasm.run" | jq -r .token)
+curl -fsS -X POST "$SITE/xrpc/com.publicdomainrelay.temp.wasm.run" \\
+  -H "Authorization: Bearer $TOKEN" \\
+  -H 'content-type: application/json' \\
+  -d "{\\"module\\":\\"at://$DID/com.publicdomainrelay.temp.wasm.module/vibescrobble\\",\\"entry\\":\\"scrobble\\",\\"input\\":{\\"text\\":\\"🚀 deployed my own site\\"}}" | jq .result`;
+
+const ownRecord = `{
+  "$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+  "name": "Example",
+  "clientMetadata": {
+    "client_id": "https://example.com/oauth-client-metadata.json",
+    "client_uri": "https://example.com",
+    "redirect_uris": ["https://example.com/oauth/callback"],
+    "scope": "atproto repo:com.example.post repo:com.example.like"
+  },
+  "scopeGroups": [
+    { "key": "posts", "label": "Write posts", "scopes": ["repo:com.example.post"] },
+    { "key": "likes", "label": "Like posts", "scopes": ["repo:com.example.like"] }
+  ],
+  "createdAt": "2026-11-06T00:00:00.000Z"
+}`;
+
+const ownPublish = `goat lex validate -c lexicons example.json
+goat record create -n -r example example.json`;
+---
+
+<Guide
+	title="Use it"
+	eyebrow="Guide"
+	description="Sign in, put integration records in your PDS, connect them with the permissions you pick, and run their modules from the page or your terminal."
+	toc={toc}
+>
+	<section id="sign-in">
+		<h2>Sign in</h2>
+		<ol class="steps">
+			<li>
+				<strong>Open integrations</strong>
+				Go to <a href="/integrations">/integrations</a> and enter your handle, for example <code>alice.bsky.social</code>.
+			</li>
+			<li>
+				<strong>Approve on your PDS</strong>
+				Your authorization server asks for the <code>atproto</code> scope only. It tells the site who you are, and nothing else.
+			</li>
+			<li>
+				<strong>See your integrations</strong>
+				The site lists the <code>com.publicdomainrelay.temp.oauth.clientMetadata</code> records in your repo. With none, the list is empty until you publish one.
+			</li>
+		</ol>
+	</section>
+
+	<section id="publish">
+		<h2>Publish records</h2>
+		<p>
+			The repo ships three integration records and two modules. Publish them to your own account with <a href="https://github.com/bluesky-social/goat">goat</a>. Use an app password, not your main password.
+		</p>
+		<Code code={tools} />
+		<p>Publish the integration records in <code>records/</code>: statusphere, vibescrobble and socialweb-computer.</p>
+		<Code code={publishRecords} />
+		<p>Build and publish the modules. Each script builds with Cargo, uploads the blob, and writes a <code>wasm.module</code> record that points to its integration by URI and CID.</p>
+		<Code code={publishModules} />
+		<Code title="check" code={check} />
+		<div class="callout tone-sandbox">
+			<strong>Republish modules after their integration changes.</strong>
+			A module record pins its integration record's CID. Run <code>publish-records.sh</code> first, then <code>publish-wasm.sh</code>.
+		</div>
+	</section>
+
+	<section id="connect">
+		<h2>Connect</h2>
+		<ol class="steps">
+			<li>
+				<strong>Tick scope groups</strong>
+				Each card lists the record's permission groups. Tick only what you want this site to do.
+			</li>
+			<li>
+				<strong>Connect</strong>
+				You go to your authorization server again, this time for those scopes. Approve and you come back to <code>/integrations?connected=…</code>.
+			</li>
+			<li>
+				<strong>Verify or change</strong>
+				<em>Verify</em> calls <code>getSession</code> with the session and shows its handle and scopes. Tick more groups and press <em>Update permissions</em> to add scopes. <em>Disconnect</em> revokes the session.
+			</li>
+		</ol>
+	</section>
+
+	<section id="run">
+		<h2>Run a module</h2>
+		<p>Connected cards show their modules. Fill the fields and press the action.</p>
+		<ul>
+			<li><strong>Statusphere.</strong> <em>Set status</em> takes one emoji and writes an <code>xyz.statusphere.status</code> record. Setting the same emoji again returns <code>unchanged</code>. <em>Clear statuses</em> deletes your status records.</li>
+			<li><strong>Vibescrobble.</strong> <em>Scrobble</em> writes a <code>com.vibescrobble.scrobble</code> record. The text must start with an emoji, for example <code>🚀 shipped the Cloudflare deploy</code>. Task is optional.</li>
+		</ul>
+		<p>The page shows each round: the entry it called and the XRPC calls it made.</p>
+	</section>
+
+	<section id="cli">
+		<h2>From your terminal</h2>
+		<p>Connect the integration on the page first. The terminal uses that same session. You need <code>goat</code>, <code>curl</code> and <code>jq</code>.</p>
+		<Code title="setup" code={cliSetup} />
+		<h3>Path A: through your PDS</h3>
+		<p>Your PDS signs a service-auth token and forwards the call. This is how any atproto app would call the site.</p>
+		<Code code={viaProxy} />
+		<h3>Path B: with a service-auth token</h3>
+		<p>Fetch the token yourself and call the site directly. A token works once.</p>
+		<Code code={viaToken} />
+		<Diagram wide code={serviceAuth} label="Sequence of the two service-auth paths." />
+	</section>
+
+	<section id="own">
+		<h2>Your own integration</h2>
+		<p>
+			Any OAuth client works as a record. Group scopes so people can grant them one at a time. The <code>client_id</code> and <code>redirect_uris</code> are placeholders; the site serves its own.
+		</p>
+		<Code title="example.json" code={ownRecord} />
+		<Code code={ownPublish} />
+		<p>To give it a module, see <a href="/modules">Write a module</a>.</p>
+	</section>
+
+	<section id="troubleshooting">
+		<h2>Troubleshooting</h2>
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>You see</th><th>Do this</th></tr></thead>
+				<tbody>
+					<tr><td>No integrations yet</td><td>Publish a record, then reload. The list reads your PDS each time.</td></tr>
+					<tr><td>Module missing from a card</td><td>The module record's <code>session.uri</code> must name that integration. Republish with <code>publish-wasm.sh</code>.</td></tr>
+					<tr><td><code>Service auth token was already used</code></td><td>Fetch a new token. Each <code>jti</code> works once.</td></tr>
+					<tr><td><code>text must start with an emoji</code></td><td>Start the scrobble with an emoji.</td></tr>
+					<tr><td>A run fails after you changed scopes</td><td>Press <em>Verify</em>, then reconnect with the groups the module needs.</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+</Guide>

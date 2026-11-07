@@ -1,0 +1,215 @@
+---
+import Code from "../components/Code.astro";
+import Diagram from "../components/Diagram.astro";
+import { cloudflare, deploySteps } from "../diagrams";
+import { deployButton, deployUrl, repository } from "../deploy";
+import Guide from "../layouts/Guide.astro";
+
+const toc = [
+	{ id: "paths", label: "Pick a path" },
+	{ id: "button", label: "Deploy button" },
+	{ id: "cli", label: "Deploy from a terminal" },
+	{ id: "domain", label: "Your own domain" },
+	{ id: "local", label: "Run on your machine" },
+	{ id: "topology", label: "What runs where" },
+	{ id: "verify", label: "Check it works" },
+	{ id: "fork", label: "Fork packages" },
+	{ id: "troubleshooting", label: "Troubleshooting" },
+];
+
+const keygen = `echo emdash_enc_v1_$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '=')`;
+
+const cliDeploy = `git clone ${repository}
+cd socialweb-computer-emdash
+pnpm install
+pnpm --filter site exec wrangler login
+pnpm run deploy`;
+
+const cliSecret = `cd site
+${keygen} | pnpm exec wrangler secret put EMDASH_ENCRYPTION_KEY`;
+
+const tokenAuth = `export CLOUDFLARE_API_TOKEN=…
+export CLOUDFLARE_ACCOUNT_ID=…
+pnpm run deploy`;
+
+const domainEnv = `"env": {
+  "mine": {
+    "name": "socialweb-computer-emdash",
+    "routes": [{ "pattern": "integrations.example.com", "custom_domain": true }],
+    "vars": { "EMDASH_SITE_URL": "https://integrations.example.com" },
+    "d1_databases": [{ "binding": "DB", "database_name": "…", "database_id": "…" }],
+    "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "…" }],
+    "kv_namespaces": [{ "binding": "SESSION", "id": "…" }],
+    "worker_loaders": [{ "binding": "LOADER" }]
+  }
+}`;
+
+const domainDeploy = `CLOUDFLARE_ENV=mine EMDASH_SITE_URL=https://integrations.example.com pnpm run deploy`;
+
+const local = `git clone ${repository}
+cd socialweb-computer-emdash
+pnpm install
+pnpm build
+pnpm dev`;
+
+const tunnel = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
+./scripts/fedproxy.sh &
+EMDASH_SITE_URL="https://emdash--\${ATPROTO_HANDLE//./-}.fedproxy.com" pnpm dev`;
+
+const verify = `SITE=https://your-site.example
+curl -fsS "$SITE/.well-known/did.json" | jq .
+curl -fsS -o /dev/null -w '%{http_code}\\n' "$SITE/integrations"`;
+
+const e2e = `export ATPROTO_HANDLE=you.bsky.social ATPROTO_PASSWORD='your-app-password'
+SITE_URL=$SITE pnpm exec node scripts/e2e.ts`;
+
+const forkPackages = `./scripts/emdash-fork.sh
+./scripts/release-emdash-fork.sh`;
+---
+
+<Guide
+	title="Deploy your own"
+	eyebrow="Guide"
+	description="One click on Cloudflare, one command from a terminal, or a dev server on your machine. Each gets you the same site with your own database and your own sessions."
+	toc={toc}
+>
+	<section id="paths">
+		<h2>Pick a path</h2>
+		<Diagram code={deploySteps} label="Flowchart of three paths: the deploy button, a terminal deploy, or a local dev server. Each ends with publishing records and connecting." />
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>Path</th><th>You need</th><th>You get</th></tr></thead>
+				<tbody>
+					<tr><td><a href="#button">Deploy button</a></td><td>GitHub, Cloudflare Workers Paid</td><td>A repo in your GitHub that redeploys on every push</td></tr>
+					<tr><td><a href="#cli">Terminal</a></td><td>Node 24, pnpm 11, Cloudflare Workers Paid</td><td>A Worker you deploy by hand</td></tr>
+					<tr><td><a href="#local">Your machine</a></td><td>Node 24, pnpm 11</td><td>SQLite, local uploads, a workerd sandbox</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="callout tone-cloud">
+			<strong>Cloudflare needs the Workers Paid plan.</strong>
+			The plugin and every WebAssembly run use Worker Loader isolates, which are not on the free plan.
+		</div>
+	</section>
+
+	<section id="button">
+		<h2>Deploy button</h2>
+		<p class="deploy-button">
+			<a href={deployUrl}><img src={deployButton} alt="Deploy to Cloudflare" width="166" height="32" /></a>
+		</p>
+		<ol class="steps">
+			<li>
+				<strong>Press the button</strong>
+				Sign in to Cloudflare and connect GitHub. Cloudflare copies this repo into a new repo in your account.
+			</li>
+			<li>
+				<strong>Keep the defaults</strong>
+				Cloudflare reads <code>wrangler.jsonc</code> and creates a D1 database for <code>DB</code>, an R2 bucket for <code>MEDIA</code>, and a KV namespace for sessions. The build command is <code>pnpm run build</code> and the deploy command is <code>pnpm run deploy</code>.
+			</li>
+			<li>
+				<strong>Set the encryption key</strong>
+				It asks for <code>EMDASH_ENCRYPTION_KEY</code>. Generate one and save a copy somewhere safe.
+				<Code code={keygen} />
+			</li>
+			<li>
+				<strong>Open your site</strong>
+				When the build finishes, open <code>https://&lt;worker&gt;.&lt;your-subdomain&gt;.workers.dev/integrations</code> and sign in.
+			</li>
+		</ol>
+		<p>Every push to your new repo builds and deploys again. Then <a href="/use#publish">publish your records</a>.</p>
+	</section>
+
+	<section id="cli">
+		<h2>Deploy from a terminal</h2>
+		<p>
+			<code>pnpm install</code> pulls the EmDash fork packages from this repo's GitHub release, so you do not need the submodule. <code>wrangler deploy</code> creates any D1, R2 and KV resource that has no ID in <code>wrangler.jsonc</code>.
+		</p>
+		<Code code={cliDeploy} />
+		<Code title="once, after the first deploy" code={cliSecret} />
+		<p>In CI, or without a browser, use an API token instead of <code>wrangler login</code>. Give it Workers Scripts, D1, R2 and KV edit on the account, and Workers Routes and DNS edit on your zone if you use a custom domain.</p>
+		<Code code={tokenAuth} />
+	</section>
+
+	<section id="domain">
+		<h2>Your own domain</h2>
+		<p>
+			Service auth needs a stable <code>did:web</code>, so give the site its own hostname. Add an environment to <code>wrangler.jsonc</code> with your domain and the resource IDs from the first deploy. That pins them, so a fresh build never makes new ones. This site runs that way as <code>env.fedfork</code>.
+		</p>
+		<Code title="wrangler.jsonc" code={domainEnv} />
+		<Code code={domainDeploy} />
+		<p>
+			Find the IDs on the Worker's <em>Bindings</em> tab in the dashboard, or with <code>pnpm exec wrangler d1 list</code> and <code>pnpm exec wrangler kv namespace list</code>.
+		</p>
+	</section>
+
+	<section id="local">
+		<h2>Run on your machine</h2>
+		<Code code={local} />
+		<p>
+			Open <a href="http://127.0.0.1:4321/integrations">http://127.0.0.1:4321/integrations</a>. OAuth works on <code>127.0.0.1</code>: the site uses loopback client IDs there.
+		</p>
+		<p>A PDS cannot reach <code>127.0.0.1</code> for service auth. For that, give the dev server a public origin. <code>fedproxy.sh</code> uses an SSH tunnel keyed to your handle; any HTTPS tunnel works.</p>
+		<Code code={tunnel} />
+	</section>
+
+	<section id="topology">
+		<h2>What runs where</h2>
+		<Diagram code={cloudflare} label="Flowchart of the Cloudflare deploy: the custom domain and a cron reach the Worker. The Worker uses D1, R2 and KV, and starts plugin and module isolates through Worker Loader." />
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>Binding</th><th>Kind</th><th>Used for</th></tr></thead>
+				<tbody>
+					<tr><td><code>DB</code></td><td>D1</td><td>EmDash content, plugin storage, the refresh lock, service-auth replay protection</td></tr>
+					<tr><td><code>MEDIA</code></td><td>R2</td><td>Media uploads</td></tr>
+					<tr><td><code>SESSION</code></td><td>KV</td><td>Login sessions. Added by the Astro adapter</td></tr>
+					<tr><td><code>LOADER</code></td><td>Worker Loader</td><td>The plugin isolate and one isolate per WebAssembly run</td></tr>
+					<tr><td><code>EMDASH_ENCRYPTION_KEY</code></td><td>Secret</td><td>EmDash plugin secrets at rest</td></tr>
+					<tr><td><code>EMDASH_SITE_URL</code></td><td>Variable</td><td>The public origin. Optional on <code>workers.dev</code></td></tr>
+				</tbody>
+			</table>
+		</div>
+		<p>
+			<code>site/astro.config.mjs</code> builds for Cloudflare when <code>EMDASH_TARGET=cloudflare</code> and for Node otherwise. It raises the plugin sandbox to <code>cpuMs: 1000</code> and <code>subrequests: 200</code>.
+		</p>
+	</section>
+
+	<section id="verify">
+		<h2>Check it works</h2>
+		<Code code={verify} />
+		<p>
+			The end-to-end script signs in as you, connects statusphere and vibescrobble, runs every module path including service auth and the PDS proxy, deletes its test scrobble, and signs out. It needs your integration and module records published first.
+		</p>
+		<Code code={e2e} />
+	</section>
+
+	<section id="fork">
+		<h2>Fork packages</h2>
+		<p>
+			The site depends on <a href="https://github.com/publicdomainrelay/emdash/tree/wasm-blob-sandbox">publicdomainrelay/emdash</a>. Its packages are tarballs on a GitHub release of this repo, named <code>emdash-fork-&lt;commit&gt;</code>, and <code>pnpm-workspace.yaml</code> overrides <code>emdash</code> and <code>@emdash-cms/*</code> with them. The lockfile pins each tarball's integrity hash.
+		</p>
+		<p>After changing the fork in the <code>emdash</code> submodule, pack and release it. The second script uploads a release for the submodule's commit and points the overrides at it.</p>
+		<Code code={forkPackages} />
+	</section>
+
+	<section id="troubleshooting">
+		<h2>Troubleshooting</h2>
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>You see</th><th>Do this</th></tr></thead>
+				<tbody>
+					<tr><td><code>Too many subrequests by single Worker invocation</code></td><td>Keep <code>sandboxLimits</code> in <code>site/astro.config.mjs</code>. The runner default is 10.</td></tr>
+					<tr><td>Deploy fails on <code>worker_loaders</code></td><td>Switch the account to Workers Paid.</td></tr>
+					<tr><td><code>EMDASH_ENCRYPTION_KEY is invalid</code> in logs</td><td>Set a key from the command above. The site still runs, but plugin secret settings are off.</td></tr>
+					<tr><td>Service auth fails with a bad audience</td><td>Set <code>EMDASH_SITE_URL</code> to the origin callers use. The site's DID is <code>did:web:</code> plus that host.</td></tr>
+					<tr><td>A second Worker or database appeared</td><td>Pin the IDs in a <code>wrangler.jsonc</code> environment, as in <a href="#domain">Your own domain</a>.</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+</Guide>
+
+<style>
+	.deploy-button img {
+		display: block;
+	}
+</style>

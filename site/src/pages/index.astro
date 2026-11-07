@@ -1,25 +1,133 @@
 ---
+import Diagram from "../components/Diagram.astro";
+import Legend from "../components/Legend.astro";
+import { journey, overview } from "../diagrams";
+import { deployButton, deployUrl } from "../deploy";
+import { guides } from "../guides";
 import Base from "../layouts/Base.astro";
+
+const features = [
+	{
+		tone: "you",
+		title: "Atmosphere sign-in",
+		body: "Sign in with your handle. The site asks only for the atproto scope, which proves who you are and nothing more.",
+	},
+	{
+		tone: "pds",
+		title: "Integrations are records",
+		body: "Each OAuth client metadata record in your PDS becomes its own OAuth client, with scope groups you tick one by one.",
+	},
+	{
+		tone: "sandbox",
+		title: "Sealed sessions",
+		body: "Tokens live in the plugin sandbox, sealed with AES-GCM, one session per user per integration. Refresh is serialized so parallel runs never race.",
+	},
+	{
+		tone: "wasm",
+		title: "WebAssembly modules",
+		body: "A wasm.module record points to a blob in your repo. It runs with no imports, no network and no tokens. It only plans XRPC calls.",
+	},
+	{
+		tone: "site",
+		title: "Service auth",
+		body: "Run modules from your terminal or another app. Your PDS signs a service-auth JWT, or proxies the call with atproto-proxy.",
+	},
+	{
+		tone: "cloud",
+		title: "Cloudflare or Node",
+		body: "One config builds for Workers with D1, R2 and Worker Loader isolates, or for Node with SQLite and a workerd sandbox.",
+	},
+] as const;
 ---
 
-<Base title="socialweb.computer" description="Sign in with Atmosphere, then grant this site the extra atproto sessions your integrations need.">
+<Base title="socialweb.computer" description="Run atproto integrations on your own EmDash site. Integrations are records in your PDS. Modules are sandboxed WebAssembly.">
+	<section class="band hero">
+		<div class="frame">
+			<p class="eyebrow">EmDash + atproto + WebAssembly</p>
+			<h1 class="intro__title">Integrations that live in your PDS</h1>
+			<p class="lede">
+				Sign in with your Atmosphere handle. Publish an OAuth client as a record in your own repo, connect it here with the scopes you choose, and run sandboxed WebAssembly that writes back to your PDS.
+			</p>
+			<div class="actions">
+				<a class="btn" href="/integrations">Try it now</a>
+				<a class="btn btn--ghost" href="/deploy">Deploy your own</a>
+				<a class="btn btn--ghost" href="/how-it-works">How it works</a>
+			</div>
+			<p class="hero__deploy">
+				<a href={deployUrl}><img src={deployButton} alt="Deploy to Cloudflare" width="166" height="32" /></a>
+				<span>One click forks the repo into your GitHub and deploys it to your Cloudflare account.</span>
+			</p>
+		</div>
+	</section>
+
 	<section class="band">
 		<div class="frame">
-			<p class="eyebrow">EmDash + atproto</p>
-			<h1 class="intro__title">Your integrations, from your PDS</h1>
-			<p class="lede">
-				Sign in with your Atmosphere handle. Each <code>oauth.clientMetadata</code> record in your repo becomes an OAuth client on this site. Each <code>wasm.module</code> record runs sandboxed with the session you grant it.
-			</p>
-			<p><a class="btn" href="/integrations">Open integrations</a></p>
+			<h2 class="section-title">The whole picture</h2>
+			<Legend />
+			<Diagram
+				code={overview}
+				label="You reach the site from a browser or a CLI. The site's plugin sandbox reads your records from your PDS, runs WebAssembly in its own isolate, and writes to your PDS with a sealed OAuth session."
+				caption="Your records define what the site may do. The plugin holds the tokens. The module only plans calls."
+			/>
+		</div>
+	</section>
+
+	<section class="band">
+		<div class="frame">
+			<h2 class="section-title">Five steps from handle to record</h2>
+			<Diagram code={journey} label="Sign in, publish records, connect, run a module, and records land in your repo." />
+		</div>
+	</section>
+
+	<section class="band">
+		<div class="frame">
+			<h2 class="section-title">What you get</h2>
+			<div class="grid">
+				{
+					features.map((feature) => (
+						<div class={`tile tone-${feature.tone}`}>
+							<h3>{feature.title}</h3>
+							<p>{feature.body}</p>
+						</div>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<section class="band">
+		<div class="frame">
+			<h2 class="section-title">Guides</h2>
+			<div class="grid">
+				{
+					guides.map((guide, index) => (
+						<a class={`tile tone-${["site", "you", "wasm", "cloud"][index]}`} href={guide.href}>
+							<h3>{guide.title}</h3>
+							<p>{guide.blurb}</p>
+						</a>
+					))
+				}
+			</div>
 		</div>
 	</section>
 </Base>
 
 <style>
-	.lede {
-		max-width: 44rem;
-		margin-block: 1rem 1.5rem;
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-lg);
+	.hero {
+		padding-block: 4rem 2rem;
+	}
+
+	.hero__deploy {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem;
+		margin-top: 1.25rem;
+		color: var(--color-muted);
+		font-size: var(--font-size-sm);
+	}
+
+	.hero__deploy img {
+		display: block;
 	}
 </style>

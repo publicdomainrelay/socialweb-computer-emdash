@@ -6,7 +6,25 @@
 	"scripts": {
 		"build": "pnpm -r --filter \"./plugins/*\" build",
 		"dev": "pnpm --filter site dev",
+		"deploy": "pnpm build && pnpm --filter site run deploy",
+		"deploy:fedfork": "CLOUDFLARE_ENV=fedfork EMDASH_SITE_URL=https://exec.fedfork.com pnpm run deploy",
 		"test": "pnpm -r test && node --test wasm/*/test.mjs"
+	},
+	"cloudflare": {
+		"bindings": {
+			"DB": {
+				"description": "D1 database for EmDash content, plugin storage, the token refresh lock and service-auth replay protection."
+			},
+			"MEDIA": {
+				"description": "R2 bucket for media uploads."
+			},
+			"LOADER": {
+				"description": "Worker Loader. Runs the sandboxed plugin and each WebAssembly module in its own isolate. Needs the **Workers Paid** plan."
+			},
+			"EMDASH_ENCRYPTION_KEY": {
+				"description": "Encrypts EmDash plugin secrets at rest. Generate one with `echo emdash_enc_v1_$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '=')` and keep a copy: losing it loses the secrets."
+			}
+		}
 	},
 	"devEngines": {
 		"runtime": {

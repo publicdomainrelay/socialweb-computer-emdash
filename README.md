@@ -2,12 +2,13 @@
 
 Users sign in to an EmDash site with Atmosphere using only the `atproto` scope. On `/integrations` they can grant the site more OAuth sessions. Each integration is defined by a `com.publicdomainrelay.temp.oauth.clientMetadata` record in their own PDS.
 
-Live on Cloudflare Workers: https://exec.fedfork.com/integrations
+Live on Cloudflare Workers: https://exec.fedfork.com. The site itself is the guide: [how it works](https://exec.fedfork.com/how-it-works), [use it](https://exec.fedfork.com/use), [write a module](https://exec.fedfork.com/modules) and [deploy your own](https://exec.fedfork.com/deploy).
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/publicdomainrelay/socialweb-computer-emdash)
 
 ## Run
 
 ```bash
-./scripts/emdash-fork.sh
 pnpm install
 pnpm build
 pnpm dev
@@ -125,26 +126,41 @@ curl -s --get http://127.0.0.1:8080/run \
 
 ## Deploy to Cloudflare Workers
 
-Needs:
-- a Workers Paid plan, for Worker Loader;
-- R2 turned on;
-- `~/.cloudflare_source` exporting `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+Needs the Workers Paid plan, for Worker Loader.
+
+- **Button.** The Deploy to Cloudflare button copies this repo into your GitHub. Cloudflare then creates D1, R2 and KV from `wrangler.jsonc`, asks for `EMDASH_ENCRYPTION_KEY`, and runs `pnpm run build` and `pnpm run deploy`.
+- **Terminal.** `pnpm run deploy` builds the plugin and the site, then runs `wrangler deploy`. Wrangler creates every D1, R2 and KV binding that has no ID.
+
+```bash
+pnpm install
+pnpm run deploy
+echo emdash_enc_v1_$(openssl rand 32 | base64 | tr '+/' '-_' | tr -d '=') | pnpm --filter site exec wrangler secret put EMDASH_ENCRYPTION_KEY
+```
+
+- `wrangler.jsonc` is at the repo root, where the button looks for it. `site/astro.config.mjs` points the adapter at it.
+- The top level has no resource IDs and no domain, so a deploy into any account gets its own resources.
+- This site's own deploy is `env.fedfork`. It pins the domain `exec.fedfork.com`, `EMDASH_SITE_URL` and the existing D1, R2 and KV IDs.
+- Deploy this site with `pnpm run deploy:fedfork`, not `pnpm run deploy`. The plain deploy uses the same Worker name and would rebind it to new resources.
 
 ```bash
 . ~/.cloudflare_source
-cd site
-pnpm exec wrangler d1 create socialweb-computer-emdash
-pnpm exec wrangler r2 bucket create socialweb-computer-emdash-media
-EMDASH_SITE_URL=https://exec.fedfork.com pnpm run deploy
-pnpm exec emdash secrets generate | pnpm exec wrangler secret put EMDASH_ENCRYPTION_KEY
-```
-
-- `wrangler d1 create` prints a `database_id`. Put it in `site/wrangler.jsonc`.
-- Set the host in two places, `routes` and `vars.EMDASH_SITE_URL`.
-
-```bash
+pnpm run deploy:fedfork
 SITE_URL=https://exec.fedfork.com pnpm exec node scripts/e2e.ts
 ```
+
+## EmDash fork packages
+
+- `pnpm install` takes the fork's packages from a GitHub release of this repo, `emdash-fork-<commit>`. The `emdash` submodule is only needed to change the fork.
+- `pnpm-workspace.yaml` overrides `emdash` and `@emdash-cms/*` with the release tarball URLs. The lockfile pins each tarball's integrity hash.
+- `blockExoticSubdeps` is off, because pnpm counts these URL overrides as exotic subdependencies.
+
+After changing the fork:
+
+```bash
+./scripts/release-emdash-fork.sh
+```
+
+The script packs the fork with `scripts/emdash-fork.sh`, uploads a release for the submodule's commit, points the overrides at it and reinstalls.
 
 ## Public origin through fedproxy
 
@@ -318,17 +334,23 @@ Legend: `●` ours, `◐` upstream code we patched, `○` third-party and untouc
 
 ```text
 socialweb-computer-emdash/                    ● github.com/publicdomainrelay/socialweb-computer-emdash
+├── wrangler.jsonc                            ● Worker, auto-provisioned D1, R2, KV, LOADER; env.fedfork
+├── .dev.vars.example                         ● secret the deploy button asks for
+├── package.json                              ● build, deploy, deploy:fedfork; binding descriptions
 ├── site/                                     ● Astro + EmDash site
 │   ├── astro.config.mjs                      ● Node or Cloudflare (EMDASH_TARGET), plugin, login, sandbox limits
-│   ├── wrangler.jsonc                        ● Worker, D1, R2, LOADER, exec.fedfork.com
 │   ├── seed/seed.json                        ● title, menu
 │   └── src/
 │       ├── worker.ts                         ● Cloudflare entry, exports PluginBridge
-│       ├── layouts/Base.astro                ●
+│       ├── layouts/Base.astro Guide.astro    ● shell, guide pages with contents and pager
+│       ├── components/                       ● Diagram (Pele), Legend, Code with copy
+│       ├── diagrams.ts                       ● every Mermaid diagram and its color classes
+│       ├── guides.ts deploy.ts               ● guide list, deploy button URL
 │       ├── styles/site.css                   ●
 │       ├── utils/integrations.ts             ● calls plugin routes
 │       └── pages/
-│           ├── index.astro                   ● landing page
+│           ├── index.astro                   ● overview
+│           ├── how-it-works.astro use.astro modules.astro deploy.astro  ● guides
 │           ├── integrations/index.astro      ● connect, run, rounds UI
 │           ├── integrations/[did]/[rkey]/oauth-client-metadata.json.ts  ● client metadata per record
 │           ├── .well-known/did.json.ts       ● did:web document with #emdash_integrations
@@ -353,7 +375,7 @@ socialweb-computer-emdash/                    ● github.com/publicdomainrelay/s
 ├── lexicons/com/publicdomainrelay/temp/      ● oauth.clientMetadata, wasm.module, wasm.run
 ├── records/                                  ● statusphere, vibescrobble, socialweb-computer; records/wasm/ module records
 ├── celld/                                    ● celld Worker using the fork runtime
-├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, emdash-fork.sh
+├── scripts/                                  ● e2e.ts, celld.sh, fedproxy.sh, publish-*.sh, emdash-fork.sh, release-emdash-fork.sh
 ├── docs/adrs/                                ● decisions
 └── emdash/ (submodule)                       ◐ github.com/publicdomainrelay/emdash @ wasm-blob-sandbox
     ├── proposals/sandboxed-wasm-modules.md   ● spec
@@ -378,6 +400,7 @@ external
 ├── @atcute/oauth-node-client, identity-resolver, identity, crypto, lexicons   ○
 ├── @scure/base, @noble/curves (tests only)      ○
 ├── astro, the rest of emdash                    ○
+├── pele                                         ○ Mermaid to SVG on the server
 ├── @astrojs/cloudflare, wrangler, unicode-segmentation, atproto-record   ○
 └── celld, rustfs, goat, fedproxy                ○ tooling
 ```

@@ -1,0 +1,31 @@
+---
+interface Props {
+	code: string;
+	title?: string;
+}
+
+const { code, title } = Astro.props;
+---
+
+<div class="code">
+	<div class="code__bar">
+		<span class="code__title">{title ?? "shell"}</span>
+		<button class="code__copy" type="button" data-copy>Copy</button>
+	</div>
+	<pre><code>{code.trim()}</code></pre>
+</div>
+
+<script>
+	for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+		button.addEventListener("click", async () => {
+			const text = button.closest(".code")?.querySelector("code")?.textContent ?? "";
+			try {
+				await navigator.clipboard.writeText(text);
+				button.textContent = "Copied";
+			} catch {
+				button.textContent = "Select and copy";
+			}
+			setTimeout(() => (button.textContent = "Copy"), 1600);
+		});
+	}
+</script>

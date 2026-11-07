@@ -1,0 +1,71 @@
+---
+import { guides } from "../guides";
+import Base from "./Base.astro";
+
+interface Props {
+	title: string;
+	description: string;
+	eyebrow: string;
+	toc: Array<{ id: string; label: string }>;
+}
+
+const { title, description, eyebrow, toc } = Astro.props;
+const index = guides.findIndex((guide) => guide.href === Astro.url.pathname.replace(/\/$/, ""));
+const previous = index > 0 ? guides[index - 1] : undefined;
+const next = index >= 0 && index < guides.length - 1 ? guides[index + 1] : undefined;
+---
+
+<Base title={title} description={description}>
+	<header class="band guide-intro">
+		<div class="frame">
+			<p class="eyebrow">{eyebrow}</p>
+			<h1 class="intro__title">{title}</h1>
+			<p class="lede">{description}</p>
+		</div>
+	</header>
+	<div class="frame guide">
+		<nav class="guide__toc" aria-label="On this page">
+			<p class="guide__toc-title">On this page</p>
+			<ol role="list">
+				{
+					toc.map((item) => (
+						<li>
+							<a href={`#${item.id}`}>{item.label}</a>
+						</li>
+					))
+				}
+			</ol>
+		</nav>
+		<article class="prose">
+			<slot />
+			<nav class="pager" aria-label="Guides">
+				{
+					previous ? (
+						<a class="pager__link" href={previous.href}>
+							<span>Previous</span>
+							{previous.title}
+						</a>
+					) : (
+						<a class="pager__link" href="/">
+							<span>Previous</span>
+							Overview
+						</a>
+					)
+				}
+				{
+					next ? (
+						<a class="pager__link pager__link--next" href={next.href}>
+							<span>Next</span>
+							{next.title}
+						</a>
+					) : (
+						<a class="pager__link pager__link--next" href="/integrations">
+							<span>Next</span>
+							Open integrations
+						</a>
+					)
+				}
+			</nav>
+		</article>
+	</div>
+</Base>

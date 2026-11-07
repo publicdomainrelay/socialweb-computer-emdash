@@ -1,0 +1,149 @@
+---
+import Code from "../components/Code.astro";
+import Diagram from "../components/Diagram.astro";
+import Legend from "../components/Legend.astro";
+import { connect, records, refresh, rounds, serviceAuth, trust } from "../diagrams";
+import Guide from "../layouts/Guide.astro";
+
+const toc = [
+	{ id: "pieces", label: "The pieces" },
+	{ id: "records", label: "Records define it" },
+	{ id: "connect", label: "Connecting" },
+	{ id: "trust", label: "Who holds what" },
+	{ id: "rounds", label: "Running a module" },
+	{ id: "service-auth", label: "Service auth" },
+	{ id: "refresh", label: "Parallel runs" },
+	{ id: "limits", label: "Limits" },
+	{ id: "fork", label: "The EmDash fork" },
+];
+
+const integrationRecord = `{
+  "$type": "com.publicdomainrelay.temp.oauth.clientMetadata",
+  "name": "Vibescrobble",
+  "clientMetadata": {
+    "client_id": "https://vibescrobble.example.com/oauth-client-metadata.json",
+    "redirect_uris": ["https://vibescrobble.example.com/oauth/callback"],
+    "scope": "atproto repo:com.vibescrobble.scrobble?action=create",
+    "dpop_bound_access_tokens": true
+  },
+  "scopeGroups": [
+    { "key": "scrobble", "label": "Post scrobbles", "scopes": ["repo:com.vibescrobble.scrobble?action=create"] }
+  ],
+  "createdAt": "2026-11-07T06:00:00.000Z"
+}`;
+---
+
+<Guide
+	title="How it works"
+	eyebrow="Explainer"
+	description="Your PDS holds the definitions. The plugin holds the tokens. WebAssembly only plans calls. Here is each step, with who talks to whom."
+	toc={toc}
+>
+	<section id="pieces">
+		<h2>The pieces</h2>
+		<p>Every diagram on this site uses the same colors.</p>
+		<Legend />
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>Piece</th><th>What it does</th></tr></thead>
+				<tbody>
+					<tr><td>EmDash site</td><td>Astro and EmDash. Serves <code>/integrations</code>, client metadata per record, a <code>did:web</code> document and <code>/xrpc/com.publicdomainrelay.temp.wasm.run</code>.</td></tr>
+					<tr><td><code>@publicdomainrelay/auth-atproto-subscriber</code></td><td>The login provider. Atmosphere OAuth with the <code>atproto</code> scope only.</td></tr>
+					<tr><td><code>atproto-integrations</code> plugin</td><td>A sandboxed EmDash plugin. It runs <code>@atcute/oauth-node-client</code>, seals sessions, verifies service auth and drives module rounds.</td></tr>
+					<tr><td>WebAssembly module</td><td>A blob in your repo with a JSON ABI. It gets JSON in and returns JSON out, and nothing else.</td></tr>
+					<tr><td>Your PDS</td><td>Holds the integration and module records, the module blobs, and the records the modules write.</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	<section id="records">
+		<h2>Records define it</h2>
+		<p>
+			Two record types describe an integration. An <code>oauth.clientMetadata</code> record is an OAuth client: its scopes and its scope groups. A <code>wasm.module</code> record names a WebAssembly blob, the client record it runs with, the actions it offers, and the NSIDs it may call.
+		</p>
+		<Diagram code={records} label="A wasm.module record points to its client metadata record by URI and CID, and to its blob by CID." />
+		<Code title="records/vibescrobble.json (trimmed)" code={integrationRecord} />
+		<p>
+			The site serves each record as its own client at <code>/integrations/&lt;did&gt;/&lt;rkey&gt;/oauth-client-metadata.json</code>. Its <code>client_id</code> and <code>redirect_uris</code> are rewritten to the site's origin, so the record's own URLs are placeholders.
+		</p>
+	</section>
+
+	<section id="connect">
+		<h2>Connecting</h2>
+		<p>
+			You sign in once with the <code>atproto</code> scope. Connecting an integration is a second OAuth flow, made by the plugin, for exactly the scope groups you ticked. The plugin asks only for your own DID, so another account cannot use your record's client to authorize itself.
+		</p>
+		<Diagram wide code={connect} label="Sequence: sign in, list integration records, then a PAR with PKCE and DPoP, approve, token exchange, and sealed storage." />
+		<p>Ticking more groups later asks for the extra scopes in a new flow. Disconnecting revokes the session and deletes it.</p>
+	</section>
+
+	<section id="trust">
+		<h2>Who holds what</h2>
+		<p>
+			The module never sees a token. It cannot open a socket. Every call it wants goes back to the plugin as a plan, and the plugin checks it against the module record's <code>calls</code> list before making it with your session.
+		</p>
+		<Diagram code={trust} label="The site holds its secrets. The plugin sandbox holds sealed tokens. The WebAssembly isolate holds only JSON, with no network and no tokens." />
+		<ul>
+			<li><strong>Blob integrity.</strong> The plugin hashes the blob with sha256 and compares it to the blob's CID before it runs.</li>
+			<li><strong>Isolation.</strong> On Cloudflare each run gets its own Worker Loader isolate with <code>globalOutbound: null</code>. On Node it runs in a workerd sandbox.</li>
+			<li><strong>Scopes.</strong> Even an allowed call can only do what your OAuth session's scopes permit.</li>
+		</ul>
+	</section>
+
+	<section id="rounds">
+		<h2>Running a module</h2>
+		<p>
+			A run is a loop of rounds. The plugin calls an entry with your input, the current time and your DID. The entry returns <code>calls</code> to make and the <code>next</code> entry to call with their results. When there is no <code>next</code>, its <code>result</code> is the answer.
+		</p>
+		<Diagram code={rounds} label="Flowchart: a run from the page or with a service-auth JWT is checked, the blob is verified, then the module and plugin alternate between planning calls and making them until there are none." />
+	</section>
+
+	<section id="service-auth">
+		<h2>Service auth</h2>
+		<p>
+			The site is <code>did:web:&lt;host&gt;</code>, with a service named <code>#emdash_integrations</code>. Any app that can talk to your PDS can run your modules. The site verifies the JWT with <code>@atcute/crypto</code> and checks <code>aud</code>, <code>lxm</code> and <code>exp</code>. Each <code>jti</code> works only once.
+		</p>
+		<Diagram wide code={serviceAuth} label="Sequence: path A, your PDS proxies the call with a fresh JWT; path B, you fetch a JWT with getServiceAuth and call the site. The plugin verifies and burns the jti." />
+		<p><a href="/use#cli">Try both paths from your terminal.</a></p>
+	</section>
+
+	<section id="refresh">
+		<h2>Parallel runs</h2>
+		<p>
+			atproto refresh tokens are single use. If two runs refreshed at once, one would lose the session. A lease in plugin storage makes the second run wait, then read the fresh tokens.
+		</p>
+		<Diagram wide code={refresh} label="Sequence: run A takes the lock and refreshes once; run B waits, then reads the fresh tokens without refreshing." />
+	</section>
+
+	<section id="limits">
+		<h2>Limits</h2>
+		<div class="table-scroll">
+			<table>
+				<thead><tr><th>Limit</th><th>Value</th></tr></thead>
+				<tbody>
+					<tr><td>Rounds per run</td><td>8</td></tr>
+					<tr><td>Calls per round</td><td>10</td></tr>
+					<tr><td>Calls per run</td><td>25</td></tr>
+					<tr><td>Callable NSIDs</td><td>The module record's <code>calls</code> list, when set</td></tr>
+					<tr><td>Plugin sandbox on Cloudflare</td><td><code>sandboxLimits: {"{"} cpuMs: 1000, subrequests: 200 {"}"}</code> in <code>site/astro.config.mjs</code></td></tr>
+					<tr><td>Plugin bundle</td><td>About 93 KB, under the 128 KB per-file cap</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	<section id="fork">
+		<h2>The EmDash fork</h2>
+		<p>
+			Upstream EmDash has no <code>wasm:execute</code> capability yet, so the site runs on <a href="https://github.com/publicdomainrelay/emdash/tree/wasm-blob-sandbox">publicdomainrelay/emdash, branch <code>wasm-blob-sandbox</code></a>. The spec is <a href="https://github.com/publicdomainrelay/emdash/blob/wasm-blob-sandbox/proposals/sandboxed-wasm-modules.md">proposals/sandboxed-wasm-modules.md</a>.
+		</p>
+		<ul>
+			<li>The <code>wasm:execute</code> capability and <code>ctx.wasm.run</code>, with a JSON ABI runner in core.</li>
+			<li>Runners for in-process, Node workerd, Miniflare, and Cloudflare Worker Loader isolates.</li>
+			<li>Plugin bundles resolve the <code>workerd</code>, <code>worker</code> and <code>browser</code> export conditions.</li>
+			<li>The Miniflare dev runner uses the production compatibility date.</li>
+			<li>A <code>sandboxLimits</code> option on <code>emdash()</code>. The Cloudflare default of 10 subrequests is too few for an OAuth connect.</li>
+		</ul>
+	</section>
+</Guide>

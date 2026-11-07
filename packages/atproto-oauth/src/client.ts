@@ -17,8 +17,7 @@ export function siteOrigin(ctx: PluginContext) {
 export const pluginRoute = (ctx: PluginContext, name: string) =>
 	`${siteOrigin(ctx)}/_emdash/api/plugins/${ctx.plugin.id}/${name}`;
 
-export const adminPage = (ctx: PluginContext, path: string) =>
-	`${siteOrigin(ctx)}/_emdash/admin/plugins/${ctx.plugin.id}${path}`;
+export const adminPath = (ctx: PluginContext, path: string) => `/_emdash/admin/plugins/${ctx.plugin.id}${path}`;
 
 export function clientConfig(ctx: PluginContext, integration: Integration) {
 	const redirectUri = pluginRoute(ctx, "oauth/callback");

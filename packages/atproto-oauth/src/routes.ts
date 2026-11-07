@@ -1,5 +1,5 @@
 import { pluginResponse, pluginRoute, type RouteEntry } from "emdash/plugin";
-import { adminPage, clientMetadata, type Integration } from "./client";
+import { adminPath, clientMetadata, type Integration } from "./client";
 import { CONNECT_PAGE } from "./connect";
 import { completeAuthorization } from "./oauth";
 import { setNotice } from "./store";
@@ -34,7 +34,7 @@ export function oauthRoutes(integration: Integration): Record<string, RouteEntry
 				} catch (error) {
 					await setNotice(ctx, error instanceof Error ? error.message : "Authorization failed");
 				}
-				return pluginResponse({ status: 303, headers: { location: adminPage(ctx, CONNECT_PAGE) } });
+				return pluginResponse({ status: 303, headers: { location: adminPath(ctx, CONNECT_PAGE) } });
 			},
 		}),
 	};

@@ -32,7 +32,7 @@ describe("statusphere", () => {
 		expect(texts(response)).toContain(`${ACCOUNT.issuer}/oauth/authorize?`);
 		expect(par.get("scope")).toBe("atproto repo:xyz.statusphere.status");
 		expect(callback.status).toBe(303);
-		expect(callback.headers.get("location")).toBe(`${SITE_URL}/_emdash/admin/plugins/statusphere/connect`);
+		expect(callback.headers.get("location")).toBe("/_emdash/admin/plugins/statusphere/connect");
 		expect(JSON.stringify(await host.inspect.settings.raw("session"))).not.toContain("access-token");
 
 		const status = await host.admin.loadPage("/status");

@@ -1,5 +1,5 @@
 export { type Agent, connectedAgent, MissingScopeError, type XrpcCall, XrpcError } from "./agent";
-export { adminPage, clientConfig, clientMetadata, type Integration } from "./client";
+export { adminPath, clientConfig, clientMetadata, type Integration } from "./client";
 export { CONNECT_PAGE, handleConnect } from "./connect";
 export { type Interaction, optionalText, parseInteraction, text, textList } from "./interaction";
 export { beginAuthorization, completeAuthorization, disconnect, refreshSession } from "./oauth";

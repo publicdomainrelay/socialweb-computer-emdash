@@ -1,6 +1,5 @@
 packages:
   - site
-  - packages/*
   - plugins/*
 
 allowBuilds:
@@ -13,6 +12,7 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - emdash
   - "@emdash-cms/*"
+  - "@publicdomainrelay/*"
 blockExoticSubdeps: true
 
 overrides:

@@ -1,6 +1,6 @@
 # 0014. auth-atproto-subscriber login provider package
 
-Status: accepted
+Status: accepted. The package now lives at https://github.com/publicdomainrelay/auth-atproto-subscriber and the site installs it from npm (ADR 0020).
 
 ## Context
 

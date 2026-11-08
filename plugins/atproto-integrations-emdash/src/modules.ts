@@ -47,6 +47,11 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 const text = (value: unknown) => (typeof value === "string" ? value : undefined);
 
+// Host pseudo-calls: run by the host, never sent to a PDS, and only when the module record lists them.
+// A Worker cannot open webrtc or iroh connections, so those are refused here (a node host runs them).
+const CONNECT_CALLS = ["com.fedfork.exec.webrtc.connect", "com.fedfork.exec.iroh.connect"];
+const HOST_CALLS = [ATTEST_NSID, ...CONNECT_CALLS];
+
 const NSID = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z0-9-]+){2,}$/;
 const ENTRY = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
 // A service the PDS proxies the call to (the atproto-proxy header): did#service_id.
@@ -143,7 +148,7 @@ function parseStep(output: unknown, allowed: string[] | undefined): ModuleStep {
 	if (output.next !== undefined && output.next !== null && (!next || !ENTRY.test(next))) throw new Error("Module next must be an export name");
 	const calls = output.calls.map((call) => {
 		if (!isObject(call) || typeof call.nsid !== "string" || !NSID.test(call.nsid)) throw new Error("Module call needs an NSID");
-		if ((allowed || call.nsid === ATTEST_NSID) && !allowed?.includes(call.nsid)) throw new Error(`Module record does not allow ${call.nsid}`);
+		if ((allowed || HOST_CALLS.includes(call.nsid)) && !allowed?.includes(call.nsid)) throw new Error(`Module record does not allow ${call.nsid}`);
 		if (call.proxy !== undefined && (typeof call.proxy !== "string" || !PROXY.test(call.proxy))) throw new Error("Module call proxy must be did#service");
 		if (call.service !== undefined && (typeof call.service !== "string" || !(SERVICE.test(call.service) || SERVICE_DID.test(call.service)))) {
 			throw new Error("Module call service must be an https origin or a DID");
@@ -185,6 +190,7 @@ async function parsed(nsid: string, response: Response) {
 
 async function perform(ctx: PluginContext, agent: SessionAgent, call: XrpcCallPlan): Promise<CallResult> {
 	try {
+		if (CONNECT_CALLS.includes(call.nsid)) throw new Error(`${call.nsid} needs a host that can open webrtc/iroh connections; this EmDash Worker cannot`);
 		const output =
 			call.nsid === ATTEST_NSID
 				? await attest(ctx, agent.userId, agent.account, call.input)

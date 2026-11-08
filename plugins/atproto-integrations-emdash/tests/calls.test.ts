@@ -166,6 +166,20 @@ describe("module call routes", () => {
 		expect(ran.error?.message).toContain(message);
 	});
 
+	it("refuses webrtc and iroh connects without sending them anywhere", async () => {
+		const calls = [
+			{ nsid: "com.fedfork.exec.webrtc.connect", input: { receipt: {}, tag: "ssh" } },
+			{ nsid: "com.fedfork.exec.iroh.connect", input: { ticket: "ticket" } },
+		];
+		const before = host.http.requests().length;
+		const ran = await run(calls, [...calls.map((item) => item.nsid)]);
+		expect(ran.data.rounds[0].calls).toEqual(
+			calls.map(({ nsid }) => ({ nsid, ok: false, error: `${nsid} needs a host that can open webrtc/iroh connections; this EmDash Worker cannot` })),
+		);
+		expect(host.http.requests().slice(before).some((item) => item.url.includes("connect"))).toBe(false);
+		expect((await run([calls[1]], null)).error?.message).toContain("Module record does not allow com.fedfork.exec.iroh.connect");
+	});
+
 	it.each([
 		["module records that do not list it", [LIST]],
 		["module records without a calls list", null],

@@ -1,9 +1,10 @@
 // Run a local wasm module through the plugin's runModule (proxy, service, attest) with an
 // app-password session instead of a site and OAuth:
 //   ATPROTO_HANDLE=... ATPROTO_PASSWORD=... node scripts/run-module.ts module.wasm module.json entry '{"json":"input"}'
-// The attestation key is sealed in RUN_MODULE_STATE (default .run-module-state.json) next to
-// its sealing key, so keep that file private; reuse it so bind_key and later signatures share a key.
-import { readFile, writeFile } from "node:fs/promises";
+// RUN_MODULE_STATE (default .run-module-state.json, mode 0600) holds the saved session, the attestation key
+// (sealed, next to its sealing key) and the managed_records ledger: keep it private and reuse it, so runs
+// refresh one session and bind_key and later signatures share a key.
+import { chmod, readFile, writeFile } from "node:fs/promises";
 import { registerHooks } from "node:module";
 
 registerHooks({
@@ -28,7 +29,14 @@ if (!wasmPath || !manifestPath || !entry) throw new Error("usage: node scripts/r
 
 const STATE = env("RUN_MODULE_STATE", ".run-module-state.json");
 type Store = Record<string, unknown>;
-const state: { settings: Store; attest_keys: Store; managed_records: Store } = {
+interface Session {
+	identifier: string;
+	did: string;
+	pds: string;
+	accessJwt: string;
+	refreshJwt: string;
+}
+const state: { settings: Store; attest_keys: Store; managed_records: Store; session?: Session } = {
 	settings: {},
 	attest_keys: {},
 	managed_records: {},
@@ -36,7 +44,10 @@ const state: { settings: Store; attest_keys: Store; managed_records: Store } = {
 		.then((text) => JSON.parse(text))
 		.catch(() => ({}))),
 };
-const save = () => writeFile(STATE, JSON.stringify(state, null, "\t"), { mode: 0o600 });
+const save = async () => {
+	await writeFile(STATE, JSON.stringify(state, null, "\t"), { mode: 0o600 });
+	await chmod(STATE, 0o600);
+};
 const kv = (store: Store) => ({
 	get: async (key: string) => store[key] ?? null,
 	compareAndSet: async (key: string, expected: string | null, value: unknown) => {
@@ -55,15 +66,38 @@ const kv = (store: Store) => ({
 	},
 });
 
-const pdsEntry = env("ATPROTO_PDS", "https://bsky.social");
-const created = await fetch(`${pdsEntry}/xrpc/com.atproto.server.createSession`, {
-	method: "POST",
-	headers: { "content-type": "application/json" },
-	body: JSON.stringify({ identifier: env("ATPROTO_HANDLE"), password: env("ATPROTO_PASSWORD") }),
-});
-const session = (await created.json()) as { did: string; accessJwt: string; didDoc?: { service?: Array<{ id: string; serviceEndpoint: string }> } };
-if (!created.ok) throw new Error(`createSession failed: ${JSON.stringify(session)}`);
-const pds = session.didDoc?.service?.find((service) => service.id === "#atproto_pds")?.serviceEndpoint ?? pdsEntry;
+// App-password logins are rate limited (10 a day), so the session is saved in STATE and refreshed on later runs;
+// createSession only when there is none or the refresh fails. Tokens never reach stdout or errors.
+type Tokens = { did: string; accessJwt: string; refreshJwt: string; didDoc?: { service?: Array<{ id: string; serviceEndpoint: string }> } };
+const identifier = env("ATPROTO_HANDLE");
+async function login(): Promise<Session> {
+	const saved = state.session?.identifier === identifier ? state.session : undefined;
+	if (saved) {
+		const refreshed = await fetch(`${saved.pds}/xrpc/com.atproto.server.refreshSession`, {
+			method: "POST",
+			headers: { authorization: `Bearer ${saved.refreshJwt}` },
+		});
+		if (refreshed.ok) {
+			const { accessJwt, refreshJwt } = (await refreshed.json()) as Tokens;
+			return { ...saved, accessJwt, refreshJwt };
+		}
+		console.error(`refreshSession failed with ${refreshed.status}; logging in again`);
+	}
+	const pdsEntry = env("ATPROTO_PDS", "https://bsky.social");
+	const created = await fetch(`${pdsEntry}/xrpc/com.atproto.server.createSession`, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ identifier, password: env("ATPROTO_PASSWORD") }),
+	});
+	const body = (await created.json().catch(() => ({}))) as Tokens & { error?: string; message?: string };
+	if (!created.ok) throw new Error(`createSession failed with ${body.error ?? created.status}${body.message ? `: ${body.message}` : ""}`);
+	const pds = body.didDoc?.service?.find((service) => service.id === "#atproto_pds")?.serviceEndpoint ?? pdsEntry;
+	return { identifier, did: body.did, pds, accessJwt: body.accessJwt, refreshJwt: body.refreshJwt };
+}
+const session = await login();
+state.session = session;
+await save();
+const pds = session.pds;
 
 const agent = {
 	userId: "local",

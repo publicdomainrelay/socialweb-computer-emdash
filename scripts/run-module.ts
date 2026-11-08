@@ -28,9 +28,14 @@ if (!wasmPath || !manifestPath || !entry) throw new Error("usage: node scripts/r
 
 const STATE = env("RUN_MODULE_STATE", ".run-module-state.json");
 type Store = Record<string, unknown>;
-const state: { settings: Store; attest_keys: Store } = await readFile(STATE, "utf8")
-	.then((text) => JSON.parse(text))
-	.catch(() => ({ settings: {}, attest_keys: {} }));
+const state: { settings: Store; attest_keys: Store; managed_records: Store } = {
+	settings: {},
+	attest_keys: {},
+	managed_records: {},
+	...(await readFile(STATE, "utf8")
+		.then((text) => JSON.parse(text))
+		.catch(() => ({}))),
+};
 const save = () => writeFile(STATE, JSON.stringify(state, null, "\t"), { mode: 0o600 });
 const kv = (store: Store) => ({
 	get: async (key: string) => store[key] ?? null,
@@ -39,6 +44,14 @@ const kv = (store: Store) => ({
 		store[key] = value;
 		await save();
 		return { applied: true };
+	},
+	put: async (key: string, value: unknown) => {
+		store[key] = value;
+		await save();
+	},
+	delete: async (key: string) => {
+		delete store[key];
+		await save();
 	},
 });
 
@@ -89,7 +102,7 @@ const ctx = {
 	plugin: { id: "atproto-integrations" },
 	log: console,
 	settings: kv(state.settings),
-	storage: { attest_keys: kv(state.attest_keys) },
+	storage: { attest_keys: kv(state.attest_keys), managed_records: kv(state.managed_records) },
 	// The module record and blob come from the local files; everything else is the network.
 	http: {
 		fetch: async (url: string, init?: RequestInit) => {

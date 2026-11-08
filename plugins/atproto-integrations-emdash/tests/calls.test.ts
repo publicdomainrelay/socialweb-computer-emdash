@@ -2,7 +2,7 @@ import { createPluginRuntimeTestHost, type PluginRuntimeTestHost } from "@emdash
 import { base32nopad } from "@scure/base";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ATTEST_NSID, signInline, verifyInline } from "../src/attest";
-import { MODULE_COLLECTION } from "../src/modules";
+import { MODULE_COLLECTION, runModule } from "../src/modules";
 import { ALICE, call, connect, didDocument, json, OPERATOR, queueIdentity, SITE_URL, useEncryptionKey } from "./network";
 
 // A module whose `echo` export returns its input: the test's `calls` come back as the module's plan.
@@ -17,7 +17,7 @@ const blobCid = `b${base32nopad.encode(Uint8Array.from([0x01, 0x55, 0x12, 0x20, 
 const SUBMIT = "com.publicdomainrelay.temp.market.submitRfp";
 const LIST = "com.atproto.repo.listRecords";
 const BIDDER = "https://bidder.example";
-const echoModule = (calls: string[] | null) => ({
+const echoModule = (calls: string[] | null, anyRecords?: string[]) => ({
 	$type: MODULE_COLLECTION,
 	abi: "emdash-wasm-json-v1",
 	name: "Echo",
@@ -25,6 +25,7 @@ const echoModule = (calls: string[] | null) => ({
 	session: { uri: `at://${ALICE.did}/com.fedfork.exec.oauth.clientMetadata/statusphere`, cid: "bafy" },
 	actions: [{ entry: "echo", label: "Echo", fields: [] }],
 	...(calls && { calls }),
+	...(anyRecords && { anyRecords }),
 });
 
 // The signed RFP the live bidders accepted (at://did:plc:lpfuqerea3deuoyrn7ojser4/com.publicdomainrelay.temp.market.rfp/3mzof3sr6ez2e).
@@ -85,11 +86,11 @@ describe("module call routes", () => {
 
 	afterEach(() => host.dispose());
 
-	async function run(calls: unknown[], allowed: string[] | null = [LIST, SUBMIT, ATTEST_NSID]) {
+	async function run(calls: unknown[], allowed: string[] | null = [LIST, SUBMIT, ATTEST_NSID], anyRecords?: string[]) {
 		await queueIdentity(host);
 		await host.http.respond(
 			`${ALICE.pds}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(ALICE.did)}&collection=${MODULE_COLLECTION}&rkey=echo`,
-			json({ uri: `at://${ALICE.did}/${MODULE_COLLECTION}/echo`, cid: "bafy", value: echoModule(allowed) }),
+			json({ uri: `at://${ALICE.did}/${MODULE_COLLECTION}/echo`, cid: "bafy", value: echoModule(allowed, anyRecords) }),
 		);
 		await host.http.respond(
 			`${ALICE.pds}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(ALICE.did)}&cid=${blobCid}`,
@@ -187,5 +188,84 @@ describe("module call routes", () => {
 		const ran = await run([{ nsid: ATTEST_NSID, input: { repository: ALICE.did } }], allowed);
 		expect(ran.success).toBe(false);
 		expect(ran.error?.message).toContain(`Module record does not allow ${ATTEST_NSID}`);
+	});
+});
+
+describe("record lockdown", () => {
+	let host: PluginRuntimeTestHost;
+	let user: Awaited<ReturnType<PluginRuntimeTestHost["fixtures"]["user"]>>;
+	const STATUS = "xyz.statusphere.status";
+	const WRITES = ["com.atproto.repo.createRecord", "com.atproto.repo.deleteRecord", "com.atproto.repo.applyWrites"];
+	const del = (rkey: string) => ({ nsid: "com.atproto.repo.deleteRecord", input: { repo: ALICE.did, collection: STATUS, rkey } });
+
+	beforeEach(async () => {
+		useEncryptionKey();
+		host = await createPluginRuntimeTestHost({ site: { url: SITE_URL } });
+		user = await host.fixtures.user({ email: "a@example.com", role: "subscriber" });
+		await connect(host, user, "statusphere", []);
+	});
+
+	afterEach(() => host.dispose());
+
+	async function run(calls: unknown[], anyRecords?: string[]) {
+		await queueIdentity(host);
+		await host.http.respond(
+			`${ALICE.pds}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(ALICE.did)}&collection=${MODULE_COLLECTION}&rkey=echo`,
+			json({ uri: `at://${ALICE.did}/${MODULE_COLLECTION}/echo`, cid: "bafy", value: echoModule(WRITES, anyRecords) }),
+		);
+		await host.http.respond(
+			`${ALICE.pds}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(ALICE.did)}&cid=${blobCid}`,
+			new Response(ECHO_WASM, { headers: { "content-type": "application/wasm" } }),
+		);
+		const ran = await call(host, user, "run", { did: ALICE.did, rkey: "echo", entry: "echo", input: { calls } });
+		return ran.data.rounds[0].calls as Array<{ ok: boolean; error?: string }>;
+	}
+
+	const deletes = () => host.http.requests().filter((item) => item.url.endsWith("com.atproto.repo.deleteRecord")).length;
+
+	it("lets a module delete only records it created", async () => {
+		const refused = await run([
+			del("3other"),
+			{ nsid: "com.atproto.repo.applyWrites", input: { repo: ALICE.did, writes: [{ $type: "com.atproto.repo.applyWrites#delete", collection: STATUS, rkey: "3other" }] } },
+		]);
+		expect(refused.map((result) => result.ok)).toEqual([false, false]);
+		expect(refused[0].error).toContain(`at://${ALICE.did}/${STATUS}/3other was not created by this module`);
+		expect(deletes()).toBe(0);
+
+		await host.http.respond(`${ALICE.pds}/xrpc/com.atproto.repo.createRecord`, json({ uri: `at://${ALICE.did}/${STATUS}/3mine`, cid: "bafy" }));
+		await run([{ nsid: "com.atproto.repo.createRecord", input: { repo: ALICE.did, collection: STATUS, record: { $type: STATUS } } }]);
+		await host.http.respond(`${ALICE.pds}/xrpc/com.atproto.repo.deleteRecord`, json({}));
+		expect((await run([del("3mine")]))[0].ok).toBe(true);
+		expect((await run([del("3mine")]))[0].ok).toBe(false);
+		expect(deletes()).toBe(1);
+	});
+
+	it("lets a module delete any record in its anyRecords collections", async () => {
+		await host.http.respond(`${ALICE.pds}/xrpc/com.atproto.repo.deleteRecord`, json({}));
+		expect((await run([del("3other")], [STATUS]))[0].ok).toBe(true);
+		expect(deletes()).toBe(1);
+	});
+});
+
+describe("runModule input", () => {
+	it("names the signed-in account as did, not the integration publisher", async () => {
+		const files: Record<string, unknown> = {
+			[`https://plc.directory/${encodeURIComponent(OPERATOR.did)}`]: didDocument([], OPERATOR),
+			[`${OPERATOR.pds}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(OPERATOR.did)}&collection=${MODULE_COLLECTION}&rkey=echo`]: {
+				value: { ...echoModule(null), session: { uri: `at://${OPERATOR.did}/com.fedfork.exec.oauth.clientMetadata/statusphere` } },
+			},
+		};
+		const seen: unknown[] = [];
+		const ctx = {
+			http: {
+				fetch: async (url: string) =>
+					url.includes("com.atproto.sync.getBlob") ? new Response(ECHO_WASM) : url in files ? json(files[url]) : new Response("not found", { status: 404 }),
+			},
+			wasm: { run: async ({ input }: { input: { did: string } }) => (seen.push(input.did), { calls: [] }) },
+			storage: { managed_records: {} },
+		};
+		const agent = { userId: "u1", account: ALICE.did };
+		await runModule(ctx as never, async () => agent as never, { did: OPERATOR.did, rkey: "echo" }, "echo", {});
+		expect(seen).toEqual([ALICE.did]);
 	});
 });

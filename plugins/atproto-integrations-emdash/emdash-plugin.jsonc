@@ -16,7 +16,8 @@
 		"sessions": { "indexes": ["userId", "did", "updatedAt"] },
 		"replays": { "indexes": ["exp"] },
 		"locks": { "indexes": [] },
-		"attest_keys": { "indexes": [] }
+		"attest_keys": { "indexes": [] },
+		"managed_records": { "indexes": [] }
 	},
 	"admin": {
 		"settingsSchema": {

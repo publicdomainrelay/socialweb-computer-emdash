@@ -32,6 +32,7 @@ interface WasmModuleRecord {
 	source?: string;
 	actions: ModuleAction[];
 	calls?: string[];
+	anyRecords?: string[];
 }
 
 interface XrpcCallPlan {
@@ -84,6 +85,8 @@ function parseActions(value: unknown): ModuleAction[] {
 	});
 }
 
+const nsids = (value: unknown) => (Array.isArray(value) ? value.filter((nsid): nsid is string => typeof nsid === "string" && NSID.test(nsid)) : undefined);
+
 export function parseModuleRecord(value: unknown): WasmModuleRecord {
 	if (!isObject(value) || typeof value.name !== "string") throw new Error("Not a wasm module record");
 	if (value.abi !== MODULE_ABI) throw new Error(`Unsupported module ABI ${String(value.abi)}`);
@@ -97,7 +100,8 @@ export function parseModuleRecord(value: unknown): WasmModuleRecord {
 		session: parseSessionRef(value.session),
 		source: isObject(value.source) ? text(value.source.uri) : undefined,
 		actions: parseActions(value.actions),
-		calls: Array.isArray(value.calls) ? value.calls.filter((nsid): nsid is string => typeof nsid === "string" && NSID.test(nsid)) : undefined,
+		calls: nsids(value.calls),
+		anyRecords: nsids(value.anyRecords),
 	};
 }
 
@@ -203,6 +207,56 @@ async function perform(ctx: PluginContext, agent: SessionAgent, call: XrpcCallPl
 	}
 }
 
+// OAuth repo scopes stop at the collection, so the host narrows writes to rkeys: outside the module's anyRecords
+// collections it may update or delete only records this host saw it create (atlibs docs/LIMITS.md). The ledger,
+// managed_records, is keyed per user and integration session so one user's integrations do not share rkeys.
+const CREATE = "com.atproto.repo.createRecord";
+const PUT = "com.atproto.repo.putRecord";
+const DELETE = "com.atproto.repo.deleteRecord";
+const APPLY = "com.atproto.repo.applyWrites";
+
+interface RecordWrite {
+	action: string;
+	collection: unknown;
+	uri?: string;
+}
+
+function writesOf({ nsid, input }: XrpcCallPlan): RecordWrite[] {
+	const body = isObject(input) ? input : {};
+	const at = (collection: unknown, rkey: unknown) => (rkey === undefined ? undefined : `at://${String(body.repo)}/${String(collection)}/${String(rkey)}`);
+	if (nsid === CREATE) return [{ action: "create", collection: body.collection }];
+	if (nsid === PUT) return [{ action: "update", collection: body.collection, uri: at(body.collection, body.rkey) }];
+	if (nsid === DELETE) return [{ action: "delete", collection: body.collection, uri: at(body.collection, body.rkey) }];
+	if (nsid === APPLY) {
+		return (Array.isArray(body.writes) ? body.writes : []).map((write) => {
+			const w = isObject(write) ? write : {};
+			return { action: String(w.$type).split("#")[1], collection: w.collection, uri: at(w.collection, w.rkey) };
+		});
+	}
+	return [];
+}
+
+type Ledger = { key: (uri: string) => string; store: PluginContext["storage"][string] };
+
+async function refusal(ledger: Ledger, anyRecords: string[] | undefined, call: XrpcCallPlan) {
+	for (const { action, collection, uri } of writesOf(call)) {
+		if (action === "create" || anyRecords?.includes(String(collection))) continue;
+		if (!uri || !(await ledger.store.get(ledger.key(uri)))) {
+			return `${call.nsid} refused: ${uri ?? String(collection)} was not created by this module (list ${String(collection)} in module.json anyRecords to allow)`;
+		}
+	}
+}
+
+async function remember(ledger: Ledger, call: XrpcCallPlan, output: unknown) {
+	const writes = writesOf(call);
+	for (const [i, { action, uri }] of writes.entries()) {
+		const result = call.nsid === APPLY && isObject(output) && Array.isArray(output.results) ? output.results[i] : output;
+		const created = isObject(result) ? result.uri : undefined;
+		if (action === "create" && typeof created === "string") await ledger.store.put(ledger.key(created), { createdAt: new Date().toISOString() });
+		if (action === "delete" && uri) await ledger.store.delete(ledger.key(uri));
+	}
+}
+
 type AgentFor = (session: IntegrationRef) => Promise<SessionAgent | undefined>;
 
 export async function runModule(
@@ -228,7 +282,11 @@ export async function runModule(
 	const blobResponse = await http.fetch(xrpcUrl(identity.pds, "com.atproto.sync.getBlob", { did: ref.did, cid: module.blobCid }));
 	if (!blobResponse.ok) throw new Error("Module blob not found");
 	const bytes = new Uint8Array(await blobResponse.arrayBuffer());
-	const base = { ...input, did: module.session.did };
+	const base = { ...input, did: agent.account };
+	const ledger: Ledger = {
+		key: (uri) => `${agent.userId} ${module.session.did}/${module.session.rkey} ${uri}`,
+		store: ctx.storage.managed_records,
+	};
 	const rounds: Array<{ entry: string; calls: CallResult[] }> = [];
 	let current = entry;
 	let carried: { state?: unknown; results?: CallResult[] } = {};
@@ -240,7 +298,16 @@ export async function runModule(
 		total += step.calls.length;
 		if (total > MAX_CALLS) throw new Error(`Module exceeded ${MAX_CALLS} calls`);
 		const results: CallResult[] = [];
-		for (const call of step.calls) results.push(await perform(ctx, agent, call));
+		for (const call of step.calls) {
+			const refused = await refusal(ledger, module.anyRecords, call);
+			if (refused) {
+				results.push({ nsid: call.nsid, ok: false, error: refused });
+				continue;
+			}
+			const result = await perform(ctx, agent, call);
+			if (result.ok) await remember(ledger, call, result.output);
+			results.push(result);
+		}
 		rounds.push({ entry: current, calls: results });
 		if (!step.next) return { module: module.name, entry, rounds, result: step.result ?? null };
 		current = step.next;

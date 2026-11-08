@@ -163,17 +163,18 @@ export async function sessionAgent(ctx: PluginContext, userId: string, ref: Inte
 		if (!response.ok) throw new Error(`${nsid} failed with ${body.error ?? response.status}${body.message ? `: ${body.message}` : ""}`);
 		return body;
 	};
-	const call = <T>(nsid: string, init: { params?: Record<string, string>; input?: unknown } = {}) =>
+	const call = <T>(nsid: string, init: { params?: Record<string, string>; input?: unknown; headers?: Record<string, string> } = {}) =>
 		send<T>(
 			nsid,
 			`/xrpc/${nsid}${init.params ? `?${new URLSearchParams(init.params)}` : ""}`,
 			init.input === undefined
-				? { method: "GET" }
-				: { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(init.input) },
+				? { method: "GET", headers: init.headers }
+				: { method: "POST", headers: { ...init.headers, "content-type": "application/json" }, body: JSON.stringify(init.input) },
 		);
 	const upload = <T>(nsid: string, body: Uint8Array<ArrayBuffer>, contentType: string) =>
 		send<T>(nsid, `/xrpc/${nsid}`, { method: "POST", headers: { "content-type": contentType }, body });
 	return {
+		userId,
 		account,
 		scope: async () => (await session.getTokenInfo(false)).scope,
 		call,

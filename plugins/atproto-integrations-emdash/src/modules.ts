@@ -1,7 +1,8 @@
 import { base32nopad, hex } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
+import { ATTEST_NSID, attest } from "./attest";
 import type { SessionAgent } from "./flow";
-import { requireHttp, xrpcUrl } from "./http";
+import { type Http, requireHttp, xrpcUrl } from "./http";
 import { resolveActor } from "./identity";
 import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
@@ -37,6 +38,8 @@ interface XrpcCallPlan {
 	nsid: string;
 	params?: Record<string, string>;
 	input?: unknown;
+	proxy?: string;
+	service?: string;
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -46,6 +49,10 @@ const text = (value: unknown) => (typeof value === "string" ? value : undefined)
 
 const NSID = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z0-9-]+){2,}$/;
 const ENTRY = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+// A service the PDS proxies the call to (the atproto-proxy header): did#service_id.
+const PROXY = /^did:[a-z]+:[^#\s]+#[A-Za-z0-9_-]+$/;
+// A service called directly, with a service-auth token (aud did:web:<host>, lxm nsid) the host mints: an https origin.
+const SERVICE = /^https:\/\/[A-Za-z0-9.-]+(:\d+)?$/;
 
 function parseSessionRef(value: unknown): IntegrationRef {
 	const uri = isObject(value) ? text(value.uri) : undefined;
@@ -134,18 +141,45 @@ function parseStep(output: unknown, allowed: string[] | undefined): ModuleStep {
 	if (output.next !== undefined && output.next !== null && (!next || !ENTRY.test(next))) throw new Error("Module next must be an export name");
 	const calls = output.calls.map((call) => {
 		if (!isObject(call) || typeof call.nsid !== "string" || !NSID.test(call.nsid)) throw new Error("Module call needs an NSID");
-		if (allowed && !allowed.includes(call.nsid)) throw new Error(`Module record does not allow ${call.nsid}`);
+		if ((allowed || call.nsid === ATTEST_NSID) && !allowed?.includes(call.nsid)) throw new Error(`Module record does not allow ${call.nsid}`);
+		if (call.proxy !== undefined && (typeof call.proxy !== "string" || !PROXY.test(call.proxy))) throw new Error("Module call proxy must be did#service");
+		if (call.service !== undefined && (typeof call.service !== "string" || !SERVICE.test(call.service))) throw new Error("Module call service must be an https origin");
+		if (call.proxy !== undefined && call.service !== undefined) throw new Error("Module call takes proxy or service, not both");
 		const params = isObject(call.params)
 			? Object.fromEntries(Object.entries(call.params).map(([key, value]) => [key, String(value)]))
 			: undefined;
-		return { nsid: call.nsid, params, input: call.input };
+		return { nsid: call.nsid, params, input: call.input, proxy: call.proxy, service: call.service };
 	});
 	return { calls, next, state: output.state, result: output.result };
 }
 
-async function perform(agent: SessionAgent, call: XrpcCallPlan): Promise<CallResult> {
+// Direct call to a service that serves no did:web document: a service-auth token from the user's PDS, never seen by wasm.
+async function callService(http: Http, agent: SessionAgent, call: XrpcCallPlan & { service: string }) {
+	const { token } = await agent.call<{ token: string }>("com.atproto.server.getServiceAuth", {
+		params: { aud: `did:web:${new URL(call.service).host}`, lxm: call.nsid },
+	});
+	const url = `${call.service}/xrpc/${call.nsid}${call.params ? `?${new URLSearchParams(call.params)}` : ""}`;
+	const authorization = `Bearer ${token}`;
+	const response = await http.fetch(
+		url,
+		call.input === undefined
+			? { method: "GET", headers: { authorization } }
+			: { method: "POST", headers: { authorization, "content-type": "application/json" }, body: JSON.stringify(call.input) },
+	);
+	const body = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+	if (!response.ok) throw new Error(`${call.nsid} failed with ${body.error ?? response.status}${body.message ? `: ${body.message}` : ""}`);
+	return body;
+}
+
+async function perform(ctx: PluginContext, agent: SessionAgent, call: XrpcCallPlan): Promise<CallResult> {
 	try {
-		return { nsid: call.nsid, ok: true, output: await agent.call(call.nsid, { params: call.params, input: call.input }) };
+		const output =
+			call.nsid === ATTEST_NSID
+				? await attest(ctx, agent.userId, agent.account, call.input)
+				: call.service
+					? await callService(requireHttp(ctx), agent, { ...call, service: call.service })
+					: await agent.call(call.nsid, { params: call.params, input: call.input, headers: call.proxy ? { "atproto-proxy": call.proxy } : undefined });
+		return { nsid: call.nsid, ok: true, output };
 	} catch (error) {
 		return { nsid: call.nsid, ok: false, error: error instanceof Error ? error.message : String(error) };
 	}
@@ -188,7 +222,7 @@ export async function runModule(
 		total += step.calls.length;
 		if (total > MAX_CALLS) throw new Error(`Module exceeded ${MAX_CALLS} calls`);
 		const results: CallResult[] = [];
-		for (const call of step.calls) results.push(await perform(agent, call));
+		for (const call of step.calls) results.push(await perform(ctx, agent, call));
 		rounds.push({ entry: current, calls: results });
 		if (!step.next) return { module: module.name, entry, rounds, result: step.result ?? null };
 		current = step.next;

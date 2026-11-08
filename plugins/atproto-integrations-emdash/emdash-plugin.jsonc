@@ -15,7 +15,8 @@
 		"pending": { "indexes": ["createdAt"] },
 		"sessions": { "indexes": ["userId", "did", "updatedAt"] },
 		"replays": { "indexes": ["exp"] },
-		"locks": { "indexes": [] }
+		"locks": { "indexes": [] },
+		"attest_keys": { "indexes": [] }
 	},
 	"admin": {
 		"settingsSchema": {

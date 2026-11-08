@@ -3,7 +3,7 @@ import { base32nopad } from "@scure/base";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ATTEST_NSID, signInline, verifyInline } from "../src/attest";
 import { MODULE_COLLECTION } from "../src/modules";
-import { ALICE, call, connect, json, queueIdentity, SITE_URL, useEncryptionKey } from "./network";
+import { ALICE, call, connect, didDocument, json, OPERATOR, queueIdentity, SITE_URL, useEncryptionKey } from "./network";
 
 // A module whose `echo` export returns its input: the test's `calls` come back as the module's plan.
 const ECHO_WASM = Uint8Array.from([
@@ -124,6 +124,17 @@ describe("module call routes", () => {
 		expect(JSON.stringify(ran.data)).not.toContain("service-token");
 	});
 
+	it("reads from a DID service's own PDS without a token", async () => {
+		const params = { repo: OPERATOR.did, collection: "com.publicdomainrelay.temp.market.offering" };
+		await queueIdentity(host, didDocument([], OPERATOR), 1, OPERATOR);
+		await host.http.respond(`${OPERATOR.pds}/xrpc/${LIST}?${new URLSearchParams(params)}`, json({ records: [] }));
+		const ran = await run([{ nsid: LIST, params, service: OPERATOR.did }]);
+		expect(ran.data.rounds[0].calls).toEqual([{ nsid: LIST, ok: true, output: { records: [] } }]);
+		const sent = host.http.requests().find((item) => item.url.startsWith(`${OPERATOR.pds}/xrpc/${LIST}`));
+		expect(sent?.headers.authorization).toBeUndefined();
+		expect(host.http.requests().some((item) => item.url.includes("getServiceAuth"))).toBe(false);
+	});
+
 	it("signs with one sealed key per user and session DID", async () => {
 		const record = { $type: "com.publicdomainrelay.temp.market.rfp", domain: "compute", createdAt: "2026-11-08T00:00:00.000Z" };
 		const first = await run([
@@ -144,8 +155,10 @@ describe("module call routes", () => {
 
 	it.each([
 		["a proxy that is not did#service", [{ nsid: LIST, proxy: "https://bidder.example" }], "Module call proxy must be did#service"],
-		["a service that is not an https origin", [{ nsid: SUBMIT, service: "http://bidder.example" }], "Module call service must be an https origin"],
-		["a service with a path", [{ nsid: SUBMIT, service: `${BIDDER}/xrpc` }], "Module call service must be an https origin"],
+		["a service that is not an https origin", [{ nsid: SUBMIT, service: "http://bidder.example" }], "Module call service must be an https origin or a DID"],
+		["a service with a path", [{ nsid: SUBMIT, service: `${BIDDER}/xrpc` }], "Module call service must be an https origin or a DID"],
+		["a DID service with a fragment", [{ nsid: LIST, service: "did:plc:bidder#atproto_pds" }], "Module call service must be an https origin or a DID"],
+		["input to a DID service", [{ nsid: SUBMIT, input: {}, service: "did:plc:bidder" }], "Module call to a DID service is a read: no input"],
 		["both proxy and service", [{ nsid: SUBMIT, proxy: "did:plc:bidder#svc", service: BIDDER }], "Module call takes proxy or service, not both"],
 	])("refuses %s", async (_name, calls, message) => {
 		const ran = await run(calls);

@@ -2,7 +2,7 @@ import { base32nopad, hex } from "@scure/base";
 import type { PluginContext } from "emdash/plugin";
 import { ATTEST_NSID, attest } from "./attest";
 import type { SessionAgent } from "./flow";
-import { type Http, requireHttp, xrpcUrl } from "./http";
+import { requireHttp, xrpcUrl } from "./http";
 import { resolveActor } from "./identity";
 import { COLLECTION as CLIENT_COLLECTION, type IntegrationRef } from "./record";
 
@@ -53,6 +53,8 @@ const ENTRY = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
 const PROXY = /^did:[a-z]+:[^#\s]+#[A-Za-z0-9_-]+$/;
 // A service called directly, with a service-auth token (aud did:web:<host>, lxm nsid) the host mints: an https origin.
 const SERVICE = /^https:\/\/[A-Za-z0-9.-]+(:\d+)?$/;
+// Or a DID: a public read (GET, no input, no token) from that DID's own PDS.
+const SERVICE_DID = /^did:(plc|web):[A-Za-z0-9._:%-]+$/;
 
 function parseSessionRef(value: unknown): IntegrationRef {
 	const uri = isObject(value) ? text(value.uri) : undefined;
@@ -143,7 +145,10 @@ function parseStep(output: unknown, allowed: string[] | undefined): ModuleStep {
 		if (!isObject(call) || typeof call.nsid !== "string" || !NSID.test(call.nsid)) throw new Error("Module call needs an NSID");
 		if ((allowed || call.nsid === ATTEST_NSID) && !allowed?.includes(call.nsid)) throw new Error(`Module record does not allow ${call.nsid}`);
 		if (call.proxy !== undefined && (typeof call.proxy !== "string" || !PROXY.test(call.proxy))) throw new Error("Module call proxy must be did#service");
-		if (call.service !== undefined && (typeof call.service !== "string" || !SERVICE.test(call.service))) throw new Error("Module call service must be an https origin");
+		if (call.service !== undefined && (typeof call.service !== "string" || !(SERVICE.test(call.service) || SERVICE_DID.test(call.service)))) {
+			throw new Error("Module call service must be an https origin or a DID");
+		}
+		if (typeof call.service === "string" && SERVICE_DID.test(call.service) && call.input !== undefined) throw new Error("Module call to a DID service is a read: no input");
 		if (call.proxy !== undefined && call.service !== undefined) throw new Error("Module call takes proxy or service, not both");
 		const params = isObject(call.params)
 			? Object.fromEntries(Object.entries(call.params).map(([key, value]) => [key, String(value)]))
@@ -154,7 +159,10 @@ function parseStep(output: unknown, allowed: string[] | undefined): ModuleStep {
 }
 
 // Direct call to a service that serves no did:web document: a service-auth token from the user's PDS, never seen by wasm.
-async function callService(http: Http, agent: SessionAgent, call: XrpcCallPlan & { service: string }) {
+// A DID service is a public read from its PDS: no token is minted for third parties.
+async function callService(ctx: PluginContext, agent: SessionAgent, call: XrpcCallPlan & { service: string }) {
+	const http = requireHttp(ctx);
+	if (call.service.startsWith("did:")) return parsed(call.nsid, await http.fetch(xrpcUrl((await resolveActor(ctx, call.service)).pds, call.nsid, call.params ?? {})));
 	const { token } = await agent.call<{ token: string }>("com.atproto.server.getServiceAuth", {
 		params: { aud: `did:web:${new URL(call.service).host}`, lxm: call.nsid },
 	});
@@ -166,8 +174,12 @@ async function callService(http: Http, agent: SessionAgent, call: XrpcCallPlan &
 			? { method: "GET", headers: { authorization } }
 			: { method: "POST", headers: { authorization, "content-type": "application/json" }, body: JSON.stringify(call.input) },
 	);
+	return parsed(call.nsid, response);
+}
+
+async function parsed(nsid: string, response: Response) {
 	const body = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
-	if (!response.ok) throw new Error(`${call.nsid} failed with ${body.error ?? response.status}${body.message ? `: ${body.message}` : ""}`);
+	if (!response.ok) throw new Error(`${nsid} failed with ${body.error ?? response.status}${body.message ? `: ${body.message}` : ""}`);
 	return body;
 }
 
@@ -177,7 +189,7 @@ async function perform(ctx: PluginContext, agent: SessionAgent, call: XrpcCallPl
 			call.nsid === ATTEST_NSID
 				? await attest(ctx, agent.userId, agent.account, call.input)
 				: call.service
-					? await callService(requireHttp(ctx), agent, { ...call, service: call.service })
+					? await callService(ctx, agent, { ...call, service: call.service })
 					: await agent.call(call.nsid, { params: call.params, input: call.input, headers: call.proxy ? { "atproto-proxy": call.proxy } : undefined });
 		return { nsid: call.nsid, ok: true, output };
 	} catch (error) {
